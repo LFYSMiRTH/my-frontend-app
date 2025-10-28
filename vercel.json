@@ -4,6 +4,13 @@
     {
       "src": "html/index.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "**/*",
+      "use": "@vercel/static",
+      "config": {
+        "staticDir": "."
+      }
     }
   ],
   "routes": [
