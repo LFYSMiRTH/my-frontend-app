@@ -1,4 +1,4 @@
-// ✅ Base API URL — now points to your live backend
+// ✅ Base API URL — now points to your live backend (NO TRAILING SPACES!)
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com';
 
 function goToLogin() {
