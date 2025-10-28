@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - TBYN CAFE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/adminDashboard.css" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="logo">
+      <span>☕</span> TBYN CAFE
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">Main</div>
+      <div class="nav-item" id="nav-dashboard">
+        <i class="ri-dashboard-line"></i> <span>Dashboard</span>
+      </div>
+      <div class="nav-item" id="nav-report">
+        <i class="ri-file-list-line"></i> <span>Report</span>
+      </div>
+
+      <!-- Menu Management triggers panel -->
+      <div class="nav-item admin-only" id="menuManagementBtn">
+        <i class="ri-store-2-line"></i> <span>Menu Management</span>
+      </div>
+    </div>
+
+    <div class="nav-section" style="margin-top: auto;">
+      <div class="nav-item" id="logoutBtn">
+        <i class="ri-logout-box-line"></i> <span>Logout</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="header">
+      <div class="user-info">
+        <h2>Dashboard</h2>
+        <p>Let’s see an overview</p>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-icon" title="Search"><i class="ri-search-line"></i></button>
+        <button type="button" class="btn btn-icon" title="Notifications"><i class="ri-notification-line"></i></button>
+        <div class="user-avatar">
+          <img src="../image/Profile.jpg" alt="User" />
+        </div>
+      </div>
+    </div>
+
+    <div class="overview" id="overviewCards"></div>
+
+    <div class="sales-trends">
+      <div class="trends-header">
+        <div class="trends-title">Sales Trends</div>
+        <select class="dropdown">
+          <option>Yearly</option>
+          <option>Monthly</option>
+          <option>Weekly</option>
+        </select>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background:#E76F51;"></div> Current
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background:#2EC4B6;"></div> Previous
+        </div>
+      </div>
+
+      <div class="chart-placeholder">
+        <div class="y-axis">
+          <span>100%</span>
+          <span>75%</span>
+          <span>50%</span>
+          <span>25%</span>
+          <span>0%</span>
+        </div>
+        <div class="x-axis">
+          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+          <span>July</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Item Modal -->
+  <div id="addMenuItemModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Add New Menu Item</h3>
+      <form id="addMenuItemForm">
+        <input type="text" id="itemName" placeholder="Item Name" required />
+        <input type="number" id="itemPrice" placeholder="Price (₱)" step="0.01" min="0" required />
+        <input type="number" id="itemStock" placeholder="Stock Quantity" min="0" value="50" required />
+        <input type="text" id="itemCategory" placeholder="Category (e.g., Coffee, Pastry)" />
+        <div class="modal-actions">
+          <button type="button" id="closeModal">Cancel</button>
+          <button type="submit">Add Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Menu Management Panel Modal -->
+  <div id="menuManagementModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Menu Management</h3>
+      <div id="menuListContainer" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+        <!-- Menu items will be loaded here dynamically -->
+        <p style="text-align: center; color: #777;">Loading menu items...</p>
+      </div>
+      <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+        <button type="button" id="addItemBtn"><i class="ri-add-line"></i> Add New Item</button>
+        <button type="button" id="closeMenuPanel"><i class="ri-close-line"></i> Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editMenuItemModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Edit Menu Item</h3>
+      <form id="editMenuItemForm">
+        <input type="hidden" id="editItemId" />
+        <input type="text" id="editItemName" placeholder="Name" required />
+        <input type="number" id="editItemPrice" placeholder="Price" step="0.01" min="0" required />
+        <input type="number" id="editItemStock" placeholder="Stock" min="0" required />
+        <input type="text" id="editItemCategory" placeholder="Category" />
+        <div class="modal-actions">
+          <button type="button" id="cancelEdit">Cancel</button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirm -->
+  <div id="deleteConfirmModal" class="modal hidden">
+    <div class="modal-content" style="text-align:center;">
+      <h3>Delete Item?</h3>
+      <p><strong id="deleteItemName"></strong></p>
+      <input type="hidden" id="deleteItemId" />
+      <div class="modal-actions">
+        <button type="button" id="cancelDelete">No</button>
+        <button type="button" id="confirmDelete" style="background:#e74c3c;color:white;">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/adminDashboard.js"></script>
+</body>
+</html>

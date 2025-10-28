@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TBYN Café | Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/login.css">
+</head>
+<body>
+
+  <div class="logo">TBYN CAFE</div>
+
+  <div class="login-container">
+    <h2>Your café, made digital.</h2>
+    <p>Fresh orders waiting — sign in to begin.</p>
+
+    <form id="loginForm">
+      <input type="text" id="loginUsername" placeholder="Username" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+
+      <div class="forgot">
+        <a href="#">Forgot Password?</a>
+      </div>
+
+      <button type="submit">Login</button>
+
+      <p class="signup-text">Don’t have an account? <a href="#" id="openSignup">Sign up</a></p>
+    </form>
+  </div>
+
+  <div class="overlay hidden" id="signupModal">
+    <div class="signup-box">
+      <h2>Create Account</h2>
+      <form id="signupForm">
+        <input type="text" id="signupUsername" placeholder="Username" required>
+        <input type="email" id="signupEmail" placeholder="Email" required>
+        <input type="password" id="signupPassword" placeholder="Password" required>
+        <button type="submit">Sign Up</button>
+        <p><a href="#" id="closeSignup">Back to Login</a></p>
+       </form>
+    </div>
+  </div>
+  <script src="../js/script.js"></script>
+</body>
+</html>
