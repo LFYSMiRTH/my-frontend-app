@@ -1,4 +1,4 @@
-// ✅ Base API URL — now points to your live backend (NO TRAILING SPACES!)
+// ✅ Base API URL — now points to your live backend
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com';
 
 function goToLogin() {
@@ -98,7 +98,7 @@ const dessertsData = [
 ];
 
 let isModalOpen = false;
-let currentCategory = null; 
+let currentCategory = null;
 
 if (modalOverlay && drinkGrid) {
 
@@ -115,7 +115,7 @@ if (modalOverlay && drinkGrid) {
     } else if (category === 'sandwiches') {
       items = sandwichesData;
       title = 'Sandwiches';
-    } else if (category === 'dessert') { 
+    } else if (category === 'dessert') {
       items = dessertsData;
       title = 'Desserts';
     } else {
@@ -127,7 +127,7 @@ if (modalOverlay && drinkGrid) {
     drinkGrid.innerHTML = '';
     items.forEach((item, index) => {
       const card = document.createElement('div');
-      card.classList.add('drink-card'); 
+      card.classList.add('drink-card');
       card.setAttribute('data-index', index);
 
       card.innerHTML = `

@@ -1,3 +1,4 @@
+const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
 const cardsConfig = [
   { key: 'totalOrders', title: 'Total Orders', icon: '<i class="ri-shopping-bag-line"></i>', color: '#2EC4B6', formatter: v => v.toLocaleString() },
   { key: 'totalRevenue', title: 'Total Revenue', icon: '<i class="ri-money-dollar-circle-line"></i>', color: '#FF9F1C', formatter: v => `₱${Number(v).toFixed(2)}` },
@@ -7,14 +8,46 @@ const cardsConfig = [
 
 const overviewContainer = document.getElementById('overviewCards');
 
+function getAuthToken() {
+  return localStorage.getItem('adminToken');
+}
+
+async function apiCall(endpoint, options = {}) {
+  const url = `${API_BASE}${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers
+  };
+
+  const config = {
+    ...options,
+    headers
+  };
+
+  const res = await fetch(url, config);
+  
+  if (res.status === 401 || res.status === 403) {
+    alert('Access denied. Please log in as admin.');
+    window.location.href = '../html/login.html';
+    throw new Error('Unauthorized');
+  }
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'Unknown error');
+    throw new Error(`HTTP ${res.status}: ${errorText}`);
+  }
+
+  return res.json();
+}
+
 async function loadDashboardData() {
   overviewContainer.innerHTML = '<p>Loading...</p>';
   try {
-    const res = await fetch('https://localhost:7179/api/admin/dashboard');
-    const data = await res.json();
+    const data = await apiCall('/admin/dashboard');
     renderOverviewCards(data);
   } catch (err) {
-    overviewContainer.innerHTML = `<p class="no-data">Error: ${err.message}</p>`;
+    console.error('Dashboard load error:', err);
+    overviewContainer.innerHTML = `<p class="no-data">Error loading dashboard: ${err.message}</p>`;
   }
 }
 
@@ -37,34 +70,37 @@ function renderOverviewCards(data) {
   });
 }
 
-// 🔁 Load Menu Items
 async function loadMenuItems() {
   const container = document.getElementById('menuListContainer');
   container.innerHTML = '<p>Loading menu...</p>';
   try {
-    const res = await fetch('https://localhost:7179/api/admin/menu');
-    const items = await res.json();
-    if (items.length === 0) {
+    const items = await apiCall('/admin/menu');
+    if (!Array.isArray(items) || items.length === 0) {
       container.innerHTML = '<p>No items found.</p>';
       return;
     }
+
     let html = '';
     items.forEach(item => {
       html += `
         <div class="menu-item">
-          <div><strong>${item.name}</strong><br>₱${item.price} | Stock: ${item.stockQuantity}</div>
+          <div><strong>${item.name}</strong><br>₱${(item.price ?? 0).toFixed(2)} | Stock: ${item.stockQuantity ?? 0}</div>
           <div class="menu-actions">
-            <button class="edit-btn" data-id="${item.id}" 
-                    data-name="${item.name}" data-price="${item.price}" 
-                    data-stock="${item.stockQuantity}" data-category="${item.category || ''}">✏️</button>
-            <button class="delete-btn" data-id="${item.id}" data-name="${item.name}">🗑️</button>
+            <button class="edit-btn" 
+              data-id="${item.id}" 
+              data-name="${item.name}" 
+              data-price="${item.price}" 
+              data-stock="${item.stockQuantity}" 
+              data-category="${item.category || ''}">✏️</button>
+            <button class="delete-btn" 
+              data-id="${item.id}" 
+              data-name="${item.name}">🗑️</button>
           </div>
         </div>
       `;
     });
     container.innerHTML = html;
 
-    // Attach listeners
     document.querySelectorAll('.edit-btn').forEach(btn => 
       btn.addEventListener('click', openEditModal)
     );
@@ -72,12 +108,11 @@ async function loadMenuItems() {
       btn.addEventListener('click', openDeleteConfirm)
     );
   } catch (err) {
-    container.innerHTML = '<p style="color:red;">Failed to load menu.</p>';
     console.error('Menu load error:', err);
+    container.innerHTML = '<p style="color:red;">Failed to load menu.</p>';
   }
 }
 
-// 🖊️ Edit Modal
 function openEditModal(e) {
   const btn = e.target.closest('.edit-btn');
   document.getElementById('editItemId').value = btn.dataset.id;
@@ -86,130 +121,132 @@ function openEditModal(e) {
   document.getElementById('editItemStock').value = btn.dataset.stock;
   document.getElementById('editItemCategory').value = btn.dataset.category;
 
-  document.getElementById('menuManagementModal').classList.add('hidden');
-  document.getElementById('editMenuItemModal').classList.remove('hidden');
+  document.getElementById('menuManagementModal')?.classList.add('hidden');
+  document.getElementById('editMenuItemModal')?.classList.remove('hidden');
 }
 
-// 🗑️ Delete Confirm
 function openDeleteConfirm(e) {
   const btn = e.target.closest('.delete-btn');
   document.getElementById('deleteItemId').value = btn.dataset.id;
   document.getElementById('deleteItemName').textContent = btn.dataset.name;
-  document.getElementById('menuManagementModal').classList.add('hidden');
-  document.getElementById('deleteConfirmModal').classList.remove('hidden');
+  document.getElementById('menuManagementModal')?.classList.add('hidden');
+  document.getElementById('deleteConfirmModal')?.classList.remove('hidden');
 }
 
-// 🚀 DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
-  // Menu Management
-  document.getElementById('menuManagementBtn')?.addEventListener('click', () => {
-    document.getElementById('menuManagementModal').classList.remove('hidden');
-    loadMenuItems();
-  });
+async function handleEditSubmit(e) {
+  e.preventDefault();
+  const id = document.getElementById('editItemId').value;
+  const updated = {
+    name: document.getElementById('editItemName').value.trim(),
+    price: parseFloat(document.getElementById('editItemPrice').value),
+    stockQuantity: parseInt(document.getElementById('editItemStock').value),
+    category: document.getElementById('editItemCategory').value.trim() || null
+  };
 
-  // Close modals
-  document.getElementById('closeMenuPanel')?.addEventListener('click', () => 
-    document.getElementById('menuManagementModal').classList.add('hidden')
-  );
-  document.getElementById('cancelEdit')?.addEventListener('click', () => {
-    document.getElementById('editMenuItemModal').classList.add('hidden');
-    document.getElementById('menuManagementModal').classList.remove('hidden');
-    loadMenuItems();
-  });
-  document.getElementById('cancelDelete')?.addEventListener('click', () => {
-    document.getElementById('deleteConfirmModal').classList.add('hidden');
-    document.getElementById('menuManagementModal').classList.remove('hidden');
-    loadMenuItems();
-  });
-
-  // Add Item
-  document.getElementById('addItemBtn')?.addEventListener('click', () => {
-    document.getElementById('menuManagementModal').classList.add('hidden');
-    document.getElementById('addMenuItemModal').classList.remove('hidden');
-  });
-
-  // Edit Form Submit
-  document.getElementById('editMenuItemForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('editItemId').value;
-    const updated = {
-      name: document.getElementById('editItemName').value.trim(),
-      price: parseFloat(document.getElementById('editItemPrice').value),
-      stockQuantity: parseInt(document.getElementById('editItemStock').value),
-      category: document.getElementById('editItemCategory').value.trim() || null
-    };
-    if (!updated.name || updated.price < 0 || updated.stockQuantity < 0) {
-      alert('Invalid input');
-      return;
-    }
-    try {
-      await fetch(`https://localhost:7179/api/admin/menu/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-      });
-      alert('Updated!');
-      document.getElementById('editMenuItemModal').classList.add('hidden');
-      loadDashboardData();
-      loadMenuItems();
-    } catch (err) {
-      alert('Update failed');
-    }
-  });
-
-  // Delete Confirm
-  document.getElementById('confirmDelete')?.addEventListener('click', async () => {
-    const id = document.getElementById('deleteItemId').value;
-    try {
-      await fetch(`https://localhost:7179/api/admin/menu/${id}`, { method: 'DELETE' });
-      alert('Deleted!');
-      document.getElementById('deleteConfirmModal').classList.add('hidden');
-      loadDashboardData();
-      loadMenuItems();
-    } catch (err) {
-      alert('Delete failed');
-    }
-  });
-
-  // Add Item Form (your existing code – keep it)
-  const form = document.getElementById('addMenuItemForm');
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const newItem = {
-        name: document.getElementById('itemName').value.trim(),
-        price: parseFloat(document.getElementById('itemPrice').value),
-        stockQuantity: parseInt(document.getElementById('itemStock').value),
-        category: document.getElementById('itemCategory').value.trim() || null
-      };
-      if (!newItem.name || newItem.price < 0 || newItem.stockQuantity < 0) {
-        alert('Invalid input');
-        return;
-      }
-      try {
-        const res = await fetch('https://localhost:7179/api/admin/menu', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newItem)
-        });
-        if (res.ok) {
-          alert('Added!');
-          form.reset();
-          document.getElementById('addMenuItemModal').classList.add('hidden');
-          loadDashboardData();
-          loadMenuItems();
-        }
-      } catch (err) {
-        alert('Add failed');
-      }
-    });
+  if (!updated.name || isNaN(updated.price) || updated.price < 0 || isNaN(updated.stockQuantity) || updated.stockQuantity < 0) {
+    alert('Please enter valid name, price (≥0), and stock (≥0).');
+    return;
   }
 
-  // Logout
+  try {
+    await apiCall(`/admin/menu/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updated)
+    });
+    alert('Item updated successfully!');
+    closeEditModal();
+    loadDashboardData();
+    loadMenuItems();
+  } catch (err) {
+    console.error('Edit error:', err);
+    alert('Update failed: ' + err.message);
+  }
+}
+
+async function handleDeleteConfirm() {
+  const id = document.getElementById('deleteItemId').value;
+  try {
+    await apiCall(`/admin/menu/${id}`, { method: 'DELETE' });
+    alert('Item deleted successfully!');
+    closeDeleteModal();
+    loadDashboardData();
+    loadMenuItems();
+  } catch (err) {
+    console.error('Delete error:', err);
+    alert('Delete failed: ' + err.message);
+  }
+}
+
+async function handleAddSubmit(e) {
+  e.preventDefault();
+  const newItem = {
+    name: document.getElementById('itemName').value.trim(),
+    price: parseFloat(document.getElementById('itemPrice').value),
+    stockQuantity: parseInt(document.getElementById('itemStock').value),
+    category: document.getElementById('itemCategory').value.trim() || null
+  };
+
+  if (!newItem.name || isNaN(newItem.price) || newItem.price < 0 || isNaN(newItem.stockQuantity) || newItem.stockQuantity < 0) {
+    alert('Please enter valid name, price (≥0), and stock (≥0).');
+    return;
+  }
+
+  try {
+    await apiCall('/admin/menu', {
+      method: 'POST',
+      body: JSON.stringify(newItem)
+    });
+    alert('Item added successfully!');
+    document.getElementById('addMenuItemForm').reset();
+    closeAddModal();
+    loadDashboardData();
+    loadMenuItems();
+  } catch (err) {
+    console.error('Add error:', err);
+    alert('Add failed: ' + err.message);
+  }
+}
+
+function closeEditModal() {
+  document.getElementById('editMenuItemModal')?.classList.add('hidden');
+  document.getElementById('menuManagementModal')?.classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteConfirmModal')?.classList.add('hidden');
+  document.getElementById('menuManagementModal')?.classList.remove('hidden');
+}
+
+function closeAddModal() {
+  document.getElementById('addMenuItemModal')?.classList.add('hidden');
+  document.getElementById('menuManagementModal')?.classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
+    localStorage.removeItem('adminToken');
     window.location.href = '../html/login.html';
   });
+
+  document.getElementById('menuManagementBtn')?.addEventListener('click', () => {
+    document.getElementById('menuManagementModal')?.classList.remove('hidden');
+    loadMenuItems();
+  });
+
+  document.getElementById('closeMenuPanel')?.addEventListener('click', () => 
+    document.getElementById('menuManagementModal')?.classList.add('hidden')
+  );
+  document.getElementById('cancelEdit')?.addEventListener('click', closeEditModal);
+  document.getElementById('cancelDelete')?.addEventListener('click', closeDeleteModal);
+  document.getElementById('addItemBtn')?.addEventListener('click', () => {
+    document.getElementById('menuManagementModal')?.classList.add('hidden');
+    document.getElementById('addMenuItemModal')?.classList.remove('hidden');
+  });
+
+  document.getElementById('editMenuItemForm')?.addEventListener('submit', handleEditSubmit);
+  document.getElementById('confirmDelete')?.addEventListener('click', handleDeleteConfirm);
+  document.getElementById('addMenuItemForm')?.addEventListener('submit', handleAddSubmit);
 
   loadDashboardData();
 });
