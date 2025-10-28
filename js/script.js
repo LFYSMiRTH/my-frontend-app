@@ -13,37 +13,37 @@ const backBtn = document.querySelector('.back-btn');
 const drinksData = [
   {
     name: "Spanish Latte",
-    image: "../../Drinks/Spanish Latte.jpg",
+    image: "../Drinks/Spanish Latte.jpg",
     description: "A creamy blend of espresso, condensed milk, and frothy milk—sweet, rich, and smooth."
   },
   {
     name: "Caramel Macchiato",
-    image: "../../Drinks/Caramel Macchiato.jpg",
+    image: "../Drinks/Caramel Macchiato.jpg",
     description: "Espresso poured over vanilla-infused milk, topped with caramel drizzle for a sweet finish."
   },
   {
     name: "Vanilla Cold Brew",
-    image: "../../Drinks/vanilla cold brew.jpg",
+    image: "../Drinks/vanilla cold brew.jpg",
     description: "Smooth cold brew steeped for 12 hours, sweetened with vanilla syrup—refreshingly bold."
   },
   {
     name: "Matcha Latte",
-    image: "../../Drinks/Matcha Latte.jpg",
+    image: "../Drinks/Matcha Latte.jpg",
     description: "Premium ceremonial matcha whisked with steamed milk—earthy, vibrant, and calming."
   },
   {
     name: "Chocolate Overload",
-    image: "../../Drinks/Chocolate Overload.jpg",
+    image: "../Drinks/Chocolate Overload.jpg",
     description: "Decadent hot chocolate with dark and milk chocolate, topped with whipped cream and shavings."
   },
   {
     name: "Espresso Shot",
-    image: "../../Drinks/Expresso Shot.jpg",
+    image: "../Drinks/Expresso Shot.jpg",
     description: "A concentrated 30ml shot of rich, aromatic coffee—pure and intense."
   },
   {
     name: "Iced Americano",
-    image: "../../Drinks/Americano.jpg",
+    image: "../Drinks/Americano.jpg",
     description: "Espresso diluted with hot water for a smooth, clean coffee experience—bold but balanced."
   }
 ];
@@ -51,22 +51,22 @@ const drinksData = [
 const sandwichesData = [
   {
     name: "Chicken Pesto",
-    image: "../../Sandwiches/Chicken Pesto.jpg",
+    image: "../Sandwiches/Chicken Pesto.jpg",
     description: "Grilled chicken breast with fresh basil pesto, mozzarella, and sun-dried tomatoes on ciabatta."
   },
   {
     name: "Clubhouse",
-    image: "../../Sandwiches/Clubhouse.jpg",
+    image: "../Sandwiches/Clubhouse.jpg",
     description: "Triple-layer sandwich with turkey, bacon, lettuce, tomato, and mayo on toasted multigrain bread."
   },
   {
     name: "Grilled Cheese Supreme",
-    image: "../../Sandwiches/Grilled Cheese Supreme.jpg",
+    image: "../Sandwiches/Grilled Cheese Supreme.jpg",
     description: "Three-cheese blend (cheddar, mozzarella, gouda) grilled to golden perfection with a hint of garlic butter."
   },
   {
     name: "Tuna Melt",
-    image: "../../Sandwiches/Tuna Melt.jpg",
+    image: "../Sandwiches/Tuna Melt.jpg",
     description: "Creamy tuna salad topped with melted Swiss cheese on sourdough, grilled until crispy."
   }
 ];
@@ -74,22 +74,22 @@ const sandwichesData = [
 const dessertsData = [
   {
     name: "Choco Lava Cake",
-    image: "../../Dessert/Choco Lava Cake.jpg",
+    image: "../Dessert/Choco Lava Cake.jpg",
     description: "Warm chocolate cake with a molten center, served with vanilla ice cream."
   },
   {
     name: "Cookie Sandwich",
-    image: "../../Dessert/Cookie Sandwich.jpg",
+    image: "../Dessert/Cookie Sandwich.jpg",
     description: "Two soft-baked chocolate chip cookies hugging a layer of creamy ice cream or frosting."
   },
   {
     name: "Ice Cream Parfait",
-    image: "../../Dessert/Ice Cream Parfait.jpg",
+    image: "../Dessert/Ice Cream Parfait.jpg",
     description: "Layers of premium ice cream, fresh fruit, granola, and honey drizzle in a chilled glass."
   },
   {
     name: "Tiramisu",
-    image: "../../Dessert/Tiramisu.jpg",
+    image: "../Dessert/Tiramisu.jpg",
     description: "Classic Italian dessert with coffee-soaked ladyfingers, mascarpone cream, and cocoa dust."
   }
 ];
@@ -331,23 +331,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const teamMembers = [
       {
         name: "John Timothy Yanto",
-        image: "../../Team/Image 1.jpg"
+        image: "../Team/Image 1.jpg"
       },
       {
         name: "Marq Kenjie Buencosejo",
-        image: "../../Team/Image 2.jpeg"
+        image: "../Team/Image 2.jpeg"
       },
       {
         name: "Russel Pelea",
-        image: "../../Team/Image 3.jpeg"
+        image: "../Team/Image 3.jpeg"
       },
       {
         name: "Allan Alamo",
-        image: "../../Team/Image 4.jpg"
+        image: "../Team/Image 4.jpg"
       },
       {
         name: "Timothy Jade Montano",
-        image: "../../Team/Image 5.jpg"
+        image: "../Team/Image 5.jpg"
       }
     ];
 
