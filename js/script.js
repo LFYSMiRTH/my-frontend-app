@@ -331,23 +331,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const teamMembers = [
       {
         name: "John Timothy Yanto",
-        image: "../Team/Image 1.jpg"
+        image: "/Team/image1.jpg"
       },
       {
         name: "Marq Kenjie Buencosejo",
-        image: "../Team/Image 2.jpeg"
+        image: "/Team/image2.jpeg"
       },
       {
         name: "Russel Pelea",
-        image: "../Team/Image 3.jpeg"
+        image: "/Team/image3.jpeg"
       },
       {
         name: "Allan Alamo",
-        image: "../Team/Image 4.jpg"
+        image: "/Team/image4.jpg"
       },
       {
         name: "Timothy Jade Montano",
-        image: "../Team/Image 5.jpg"
+        image: "/Team/image5.jpg"
       }
     ];
 
