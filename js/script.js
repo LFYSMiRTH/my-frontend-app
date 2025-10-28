@@ -1,3 +1,6 @@
+// ✅ Base API URL — now points to your live backend
+const API_BASE = 'https://tambayan-cafe-backend.onrender.com';
+
 function goToLogin() {
   window.location.href = "login.html";
 }
@@ -241,6 +244,7 @@ if (loginForm && loginPassword) {
     const username = document.getElementById('loginUsername').value.trim();
     const password = loginPassword.value.trim();
 
+    // Admin login (client-side only)
     if (username === 'admin' && password === 'admin123') {
       localStorage.setItem(
         'adminData',
@@ -257,7 +261,7 @@ if (loginForm && loginPassword) {
     const user = { username, password };
 
     try {
-      const response = await fetch('https://localhost:7179/api/user/login', {
+      const response = await fetch(`${API_BASE}/api/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(user)
@@ -300,7 +304,7 @@ if (signupForm) {
     };
 
     try {
-      const response = await fetch('https://localhost:7179/api/user/register', {
+      const response = await fetch(`${API_BASE}/api/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(user)
