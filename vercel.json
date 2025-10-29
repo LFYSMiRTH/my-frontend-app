@@ -1,9 +1,7 @@
 {
   "version": 2,
   "routes": [
-    { "src": "/login", "dest": "/html/login.html" },
-    { "src": "/admin", "dest": "/html/adminDashboard.html" },
-    { "src": "/", "dest": "/html/index.html" },
-    { "src": "/(.*)", "dest": "/html/$1.html" }
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/html/$1" }
   ]
 }
