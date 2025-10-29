@@ -246,8 +246,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeMenuPanel')?.addEventListener('click', () => 
     document.getElementById('menuManagementModal')?.classList.add('hidden')
   );
+
   document.getElementById('cancelEdit')?.addEventListener('click', closeEditModal);
   document.getElementById('cancelDelete')?.addEventListener('click', closeDeleteModal);
+  document.getElementById('cancelAdd')?.addEventListener('click', closeAddModal); // ✅ ADDED THIS
+
   document.getElementById('addItemBtn')?.addEventListener('click', () => {
     document.getElementById('menuManagementModal')?.classList.add('hidden');
     document.getElementById('addMenuItemModal')?.classList.remove('hidden');
