@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('cancelEdit')?.addEventListener('click', closeEditModal);
   document.getElementById('cancelDelete')?.addEventListener('click', closeDeleteModal);
-  document.getElementById('cancelAdd')?.addEventListener('click', closeAddModal); // ✅ ADDED THIS
+  document.getElementById('closeModal')?.addEventListener('click', closeAddModal);
 
   document.getElementById('addItemBtn')?.addEventListener('click', () => {
     document.getElementById('menuManagementModal')?.classList.add('hidden');
