@@ -25,7 +25,7 @@ async function apiCall(endpoint, options = {}) {
   
   if (res.status === 401 || res.status === 403) {
     alert('Access denied. Please log in as admin.');
-    window.location.href = '../html/login.html';
+    window.location.href = '/html/login.html';
     throw new Error('Unauthorized');
   }
 
