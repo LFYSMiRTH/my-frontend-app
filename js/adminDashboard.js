@@ -1,4 +1,5 @@
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
+
 const cardsConfig = [
   { key: 'totalOrders', title: 'Total Orders', icon: '<i class="ri-shopping-bag-line"></i>', color: '#2EC4B6', formatter: v => v.toLocaleString() },
   { key: 'totalRevenue', title: 'Total Revenue', icon: '<i class="ri-money-dollar-circle-line"></i>', color: '#FF9F1C', formatter: v => `₱${Number(v).toFixed(2)}` },
@@ -19,11 +20,7 @@ async function apiCall(endpoint, options = {}) {
     ...options.headers
   };
 
-  const config = {
-    ...options,
-    headers
-  };
-
+  const config = { ...options, headers };
   const res = await fetch(url, config);
   
   if (res.status === 401 || res.status === 403) {
@@ -33,11 +30,23 @@ async function apiCall(endpoint, options = {}) {
   }
 
   if (!res.ok) {
-    const errorText = await res.text().catch(() => 'Unknown error');
+    let errorText = 'Unknown error';
+    try {
+      const errorJson = await res.json();
+      errorText = errorJson.message || JSON.stringify(errorJson);
+    } catch {
+      errorText = await res.text() || `HTTP ${res.status}`;
+    }
     throw new Error(`HTTP ${res.status}: ${errorText}`);
   }
 
-  return res.json();
+  // Safely parse JSON only if response contains JSON
+  const contentType = res.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return await res.json();
+  } else {
+    return { success: true }; // for 200/204 with empty body
+  }
 }
 
 async function loadDashboardData() {
