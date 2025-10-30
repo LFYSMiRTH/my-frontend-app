@@ -8,6 +8,7 @@ body {
   height: 100vh;
   flex-direction: column;
   padding: 20px;
+  position: relative;
 }
 
 .logo {
@@ -26,6 +27,8 @@ body {
   padding: 40px 30px;
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  z-index: 10;
+  position: relative;
 }
 
 h2 {
@@ -62,7 +65,6 @@ form input:focus {
   justify-content: flex-end;
   margin-top: -5px;
   margin-bottom: 20px;
-
 }
 
 .forgot a {
@@ -113,12 +115,13 @@ button:hover {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
 }
 
 .signup-box {
@@ -128,6 +131,8 @@ button:hover {
   width: 360px;
   text-align: center;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 1001;
 }
 
 .signup-box h2 {
@@ -254,3 +259,49 @@ button:hover {
 .weak { background-color: #e74c3c !important; }
 .medium { background-color: #f39c12 !important; }
 .strong { background-color: #2ecc71 !important; }
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.toggle-password {
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 24px !important;
+  height: 24px !important;
+  font: inherit !important;
+  color: #888 !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  right: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  text-indent: 0 !important;
+  appearance: none !important;
+  transition: color 0.2s ease !important;
+}
+
+.toggle-password:hover {
+  color: #555 !important;
+}
+
+.toggle-password i {
+  font-size: 14px !important;
+  line-height: 1 !important;
+}

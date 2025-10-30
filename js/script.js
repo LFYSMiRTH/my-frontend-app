@@ -4,7 +4,6 @@ function goToLogin() {
   window.location.href = "/login";
 }
 
-// --- Menu Modal Logic ---
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const drinkGrid = document.getElementById('drinkGrid');
@@ -211,7 +210,6 @@ if (modalOverlay && drinkGrid) {
   });
 }
 
-// --- Signup Modal Toggle ---
 const signupModal = document.getElementById('signupModal');
 const openSignup = document.getElementById('openSignup');
 const closeSignup = document.getElementById('closeSignup');
@@ -234,7 +232,6 @@ if (openSignup && closeSignup && signupModal) {
   });
 }
 
-// --- Login Form ---
 const loginForm = document.getElementById('loginForm');
 const loginUsername = document.getElementById('loginUsername');
 const loginPassword = document.getElementById('loginPassword');
@@ -258,7 +255,6 @@ if (loginForm && loginUsername && loginPassword) {
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
 
-    // Admin login
     if (username === 'admin' && password === 'admin123') {
       localStorage.setItem(
         'adminData',
@@ -272,7 +268,6 @@ if (loginForm && loginUsername && loginPassword) {
       return;
     }
 
-    // Regular user login
     const user = { username, password };
 
     try {
@@ -288,7 +283,6 @@ if (loginForm && loginUsername && loginPassword) {
         localStorage.setItem('customerData', JSON.stringify(data));
         window.location.href = '/customer';
       } else {
-        // ✅ Secure & accurate message
         alert('Invalid username or password. Please try again.');
         loginPassword.classList.add('input-error');
         setTimeout(() => {
@@ -309,7 +303,6 @@ if (loginForm && loginUsername && loginPassword) {
   });
 }
 
-// --- Signup Form ---
 const signupForm = document.getElementById('signupForm');
 if (signupForm) {
   const usernameInput = document.getElementById('signupUsername');
@@ -320,7 +313,6 @@ if (signupForm) {
   const passwordError = document.getElementById('passwordError');
   const strengthBar = document.getElementById('strengthBar');
 
-  // Clear errors on input
   usernameInput.addEventListener('input', () => {
     usernameError.textContent = '';
     usernameInput.classList.remove('input-error');
@@ -331,7 +323,6 @@ if (signupForm) {
     emailInput.classList.remove('input-error');
   });
 
-  // Validate username on blur
   usernameInput.addEventListener('blur', async () => {
     const username = usernameInput.value.trim();
     if (username.length < 3) return;
@@ -348,7 +339,6 @@ if (signupForm) {
     }
   });
 
-  // Validate email on blur
   emailInput.addEventListener('blur', async () => {
     const email = emailInput.value.trim();
     if (!email.includes('@')) return;
@@ -365,7 +355,6 @@ if (signupForm) {
     }
   });
 
-  // Password strength
   passwordInput.addEventListener('input', () => {
     const password = passwordInput.value;
     const strength = checkPasswordStrength(password);
@@ -395,11 +384,9 @@ if (signupForm) {
       : '';
   }
 
-  // Signup submit
   signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // Trim inputs
     const username = usernameInput.value.trim();
     const email = emailInput.value.trim();
     const password = passwordInput.value;
@@ -454,7 +441,6 @@ if (signupForm) {
   });
 }
 
-// --- Forgot Password Flow ---
 const forgotPasswordModal = document.getElementById('forgotPasswordModal');
 const verifyCodeModal = document.getElementById('verifyCodeModal');
 const newPasswordModal = document.getElementById('newPasswordModal');
@@ -591,7 +577,6 @@ document.getElementById('newPasswordForm')?.addEventListener('submit', async (e)
   }
 });
 
-// --- Team Carousel ---
 document.addEventListener('DOMContentLoaded', () => {
   const teamImage = document.getElementById('teamImage');
   const teamName = document.getElementById('teamName');
@@ -646,3 +631,25 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.addEventListener('click', showNext);
   }
 });
+
+function initPasswordToggles() {
+  document.querySelectorAll('.password-wrapper .toggle-password:not([data-initialized])')
+    .forEach(button => {
+      button.setAttribute('data-initialized', 'true');
+      button.addEventListener('click', function () {
+        const input = this.previousElementSibling;
+        const icon = this.querySelector('i');
+        if (!input || !icon) return;
+
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+          input.type = 'password';
+          icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+      });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initPasswordToggles);
