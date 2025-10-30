@@ -20,7 +20,7 @@
       <input type="password" id="loginPassword" placeholder="Password" required>
 
       <div class="forgot">
-        <a href="#">Forgot Password?</a>
+        <a href="#" id="openForgotPassword">Forgot Password?</a>
       </div>
 
       <button type="submit">Login</button>
@@ -34,13 +34,59 @@
       <h2>Create Account</h2>
       <form id="signupForm">
         <input type="text" id="signupUsername" placeholder="Username" required>
+        <div id="usernameError" class="error-message"></div>
+
         <input type="email" id="signupEmail" placeholder="Email" required>
+        <div id="emailError" class="error-message"></div>
+
         <input type="password" id="signupPassword" placeholder="Password" required>
+        <div id="passwordStrength" class="strength-meter">
+          <div id="strengthBar"></div>
+        </div>
+        <div id="passwordError" class="error-message"></div>
+
         <button type="submit">Sign Up</button>
         <p><a href="#" id="closeSignup">Back to Login</a></p>
-       </form>
+      </form>
     </div>
   </div>
+
+  <div class="overlay hidden" id="forgotPasswordModal">
+    <div class="signup-box">
+      <h2>Reset Password</h2>
+      <p>Enter your email to receive a verification code.</p>
+      <form id="forgotPasswordForm">
+        <input type="email" id="resetEmail" placeholder="Email" required>
+        <button type="submit">Send Code</button>
+        <p><a href="#" id="backToLoginFromForgot">Back to Login</a></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="verifyCodeModal">
+    <div class="signup-box">
+      <h2>Verify Code</h2>
+      <p>Enter the 6-digit code sent to your email.</p>
+      <form id="verifyCodeForm">
+        <input type="text" id="verificationCode" placeholder="6-digit code" maxlength="6" required>
+        <button type="submit">Verify</button>
+        <p><a href="#" id="backToEmailStep">← Back</a></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="newPasswordModal">
+    <div class="signup-box">
+      <h2>Set New Password</h2>
+      <form id="newPasswordForm">
+        <input type="password" id="newPassword" placeholder="New Password" required>
+        <input type="password" id="confirmNewPassword" placeholder="Confirm Password" required>
+        <button type="submit">Reset Password</button>
+        <p><a href="#" id="backToCodeStep">← Back</a></p>
+      </form>
+    </div>
+  </div>
+
   <script src="../js/script.js"></script>
 </body>
 </html>

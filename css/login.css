@@ -226,3 +226,31 @@ button:hover {
   75% { transform: translateX(-4px); }
   100% { transform: translateX(0); }
 }
+
+.error-message {
+  color: #e74c3c;
+  font-size: 13px;
+  min-height: 18px;
+  margin-top: -8px;
+  margin-bottom: 8px;
+  text-align: left;
+  padding-left: 5%;
+}
+
+.strength-meter {
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  margin: 8px 0 12px;
+  overflow: hidden;
+}
+
+#strengthBar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s, background-color 0.3s;
+}
+
+.weak { background-color: #e74c3c !important; }
+.medium { background-color: #f39c12 !important; }
+.strong { background-color: #2ecc71 !important; }

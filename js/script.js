@@ -1,4 +1,3 @@
-// ✅ Base API URL — now points to your live backend
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com';
 
 function goToLogin() {
@@ -101,7 +100,6 @@ let isModalOpen = false;
 let currentCategory = null;
 
 if (modalOverlay && drinkGrid) {
-
   function openCategoryModal(category) {
     if (isModalOpen) return;
 
@@ -244,7 +242,6 @@ if (loginForm && loginPassword) {
     const username = document.getElementById('loginUsername').value.trim();
     const password = loginPassword.value.trim();
 
-    // Admin login (client-side only)
     if (username === 'admin' && password === 'admin123') {
       localStorage.setItem(
         'adminData',
@@ -294,13 +291,103 @@ if (loginForm && loginPassword) {
 
 const signupForm = document.getElementById('signupForm');
 if (signupForm) {
+  const usernameInput = document.getElementById('signupUsername');
+  const emailInput = document.getElementById('signupEmail');
+  const passwordInput = document.getElementById('signupPassword');
+  const usernameError = document.getElementById('usernameError');
+  const emailError = document.getElementById('emailError');
+  const passwordError = document.getElementById('passwordError');
+  const strengthBar = document.getElementById('strengthBar');
+
+  usernameInput.addEventListener('blur', async () => {
+    const username = usernameInput.value.trim();
+    if (username.length < 3) return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/user/check-username?username=${encodeURIComponent(username)}`);
+      const exists = await res.json();
+      if (exists) {
+        usernameError.textContent = 'Username already taken.';
+        usernameInput.classList.add('input-error');
+      } else {
+        usernameError.textContent = '';
+        usernameInput.classList.remove('input-error');
+      }
+    } catch (err) {
+      console.error('Username check failed:', err);
+    }
+  });
+
+  emailInput.addEventListener('blur', async () => {
+    const email = emailInput.value.trim();
+    if (!email.includes('@')) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/user/check-email?email=${encodeURIComponent(email)}`);
+      const exists = await res.json();
+      if (exists) {
+        emailError.textContent = 'Email already registered.';
+        emailInput.classList.add('input-error');
+      } else {
+        emailError.textContent = '';
+        emailInput.classList.remove('input-error');
+      }
+    } catch (err) {
+      console.error('Email check failed:', err);
+    }
+  });
+
+  passwordInput.addEventListener('input', () => {
+    const password = passwordInput.value;
+    const strength = checkPasswordStrength(password);
+    updateStrengthUI(strength);
+  });
+
+  function checkPasswordStrength(password) {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  }
+
+  function updateStrengthUI(strength) {
+    const width = Math.min(100, strength * 20);
+    strengthBar.style.width = `${width}%`;
+    strengthBar.className = '';
+    if (strength < 3) strengthBar.classList.add('weak');
+    else if (strength < 5) strengthBar.classList.add('medium');
+    else strengthBar.classList.add('strong');
+
+    if (strength < 5) {
+      passwordError.textContent = 'Use 8+ chars with uppercase, lowercase, number, and symbol.';
+    } else {
+      passwordError.textContent = '';
+    }
+  }
+
   signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    usernameError.textContent = '';
+    emailError.textContent = '';
+    passwordError.textContent = '';
+    let hasError = false;
+
+    if (checkPasswordStrength(passwordInput.value) < 5) {
+      passwordError.textContent = 'Password is not strong enough.';
+      passwordInput.classList.add('input-error');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
     const user = {
-      username: document.getElementById('signupUsername').value.trim(),
-      email: document.getElementById('signupEmail').value.trim(),
-      password: document.getElementById('signupPassword').value.trim()
+      username: usernameInput.value.trim(),
+      email: emailInput.value.trim(),
+      password: passwordInput.value
     };
 
     try {
@@ -310,13 +397,26 @@ if (signupForm) {
         body: JSON.stringify(user)
       });
 
+      const result = await response.json();
+
       if (response.ok) {
         if (signupModal) signupModal.classList.add('hidden');
         alert('Account created successfully! You can now log in.');
+        signupForm.reset();
+        if (strengthBar) strengthBar.style.width = '0%';
       } else {
-        const errorText = await response.text();
-        console.error('Signup failed:', errorText);
-        alert('Failed to create account. Please try again.');
+        if (result.error === 'UsernameExists') {
+          usernameError.textContent = 'Username already taken.';
+          usernameInput.classList.add('input-error');
+        } else if (result.error === 'EmailExists') {
+          emailError.textContent = 'Email already registered.';
+          emailInput.classList.add('input-error');
+        } else if (result.error === 'WeakPassword') {
+          passwordError.textContent = 'Password does not meet security requirements.';
+          passwordInput.classList.add('input-error');
+        } else {
+          alert('Failed to create account. Please try again.');
+        }
       }
     } catch (err) {
       console.error('Signup error:', err);
@@ -324,6 +424,142 @@ if (signupForm) {
     }
   });
 }
+
+const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+const verifyCodeModal = document.getElementById('verifyCodeModal');
+const newPasswordModal = document.getElementById('newPasswordModal');
+
+document.getElementById('openForgotPassword')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (forgotPasswordModal) forgotPasswordModal.classList.remove('hidden');
+});
+
+document.getElementById('backToLoginFromForgot')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (forgotPasswordModal) forgotPasswordModal.classList.add('hidden');
+});
+
+[forgotPasswordModal, verifyCodeModal, newPasswordModal].forEach(modal => {
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+  }
+});
+
+document.getElementById('backToEmailStep')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (verifyCodeModal) verifyCodeModal.classList.add('hidden');
+  if (forgotPasswordModal) forgotPasswordModal.classList.remove('hidden');
+});
+
+document.getElementById('backToCodeStep')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (newPasswordModal) newPasswordModal.classList.add('hidden');
+  if (verifyCodeModal) verifyCodeModal.classList.remove('hidden');
+});
+
+document.getElementById('forgotPasswordForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('resetEmail')?.value.trim();
+
+  if (!email) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+
+    if (res.ok) {
+      window.tempResetEmail = email;
+      if (forgotPasswordModal) forgotPasswordModal.classList.add('hidden');
+      if (verifyCodeModal) verifyCodeModal.classList.remove('hidden');
+      if (document.getElementById('verificationCode')) {
+        document.getElementById('verificationCode').value = '';
+      }
+    } else {
+      alert('Failed to send code. Please try again.');
+    }
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    alert('Network error. Please check your connection.');
+  }
+});
+
+document.getElementById('verifyCodeForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = document.getElementById('verificationCode')?.value.trim();
+
+  if (!window.tempResetEmail) {
+    alert('Session expired. Please start over.');
+    if (verifyCodeModal) verifyCodeModal.classList.add('hidden');
+    if (forgotPasswordModal) forgotPasswordModal.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/verify-reset-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: window.tempResetEmail, code })
+    });
+
+    if (res.ok) {
+      if (verifyCodeModal) verifyCodeModal.classList.add('hidden');
+      if (newPasswordModal) newPasswordModal.classList.remove('hidden');
+      if (document.getElementById('newPassword')) document.getElementById('newPassword').value = '';
+      if (document.getElementById('confirmNewPassword')) document.getElementById('confirmNewPassword').value = '';
+    } else {
+      alert('Invalid or expired code. Please check your email.');
+    }
+  } catch (err) {
+    console.error('Verify code error:', err);
+    alert('Verification failed. Please try again.');
+  }
+});
+
+document.getElementById('newPasswordForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pass = document.getElementById('newPassword')?.value;
+  const confirm = document.getElementById('confirmNewPassword')?.value;
+
+  if (pass !== confirm) {
+    alert('Passwords do not match.');
+    return;
+  }
+
+  if (!window.tempResetEmail) {
+    alert('Session expired. Please restart the process.');
+    if (newPasswordModal) newPasswordModal.classList.add('hidden');
+    if (forgotPasswordModal) forgotPasswordModal.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: window.tempResetEmail,
+        code: document.getElementById('verificationCode')?.value,
+        newPassword: pass
+      })
+    });
+
+    if (res.ok) {
+      if (newPasswordModal) newPasswordModal.classList.add('hidden');
+      alert('✅ Password reset successfully! You can now log in.');
+      window.location.href = 'login.html';
+    } else {
+      alert('Failed to reset password. Please try again.');
+    }
+  } catch (err) {
+    console.error('Reset password error:', err);
+    alert('Reset failed. Please check your connection.');
+  }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   const teamImage = document.getElementById('teamImage');
