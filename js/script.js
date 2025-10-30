@@ -1,7 +1,7 @@
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com';
 
 function goToLogin() {
-  window.location.href = "login.html";
+  window.location.href = "/login";
 }
 
 const modalOverlay = document.getElementById('modalOverlay');
@@ -551,7 +551,7 @@ document.getElementById('newPasswordForm')?.addEventListener('submit', async (e)
     if (res.ok) {
       if (newPasswordModal) newPasswordModal.classList.add('hidden');
       alert('✅ Password reset successfully! You can now log in.');
-      window.location.href = 'login.html';
+      window.location.href = '/login';
     } else {
       alert('Failed to reset password. Please try again.');
     }
