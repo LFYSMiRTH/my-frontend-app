@@ -232,6 +232,7 @@ if (openSignup && closeSignup && signupModal) {
   });
 }
 
+// --- Login Form ---
 const loginForm = document.getElementById('loginForm');
 const loginUsername = document.getElementById('loginUsername');
 const loginPassword = document.getElementById('loginPassword');
@@ -326,11 +327,11 @@ if (signupForm) {
   usernameInput.addEventListener('blur', async () => {
     const username = usernameInput.value.trim();
     if (username.length < 3) return;
-    
+
     try {
       const res = await fetch(`${API_BASE}/api/user/check-username?username=${encodeURIComponent(username)}`);
-      const exists = await res.json();
-      if (exists) {
+      const result = await res.json();
+      if (result.exists) {
         usernameError.textContent = 'Username already taken.';
         usernameInput.classList.add('input-error');
       }
@@ -345,8 +346,8 @@ if (signupForm) {
 
     try {
       const res = await fetch(`${API_BASE}/api/user/check-email?email=${encodeURIComponent(email)}`);
-      const exists = await res.json();
-      if (exists) {
+      const result = await res.json();
+      if (result.exists) {
         emailError.textContent = 'Email already registered.';
         emailInput.classList.add('input-error');
       }
