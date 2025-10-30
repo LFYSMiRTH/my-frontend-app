@@ -4,7 +4,6 @@ function goToLogin() {
   window.location.href = "/login";
 }
 
-// --- Menu Modal Logic (unchanged) ---
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const drinkGrid = document.getElementById('drinkGrid');
@@ -211,7 +210,6 @@ if (modalOverlay && drinkGrid) {
   });
 }
 
-// --- Signup Modal Toggle ---
 const signupModal = document.getElementById('signupModal');
 const openSignup = document.getElementById('openSignup');
 const closeSignup = document.getElementById('closeSignup');
@@ -234,14 +232,12 @@ if (openSignup && closeSignup && signupModal) {
   });
 }
 
-// --- Login Form ---
 const loginForm = document.getElementById('loginForm');
 const loginUsername = document.getElementById('loginUsername');
 const loginPassword = document.getElementById('loginPassword');
 const forgotPasswordLink = document.getElementById('openForgotPassword');
 
 if (loginForm && loginUsername && loginPassword) {
-  // Enable/disable "Forgot Password" based on input
   const toggleForgotPassword = () => {
     const hasInput = loginUsername.value.trim() !== '' || loginPassword.value.trim() !== '';
     if (forgotPasswordLink) {
@@ -285,9 +281,8 @@ if (loginForm && loginUsername && loginPassword) {
         const data = await response.json();
         loginPassword.classList.remove('input-error');
         localStorage.setItem('customerData', JSON.stringify(data));
-        window.location.href = '/customer'; // assuming you have a route for this
+        window.location.href = '/customer';
       } else {
-        // Improved user-friendly message
         alert('We couldn’t find an account with that username. Please sign up first.');
         loginPassword.classList.add('input-error');
         setTimeout(() => {
@@ -308,7 +303,6 @@ if (loginForm && loginUsername && loginPassword) {
   });
 }
 
-// --- Signup Form with Real-time Validation Clearing ---
 const signupForm = document.getElementById('signupForm');
 if (signupForm) {
   const usernameInput = document.getElementById('signupUsername');
@@ -319,13 +313,11 @@ if (signupForm) {
   const passwordError = document.getElementById('passwordError');
   const strengthBar = document.getElementById('strengthBar');
 
-  // Clear username error on input
   usernameInput.addEventListener('input', () => {
     usernameError.textContent = '';
     usernameInput.classList.remove('input-error');
   });
 
-  // Clear email error on input
   emailInput.addEventListener('input', () => {
     emailError.textContent = '';
     emailInput.classList.remove('input-error');
@@ -449,7 +441,6 @@ if (signupForm) {
   });
 }
 
-// --- Forgot Password Flow (unchanged except minor cleanup) ---
 const forgotPasswordModal = document.getElementById('forgotPasswordModal');
 const verifyCodeModal = document.getElementById('verifyCodeModal');
 const newPasswordModal = document.getElementById('newPasswordModal');
@@ -586,7 +577,6 @@ document.getElementById('newPasswordForm')?.addEventListener('submit', async (e)
   }
 });
 
-// --- Team Carousel (unchanged) ---
 document.addEventListener('DOMContentLoaded', () => {
   const teamImage = document.getElementById('teamImage');
   const teamName = document.getElementById('teamName');
