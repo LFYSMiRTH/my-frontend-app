@@ -18,15 +18,25 @@
     <div class="nav-section">
       <div class="nav-title">Main</div>
       <div class="nav-item" id="nav-dashboard">
-        <i class="ri-dashboard-line"></i> <span>Dashboard</span>
+        <i class="ri-home-line"></i> <span>Dashboard</span>
       </div>
-      <div class="nav-item" id="nav-report">
-        <i class="ri-file-list-line"></i> <span>Report</span>
-      </div>
-
-      <!-- Menu Management triggers panel -->
-      <div class="nav-item admin-only" id="menuManagementBtn">
+      <div class="nav-item" id="nav-menu-management">
         <i class="ri-store-2-line"></i> <span>Menu Management</span>
+      </div>
+      <div class="nav-item" id="nav-inventory-management">
+        <i class="ri-box-3-line"></i> <span>Inventory Management</span>
+      </div>
+      <div class="nav-item" id="nav-sales-analytics">
+        <i class="ri-line-chart-line"></i> <span>Sales & Analytics</span>
+      </div>
+      <div class="nav-item" id="nav-reports">
+        <i class="ri-file-list-line"></i> <span>Reports</span>
+      </div>
+      <div class="nav-item" id="nav-user-management">
+        <i class="ri-group-line"></i> <span>User Management</span>
+      </div>
+      <div class="nav-item" id="nav-system-settings">
+        <i class="ri-settings-3-line"></i> <span>System Settings</span>
       </div>
     </div>
 
@@ -87,6 +97,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Top Selling Items Section -->
+    <div class="top-selling-items">
+      <div class="section-header">
+        <h3>Top Selling Items</h3>
+      </div>
+      <div id="topSellingList" class="item-list">
+        <p>Loading top sellers...</p>
+      </div>
+    </div>
   </main>
 
   <!-- Add Item Modal -->
@@ -94,10 +114,40 @@
     <div class="modal-content">
       <h3>Add New Menu Item</h3>
       <form id="addMenuItemForm">
-        <input type="text" id="itemName" placeholder="Item Name" required />
-        <input type="number" id="itemPrice" placeholder="Price (₱)" step="0.01" min="0" required />
-        <input type="number" id="itemStock" placeholder="Stock Quantity" min="0" value="50" required />
-        <input type="text" id="itemCategory" placeholder="Category (e.g., Coffee, Pastry)" />
+        <div class="form-group">
+          <label for="itemName">Item Name</label>
+          <input type="text" id="itemName" placeholder="Enter item name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="itemCategory">Category</label>
+          <select id="itemCategory" required>
+            <option value="" disabled selected>Select category</option>
+            <option value="Drinks">Drinks</option>
+            <option value="Meals">Meals</option>
+            <option value="Desserts">Desserts</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="itemPrice">Price (₱)</label>
+          <input type="number" id="itemPrice" placeholder="0.00" step="0.01" min="0" required />
+        </div>
+
+        <div class="form-group">
+          <label for="itemStock">Stock Quantity</label>
+          <input type="number" id="itemStock" placeholder="e.g., 50" min="0" value="50" required />
+        </div>
+
+        <div class="toggle-group">
+          <label class="switch">
+            <input type="checkbox" id="itemAvailable" checked />
+            <span class="slider"></span>
+          </label>
+          <span>Available for ordering</span>
+        </div>
+
         <div class="modal-actions">
           <button type="button" id="closeModal">Cancel</button>
           <button type="submit">Add Item</button>
@@ -110,10 +160,22 @@
   <div id="menuManagementModal" class="modal hidden">
     <div class="modal-content">
       <h3>Menu Management</h3>
-      <div id="menuListContainer" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
-        <!-- Menu items will be loaded here dynamically -->
+
+      <!-- Search & Category Filters -->
+      <div class="menu-filters">
+        <input type="text" id="menuSearch" placeholder="Search menu items..." />
+        <div class="category-filters">
+          <button class="category-btn active" data-category="all">All</button>
+          <button class="category-btn" data-category="Drinks">Drinks</button>
+          <button class="category-btn" data-category="Meals">Meals</button>
+          <button class="category-btn" data-category="Desserts">Desserts</button>
+        </div>
+      </div>
+
+      <div id="menuListContainer" style="max-height: 300px; overflow-y: auto; margin: 16px 0;">
         <p style="text-align: center; color: #777;">Loading menu items...</p>
       </div>
+
       <div class="modal-actions" style="flex-direction: column; gap: 10px;">
         <button type="button" id="addItemBtn"><i class="ri-add-line"></i> Add New Item</button>
         <button type="button" id="closeMenuPanel"><i class="ri-close-line"></i> Close</button>
@@ -121,15 +183,62 @@
     </div>
   </div>
 
+  <!-- Edit Item Modal -->
   <div id="editMenuItemModal" class="modal hidden">
     <div class="modal-content">
       <h3>Edit Menu Item</h3>
       <form id="editMenuItemForm">
         <input type="hidden" id="editItemId" />
-        <input type="text" id="editItemName" placeholder="Name" required />
-        <input type="number" id="editItemPrice" placeholder="Price" step="0.01" min="0" required />
-        <input type="number" id="editItemStock" placeholder="Stock" min="0" required />
-        <input type="text" id="editItemCategory" placeholder="Category" />
+        
+        <div class="form-group">
+          <label for="editItemName">Name</label>
+          <input type="text" id="editItemName" placeholder="Name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="editItemCategory">Category</label>
+          <select id="editItemCategory" required>
+            <option value="Drinks">Drinks</option>
+            <option value="Meals">Meals</option>
+            <option value="Desserts">Desserts</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="editItemPrice">Price (₱)</label>
+          <input type="number" id="editItemPrice" placeholder="0.00" step="0.01" min="0" required />
+        </div>
+
+        <div class="form-group">
+          <label for="editItemStock">Stock</label>
+          <input type="number" id="editItemStock" placeholder="Stock" min="0" required />
+        </div>
+
+        <div class="toggle-group">
+          <label class="switch">
+            <input type="checkbox" id="editItemAvailable" />
+            <span class="slider"></span>
+          </label>
+          <span>Available for ordering</span>
+        </div>
+
+        <!-- 🔥 NEW: Ingredient Section -->
+        <div id="ingredientSection" style="margin: 20px 0; padding: 16px; border: 1px solid #ddd; border-radius: 8px;">
+          <h4 style="margin: 0 0 12px; font-size: 1.1rem; color: #2c3e50;">Ingredients Required</h4>
+          <div id="ingredientList" style="min-height: 40px; margin-bottom: 12px;">
+            <p style="color: #777; font-size: 0.9rem;">Loading ingredients...</p>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 12px;">
+            <select id="addIngredientSelect" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;">
+              <option value="">Select ingredient...</option>
+            </select>
+            <input type="number" id="addIngredientQty" placeholder="Qty" min="0.01" step="0.01" style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;" />
+            <button type="button" id="addIngredientBtn" style="padding: 8px 12px; background: #6b4a3a; color: white; border: none; border-radius: 6px; cursor: pointer;">+</button>
+          </div>
+        </div>
+
         <div class="modal-actions">
           <button type="button" id="cancelEdit">Cancel</button>
           <button type="submit">Save</button>
@@ -148,6 +257,113 @@
         <button type="button" id="cancelDelete">No</button>
         <button type="button" id="confirmDelete" style="background:#e74c3c;color:white;">Yes</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Inventory Management Modal -->
+  <div id="inventoryManagementModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Inventory Management</h3>
+
+      <!-- Tabs -->
+      <div class="inventory-tabs">
+        <button class="tab-btn active" data-tab="stock">Stock Tracker</button>
+        <button class="tab-btn" data-tab="suppliers">Suppliers</button>
+      </div>
+
+      <!-- Stock Tracker Tab -->
+      <div id="stockTab" class="tab-content active">
+        <div class="inventory-filters">
+          <input type="text" id="inventorySearch" placeholder="Search ingredients..." />
+        </div>
+        <!-- 🔥 NEW: Add Ingredient Button -->
+        <button type="button" id="addInventoryItemBtn" class="btn-add-ingredient">
+          <i class="ri-add-line"></i> Add New Ingredient
+        </button>
+        <div id="inventoryList" style="max-height: 300px; overflow-y: auto; margin: 16px 0;">
+          <p>Loading inventory...</p>
+        </div>
+      </div>
+
+      <!-- Suppliers Tab -->
+      <div id="suppliersTab" class="tab-content">
+        <button type="button" id="addSupplierBtn" class="btn-add-supplier">
+          <i class="ri-add-line"></i> Add Supplier
+        </button>
+        <div id="suppliersList" style="max-height: 260px; overflow-y: auto; margin-top: 12px;">
+          <p>Loading suppliers...</p>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+        <button type="button" id="closeInventoryModal"><i class="ri-close-line"></i> Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="supplierModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="supplierModalTitle">Add New Supplier</h3>
+      <form id="supplierForm">
+        <input type="hidden" id="supplierId" />
+        <div class="form-group">
+          <label for="supplierName">Supplier Name</label>
+          <input type="text" id="supplierName" placeholder="Supplier Name" required />
+        </div>
+        <div class="form-group">
+          <label for="supplierContact">Contact Person</label>
+          <input type="text" id="supplierContact" placeholder="Contact Person" required />
+        </div>
+        <div class="form-group">
+          <label for="supplierEmail">Email</label>
+          <input type="email" id="supplierEmail" placeholder="Email" required />
+        </div>
+        <div class="form-group">
+          <label for="supplierPhone">Phone Number</label>
+          <input type="tel" id="supplierPhone" placeholder="Phone Number" required />
+        </div>
+        <div class="form-group">
+          <label for="supplierAddress">Address</label>
+          <textarea id="supplierAddress" placeholder="Address" rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelSupplier">Cancel</button>
+          <button type="submit">Save Supplier</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 🔥 NEW: Add Inventory Item Modal -->
+  <div id="addInventoryItemModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Add New Ingredient</h3>
+      <form id="addInventoryItemForm">
+        <div class="form-group">
+          <label for="invName">Ingredient Name</label>
+          <input type="text" id="invName" placeholder="e.g., Milk, Coffee Beans" required />
+        </div>
+        <div class="form-group">
+          <label for="invCategory">Category</label>
+          <input type="text" id="invCategory" placeholder="e.g., Dairy, Coffee" />
+        </div>
+        <div class="form-group">
+          <label for="invUnit">Unit</label>
+          <input type="text" id="invUnit" placeholder="e.g., cup, tsp, pcs" value="pcs" required />
+        </div>
+        <div class="form-group">
+          <label for="invStock">Current Stock</label>
+          <input type="number" id="invStock" min="0" value="0" required />
+        </div>
+        <div class="form-group">
+          <label for="invReorder">Reorder Level</label>
+          <input type="number" id="invReorder" min="0" value="10" required />
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelAddInventory">Cancel</button>
+          <button type="submit">Add Ingredient</button>
+        </div>
+      </form>
     </div>
   </div>
 
