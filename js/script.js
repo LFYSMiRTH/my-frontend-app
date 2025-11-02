@@ -251,25 +251,10 @@ if (loginForm && loginUsername && loginPassword) {
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
 
-    if (username === 'admin' && password === 'admin123') {
-      localStorage.setItem(
-        'adminData',
-        JSON.stringify({
-          username: 'admin',
-          role: 'admin',
-          isLoggedIn: true
-        })
-      );
-      window.location.href = '/admin';
-      return;
-    }
-
     const user = { username, password };
-
     try {
       const response = await fetch(`${API_BASE}/api/user/login`, {
         method: 'POST',
@@ -280,8 +265,16 @@ if (loginForm && loginUsername && loginPassword) {
       if (response.ok) {
         const data = await response.json();
         loginPassword.classList.remove('input-error');
-        localStorage.setItem('customerData', JSON.stringify(data));
-        window.location.href = '/customer';
+
+        localStorage.setItem('userData', JSON.stringify(data));
+
+        if (data.role === 'admin') {
+          window.location.href = '/admin';
+        } else if (data.role === 'staff') {
+          window.location.href = '/staff';
+        } else {
+          window.location.href = '/customer';
+        }
       } else {
         alert('Invalid username or password. Please try again.');
         loginPassword.classList.add('input-error');
