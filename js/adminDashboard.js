@@ -148,24 +148,17 @@ function renderCustomersList(searchTerm = '') {
   let html = '';
   filtered.forEach(cust => {
     const statusIcon = cust.isActive
-      ? '<i class="ri-checkbox-circle-fill" style="color:#2ecc71;"></i>'
-      : '<i class="ri-forbid-2-fill" style="color:#e74c3c;"></i> Blocked';
-    const toggleText = cust.isActive
-      ? '<i class="ri-user-unfollow-line"></i> Block'
-      : '<i class="ri-user-follow-line"></i> Unblock';
+      ? '<i class="ri-checkbox-circle-fill" style="color:#2ecc71;"></i> Active'
+      : '<i class="ri-close-circle-fill" style="color:#e74c3c;"></i> Inactive';
     html += `
       <div class="menu-item">
         <div>
           <strong>${cust.name || '—'}</strong><br>
-          ${cust.email} | ${cust.phone || 'No phone'}<br>
-          Orders: ${cust.orderCount || 0} | 
-          Status: ${statusIcon}
+          ${cust.email}<br>
+          Orders: ${cust.orderCount || 0}
         </div>
         <div class="menu-actions">
           <button class="view-orders-btn" data-id="${cust.id}"><i class="ri-file-list-3-line"></i></button>
-          <button class="toggle-customer-status" data-id="${cust.id}" data-active="${cust.isActive}">
-            ${toggleText}
-          </button>
         </div>
       </div>
     `;
@@ -173,9 +166,6 @@ function renderCustomersList(searchTerm = '') {
   container.innerHTML = html;
   document.querySelectorAll('.view-orders-btn').forEach(btn =>
     btn.addEventListener('click', () => viewCustomerOrders(btn.dataset.id))
-  );
-  document.querySelectorAll('.toggle-customer-status').forEach(btn =>
-    btn.addEventListener('click', toggleCustomerStatus)
   );
 }
 
@@ -303,36 +293,6 @@ async function handleDeleteUserConfirm() {
   }
 }
 
-function toggleCustomerStatus(e) {
-  const btn = e.target.closest('.toggle-customer-status');
-  const id = btn.dataset.id;
-  const isActive = btn.dataset.active === 'true';
-  const action = isActive ? 'block' : 'unblock';
-  const name = allCustomers.find(c => c.id == id)?.name || 'this customer';
-  document.getElementById('blockCustomerId').value = id;
-  document.getElementById('blockCustomerAction').value = action;
-  document.getElementById('blockCustomerMessage').textContent = 
-    `Are you sure you want to ${action} ${name}?`;
-  document.getElementById('blockCustomerModal').classList.remove('hidden');
-}
-
-async function confirmBlockCustomer() {
-  const id = document.getElementById('blockCustomerId').value;
-  const action = document.getElementById('blockCustomerAction').value;
-  const isActive = action === 'unblock';
-  try {
-    await apiCall(`/admin/customers/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ isActive })
-    });
-    alert(`Customer ${action}ed successfully!`);
-    closeBlockCustomerModal();
-    loadCustomers();
-  } catch (err) {
-    alert('Action failed: ' + err.message);
-  }
-}
-
 function viewCustomerOrders(id) {
   alert(`Order history for customer ID ${id} will appear here once implemented.`);
 }
@@ -340,18 +300,17 @@ function viewCustomerOrders(id) {
 function closeAddUserModal() {
   document.getElementById('addUserModal').classList.add('hidden');
 }
+
 function closeEditUserModal() {
   document.getElementById('editUserModal').classList.add('hidden');
 }
+
 function closeDeleteUserModal() {
   document.getElementById('deleteUserConfirmModal').classList.add('hidden');
 }
-function closeBlockCustomerModal() {
-  document.getElementById('blockCustomerModal').classList.add('hidden');
-}
 
-// ===== OTHER FUNCTIONS (unchanged from your original) =====
-// (Reports, Inventory, Menu, Dashboard, etc. — all remain the same since they didn't use emojis)
+// ===== OTHER FUNCTIONS (unchanged) =====
+// (Reports, Inventory, Menu, Dashboard, etc. — all remain the same)
 
 async function loadReportHistory() {
   const el = document.getElementById('reportHistoryList');
@@ -1040,18 +999,23 @@ async function handleAddSubmit(e) {
 function closeEditModal() {
   document.getElementById('editMenuItemModal').classList.add('hidden');
 }
+
 function closeDeleteModal() {
   document.getElementById('deleteConfirmModal').classList.add('hidden');
 }
+
 function closeAddModal() {
   document.getElementById('addMenuItemModal').classList.add('hidden');
 }
+
 function openAddInventoryModal() {
   document.getElementById('addInventoryItemModal').classList.remove('hidden');
 }
+
 function closeAddInventoryModal() {
   document.getElementById('addInventoryItemModal').classList.add('hidden');
 }
+
 async function handleAddInventorySubmit(e) {
   e.preventDefault();
   const newItem = {
@@ -1079,12 +1043,15 @@ async function handleAddInventorySubmit(e) {
     alert('Failed to add ingredient: ' + err.message);
   }
 }
+
 function openAddSupplierModal() {
   document.getElementById('supplierModal').classList.remove('hidden');
 }
+
 function closeSupplierModal() {
   document.getElementById('supplierModal').classList.add('hidden');
 }
+
 async function handleSupplierSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('supplierId').value;
@@ -1120,10 +1087,12 @@ async function handleSupplierSubmit(e) {
     alert('Failed to save supplier: ' + err.message);
   }
 }
+
 function highlightNavItem(id) {
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
 }
+
 function showView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(viewId).classList.add('active');
@@ -1135,10 +1104,12 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('userData');
     window.location.href = '/login';
   });
+
   document.getElementById('nav-dashboard')?.addEventListener('click', () => {
     showView('dashboardView');
     highlightNavItem('nav-dashboard');
   });
+
   document.getElementById('nav-sales-analytics')?.addEventListener('click', async () => {
     showView('salesAnalyticsView');
     highlightNavItem('nav-sales-analytics');
@@ -1147,17 +1118,20 @@ document.addEventListener('DOMContentLoaded', () => {
     await loadExpenses();
     await loadProfitLossReport();
   });
+
   document.getElementById('nav-menu-management')?.addEventListener('click', async () => {
     showView('menuManagementView');
     highlightNavItem('nav-menu-management');
     await loadMenuItems();
   });
+
   document.getElementById('nav-inventory-management')?.addEventListener('click', async () => {
     showView('inventoryManagementView');
     highlightNavItem('nav-inventory-management');
     await loadInventoryItems();
     await loadSuppliers();
   });
+
   document.getElementById('nav-reports')?.addEventListener('click', async () => {
     showView('reportsView');
     highlightNavItem('nav-reports');
@@ -1168,6 +1142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('startDate').valueAsDate = lastMonth;
     document.getElementById('endDate').valueAsDate = today;
   });
+
   document.getElementById('nav-user-management')?.addEventListener('click', async () => {
     showView('userManagementView');
     highlightNavItem('nav-user-management');
@@ -1190,17 +1165,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('customerSearch')?.addEventListener('input', e => renderCustomersList(e.target.value));
     document.getElementById('addUserBtn')?.addEventListener('click', openAddUserModal);
   });
-  document.getElementById('nav-system-settings')?.addEventListener('click', () => {
-    alert('System Settings is under development.');
-    highlightNavItem('nav-system-settings');
-  });
+
   document.getElementById('generateReportBtn')?.addEventListener('click', generateReport);
   document.getElementById('addItemBtn')?.addEventListener('click', () => {
     document.getElementById('addMenuItemModal').classList.remove('hidden');
   });
+
   document.getElementById('editMenuItemForm')?.addEventListener('submit', handleEditSubmit);
   document.getElementById('confirmDelete')?.addEventListener('click', handleDeleteConfirm);
   document.getElementById('addMenuItemForm')?.addEventListener('submit', handleAddSubmit);
+
   let currentSearch = '';
   let currentCategory = 'all';
   const searchInput = document.getElementById('menuSearch');
@@ -1210,6 +1184,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMenuList(currentSearch, currentCategory);
     });
   }
+
   document.querySelectorAll('.category-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
@@ -1218,6 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMenuList(currentSearch, currentCategory);
     });
   });
+
   document.getElementById('addInventoryItemBtn')?.addEventListener('click', openAddInventoryModal);
   document.getElementById('addSupplierBtn')?.addEventListener('click', openAddSupplierModal);
   document.getElementById('inventorySearch')?.addEventListener('input', (e) => {
@@ -1230,6 +1206,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cancelEdit')?.addEventListener('click', closeEditModal);
   document.getElementById('cancelDelete')?.addEventListener('click', closeDeleteModal);
   document.getElementById('closeModal')?.addEventListener('click', closeAddModal);
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1239,10 +1216,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById(`${tab}Tab`)?.classList.add('active');
     });
   });
+
   document.getElementById('addUserForm')?.addEventListener('submit', handleAddUserSubmit);
   document.getElementById('editUserForm')?.addEventListener('submit', handleEditUserSubmit);
   document.getElementById('confirmDeleteUser')?.addEventListener('click', handleDeleteUserConfirm);
-  document.getElementById('confirmBlockCustomer')?.addEventListener('click', confirmBlockCustomer);
+
   highlightNavItem('nav-dashboard');
   loadDashboardData();
   loadTopSellingItems();
