@@ -1,8 +1,9 @@
 {
   "version": 2,
   "routes": [
+    { "src": "/", "dest": "/html/index.html" },
     { "src": "/login", "dest": "/html/login.html" },
     { "src": "/admin", "dest": "/html/adminDashboard.html" },
-    { "src": "/", "dest": "/html/index.html" }
+    { "src": "/customer", "dest": "/html/customerDashboard.html" }
   ]
 }
