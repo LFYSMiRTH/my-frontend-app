@@ -12,13 +12,12 @@ body {
   min-height: 100vh;
 }
 
-/* SIDEBAR */
 .sidebar {
   width: 260px;
   background: #fff;
   color: #333;
   height: 100vh;
-  padding: 20px 0;
+  padding: 0;
   position: fixed;
   overflow-y: auto;
   border-right: 1px solid #eee;
@@ -29,38 +28,39 @@ body {
   z-index: 1000;
 }
 
-/* LOGO SECTION */
 .sidebar .logo {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
   border-bottom: 1px solid #eee;
-  transition: padding 0.3s ease;
+  transition: all 0.3s ease;
+  background: white;
 }
 
-.sidebar .logo img {
+.logo-icon {
+  width: 40px;
   height: 40px;
-  width: auto;
-  transition: height 0.3s ease;
+  object-fit: contain;
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
-.sidebar .logo span {
+.logo-text {
   font-size: 1.25rem;
   font-weight: 700;
   color: #2c3e50;
   line-height: 1;
-  transition: opacity 0.3s ease, font-size 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-/* NAVIGATION SECTIONS */
 .nav-section {
-  padding: 20px 0;
+  padding: 16px 0;
   transition: padding 0.3s ease;
 }
 
 .nav-section:last-child {
-  margin-top: auto;
+  margin-top: 16px;
   padding-top: 0;
   border-top: 1px solid #eee;
 }
@@ -338,7 +338,6 @@ body {
   font-weight: 500;
 }
 
-/* ANALYTICS GRID */
 .analytics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -360,7 +359,6 @@ body {
   margin-bottom: 16px;
 }
 
-/* MENU MANAGEMENT */
 .menu-filters {
   display: flex;
   flex-direction: column;
@@ -1049,7 +1047,6 @@ input:checked + .slider:before {
   }
 }
 
-/* Optional: Add hover effect to expand sidebar on desktop */
 @media (min-width: 769px) {
   .sidebar:hover {
     width: 260px;
