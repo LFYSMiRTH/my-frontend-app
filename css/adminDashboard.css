@@ -410,22 +410,31 @@ body {
   min-height: 300px;
 }
 
+/* ===== MENU ITEM WITH IMAGE ===== */
 #menuListContainer .menu-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid #eee;
-  font-size: 0.95rem;
 }
-
 #menuListContainer .menu-item:last-child {
   border-bottom: none;
+}
+.menu-item-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
 }
 
 #menuListContainer .menu-actions {
   display: flex;
   gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 #menuListContainer .menu-actions button {
@@ -479,17 +488,6 @@ body {
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-}
-
-.inventory-list-container,
-.suppliers-list-container {
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-  border: 1px solid #f0f0f0;
-  margin-bottom: 24px;
-  min-height: 300px;
 }
 
 .inventory-item {
@@ -583,7 +581,8 @@ body {
 }
 .form-group input,
 .form-group select,
-.form-group textarea {
+.form-group textarea,
+.form-group small {
   width: 100%;
   padding: 12px;
   border: 1px solid #ddd;
@@ -598,6 +597,13 @@ body {
   border-color: #6b4a3a;
   outline: none;
   box-shadow: 0 0 0 2px rgba(107, 74, 58, 0.1);
+}
+.form-group small {
+  padding: 4px 0 0;
+  font-size: 0.8rem;
+  color: #777;
+  background: none;
+  border: none;
 }
 
 /* TOGGLE SWITCH */
@@ -764,7 +770,7 @@ input:checked + .slider:before {
   justify-content: center;
 }
 
-/* ===== REPORTS VIEW STYLES ===== */
+/* REPORTS */
 #reportOutput {
   background: white;
   border-radius: 16px;
@@ -807,7 +813,7 @@ input:checked + .slider:before {
   color: #777;
 }
 
-/* ===== USER MANAGEMENT STYLES ===== */
+/* USER MANAGEMENT */
 .user-management-tabs {
   display: flex;
   gap: 8px;
@@ -828,7 +834,6 @@ input:checked + .slider:before {
   background: #6b4a3a;
   color: white;
 }
-
 .user-management-header {
   display: flex;
   justify-content: space-between;
@@ -836,7 +841,6 @@ input:checked + .slider:before {
   margin-bottom: 20px;
   gap: 16px;
 }
-
 .search-input {
   width: 100%;
   max-width: 400px;
@@ -859,7 +863,6 @@ input:checked + .slider:before {
   color: #999;
   font-style: italic;
 }
-
 .btn-add-user {
   background: #6b4a3a;
   color: white;
@@ -878,7 +881,6 @@ input:checked + .slider:before {
   background: #5a3e30;
 }
 
-/* Enhanced styling for user list items */
 #userManagementView .menu-item {
   display: flex;
   justify-content: space-between;
@@ -894,7 +896,6 @@ input:checked + .slider:before {
 #userManagementView .menu-item:hover {
   background-color: #f9f9f9;
 }
-
 #userManagementView .menu-actions {
   display: flex;
   gap: 8px;
@@ -924,155 +925,55 @@ input:checked + .slider:before {
   font-weight: 500;
   color: white;
 }
-.role-badge.admin {
-  background: #FF9F1C;
-}
-.role-badge.staff {
-  background: #2A9D8F;
-}
-.role-badge.customer {
-  background: #6B4A3A;
-}
+.role-badge.admin { background: #FF9F1C; }
+.role-badge.staff { background: #2A9D8F; }
+.role-badge.customer { background: #6B4A3A; }
 
-/* ========== RESPONSIVE DESIGN ==========
-   Media Query for Mobile/Tablet (768px and below)
-========================================== */
+/* RESPONSIVE */
 @media (max-width: 768px) {
   .sidebar {
     width: 70px;
     padding: 16px 0;
   }
-
   .sidebar .logo {
     padding: 16px 12px;
     gap: 8px;
   }
-
   .sidebar .logo img {
     height: 32px;
   }
-
-  .sidebar .logo span {
+  .sidebar .logo span,
+  .sidebar .nav-title,
+  .sidebar .nav-item span {
     opacity: 0;
     font-size: 0;
-    padding: 0;
-    margin: 0;
     width: 0;
     height: 0;
     overflow: hidden;
-  }
-
-  .sidebar .nav-title {
     display: none;
   }
-
   .sidebar .nav-item {
     justify-content: center;
     padding: 16px 0;
     gap: 0;
   }
-
-  .sidebar .nav-item span {
-    display: none;
-  }
-
   .sidebar .nav-item i {
     font-size: 1.4rem;
     margin-right: 0;
   }
-
   .main-content {
     margin-left: 70px;
     padding: 16px;
   }
-
-  /* Modal adjustments */
   .modal-content {
     width: 95%;
     padding: 16px;
     max-width: 400px;
   }
-
-  .modal-content h3 {
-    font-size: 1.2rem;
-  }
-
-  .modal-actions .btn {
-    padding: 10px 16px;
-    font-size: 0.95rem;
-  }
-
-  /* Responsive Grids */
   .overview {
     grid-template-columns: 1fr;
   }
-
   .analytics-grid {
     grid-template-columns: 1fr;
-  }
-
-  /* Form fields */
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    padding: 10px;
-    font-size: 0.95rem;
-  }
-
-  /* Buttons */
-  .btn {
-    width: 36px;
-    height: 36px;
-    font-size: 0.9rem;
-  }
-
-  .user-avatar img {
-    width: 36px;
-    height: 36px;
-  }
-
-  /* Chart */
-  .x-axis span {
-    font-size: 0.65rem;
-  }
-
-  /* User Management */
-  .search-input {
-    max-width: 100%;
-  }
-
-  .btn-add-user {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (min-width: 769px) {
-  .sidebar:hover {
-    width: 260px;
-  }
-
-  .sidebar:hover .logo span {
-    opacity: 1;
-    font-size: 1.25rem;
-    width: auto;
-    height: auto;
-    overflow: visible;
-  }
-
-  .sidebar:hover .nav-item span {
-    display: inline;
-  }
-
-  .sidebar:hover .nav-item i {
-    margin-right: 8px;
-  }
-
-  .sidebar:hover .nav-item {
-    gap: 12px;
-  }
-
-  .sidebar:hover .main-content {
-    margin-left: 260px;
   }
 }

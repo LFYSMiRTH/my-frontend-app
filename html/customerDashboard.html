@@ -18,7 +18,6 @@
         <img src="/Logo/TambayanLogo.png" alt="TMBYN CAFE" class="logo-img" />
         <div class="logo-text">TBYN CAFE</div>
       </div>
-
       <div class="nav-section">MAIN</div>
       <a href="#" class="nav-item active" data-view="dashboard">
         <i class="ri-home-4-line"></i> Dashboard
@@ -35,7 +34,6 @@
       <a href="#" class="nav-item">
         <i class="ri-user-settings-line"></i> Profile Settings
       </a>
-
       <a href="#" class="nav-item logout">
         <i class="ri-logout-box-r-line"></i> Logout
       </a>
@@ -52,60 +50,31 @@
             <span class="notification-badge">0</span>
           </div>
         </div>
-
-        <!-- Recent Orders -->
         <section class="section">
-          <h2 class="section-title">
-            <i class="ri-file-list-3-line"></i> Recent Orders
-          </h2>
+          <h2 class="section-title"><i class="ri-file-list-3-line"></i> Recent Orders</h2>
           <table class="orders-table">
-            <thead>
-              <tr>
-                <th>Order #</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Loaded by JS -->
-            </tbody>
+            <thead><tr><th>Order #</th><th>Date</th><th>Status</th><th>Total</th></tr></thead>
+            <tbody></tbody>
           </table>
         </section>
-
-        <!-- Favorites -->
         <section class="section">
-          <h2 class="section-title">
-            <i class="ri-star-line"></i> You might like…
-          </h2>
-          <div class="favorites-grid">
-            <!-- Loaded by JS -->
-          </div>
+          <h2 class="section-title"><i class="ri-star-line"></i> You might like…</h2>
+          <div class="favorites-grid"></div>
         </section>
-
-        <!-- Order Tracker -->
         <section class="section">
-          <h2 class="section-title">
-            <i class="ri-time-line"></i> Order Status Tracker
-          </h2>
+          <h2 class="section-title"><i class="ri-time-line"></i> Order Status Tracker</h2>
           <p><strong>Current Order: <span id="currentOrderText">No active order</span></strong></p>
           <div class="tracker">
             <div class="step">
-              <div class="step-circle">
-                <i class="ri-loader-2-fill"></i>
-              </div>
+              <div class="step-circle"><i class="ri-loader-2-fill"></i></div>
               <div class="step-label">Preparing</div>
             </div>
             <div class="step">
-              <div class="step-circle">
-                <i class="ri-check-line"></i>
-              </div>
+              <div class="step-circle"><i class="ri-check-line"></i></div>
               <div class="step-label">Ready</div>
             </div>
             <div class="step">
-              <div class="step-circle">
-                <i class="ri-truck-line"></i>
-              </div>
+              <div class="step-circle"><i class="ri-truck-line"></i></div>
               <div class="step-label">Served</div>
             </div>
           </div>
@@ -122,21 +91,16 @@
             <span id="cartCount">0</span>
           </div>
         </div>
-
         <div class="controls">
           <input type="text" id="menuSearch" placeholder="Search menu items..." />
           <div class="category-filters">
             <button class="category-btn active" data-category="all">All</button>
-            <button class="category-btn" data-category="Coffee">Coffee</button>
+            <button class="category-btn" data-category="Drinks">Drinks</button>
             <button class="category-btn" data-category="Sandwiches">Sandwiches</button>
             <button class="category-btn" data-category="Desserts">Desserts</button>
           </div>
         </div>
-
-        <div class="menu-grid" id="menuGrid">
-          <!-- Loaded by JS -->
-        </div>
-
+        <div class="menu-grid" id="menuGrid"></div>
         <div class="checkout-bar">
           <div class="cart-summary">
             <span id="cartTotal">₱0.00</span>
@@ -148,21 +112,22 @@
     </main>
   </div>
 
-  <!-- Item Detail Modal -->
+  <!-- Modal -->
   <div class="modal" id="itemModal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
       <div class="modal-body">
-        <img id="modalImage" src="" alt="Item" />
+        <img id="modalImage" src="/image/placeholder-menu.jpg" alt="Item" />
         <h2 id="modalName"></h2>
         <p id="modalPrice"></p>
         <p><strong>Category:</strong> <span id="modalCategory"></span></p>
         <p><strong>Ingredients:</strong></p>
         <ul id="modalIngredients"></ul>
         <p id="modalAvailability"></p>
+        <!-- Customization injected by JS -->
         <div class="modal-actions">
           <input type="number" id="modalQuantity" min="1" value="1" />
-          <button id="modalAddToCart" class="add-btn">Add to Cart</button>
+          <button id="modalAddToCart" class="add-btn">Add to Billing</button>
         </div>
       </div>
     </div>

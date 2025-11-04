@@ -1,5 +1,4 @@
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
-
 let allMenuItems = [];
 let cart = JSON.parse(localStorage.getItem('tambayanCart')) || [];
 let currentCategory = 'all';
@@ -10,13 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/login';
     return;
   }
-
   loadCustomerProfile();
   loadRecentOrders();
   loadFavorites();
   loadCurrentOrderForTracker();
   setInterval(loadCurrentOrderForTracker, 10000);
-
   document.querySelectorAll('.nav-item:not(.logout)').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -30,13 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-
   document.querySelector('.logout').addEventListener('click', (e) => {
     e.preventDefault();
     localStorage.removeItem('userData');
     window.location.href = '/login';
   });
-
   document.querySelector('.bell').addEventListener('click', async () => {
     try {
       const notifs = await apiCall('/customer/notifications?limit=5');
@@ -44,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('No new notifications.');
         return;
       }
-      let msg = '🔔 Notifications:\n\n';
+      let msg = '🔔 Notifications:\n';
       notifs.forEach(n => {
         msg += `• ${n.message} (${new Date(n.createdAt).toLocaleString()})\n`;
       });
@@ -53,11 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Failed to load notifications: ' + err.message);
     }
   });
-
   document.getElementById('menuSearch')?.addEventListener('input', (e) => {
     renderMenu(e.target.value, currentCategory);
   });
-
   document.querySelectorAll('.category-btn')?.forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
@@ -66,12 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMenu(document.getElementById('menuSearch').value, currentCategory);
     });
   });
-
   document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
   document.getElementById('closeModal')?.addEventListener('click', () => {
     document.getElementById('itemModal').style.display = 'none';
   });
-
   updateCartUI();
 });
 
@@ -95,21 +86,17 @@ async function apiCall(endpoint, options = {}) {
     'Content-Type': 'application/json',
     ...options.headers
   };
-
   if (userData && userData.role === 'customer') {
     headers.Authorization = `Bearer ${getAuthToken()}`;
   }
-
   const config = { ...options, headers };
   const res = await fetch(url, config);
-
   if (res.status === 401 || res.status === 403) {
     alert('Session expired. Please log in again.');
     localStorage.removeItem('userData');
     window.location.href = '/login';
     throw new Error('Unauthorized');
   }
-
   if (!res.ok) {
     let errorText = 'Unknown error';
     try {
@@ -120,7 +107,6 @@ async function apiCall(endpoint, options = {}) {
     }
     throw new Error(`HTTP ${res.status}: ${errorText}`);
   }
-
   return res.json();
 }
 
@@ -187,7 +173,7 @@ async function loadFavorites() {
       html += `
         <div class="item-card">
           <div class="item-image">
-            <i class="ri-coffee-line"></i>
+            <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" />
           </div>
           <div class="item-info">
             <div class="item-title">${item.name}</div>
@@ -201,7 +187,6 @@ async function loadFavorites() {
       `;
     });
     grid.innerHTML = html;
-
     document.querySelectorAll('.add-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         try {
@@ -259,11 +244,9 @@ async function loadMenuItems() {
   grid.innerHTML = '<p>Loading menu...</p>';
   try {
     const items = await apiCall('/customer/menu');
-    console.log('✅ Menu items received:', items);
     allMenuItems = Array.isArray(items) ? items : [];
     renderMenu('', 'all');
   } catch (err) {
-    console.error('❌ Failed to load menu:', err);
     grid.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
@@ -271,7 +254,6 @@ async function loadMenuItems() {
 function renderMenu(searchTerm = '', category = 'all') {
   const grid = document.getElementById('menuGrid');
   let filtered = allMenuItems;
-
   if (searchTerm) {
     const term = searchTerm.toLowerCase();
     filtered = filtered.filter(item =>
@@ -279,23 +261,20 @@ function renderMenu(searchTerm = '', category = 'all') {
       (item.description && item.description.toLowerCase().includes(term))
     );
   }
-
   if (category !== 'all') {
     filtered = filtered.filter(item => item.category === category);
   }
-
   if (filtered.length === 0) {
     grid.innerHTML = '<p>No items found.</p>';
     return;
   }
-
   grid.innerHTML = filtered.map(item => {
     const isAvailable = item.isAvailable;
     const unavailableClass = !isAvailable ? 'unavailable' : '';
     return `
       <div class="menu-item-card ${unavailableClass}" data-id="${item.id}">
         <div class="menu-item-image">
-          <i class="ri-coffee-line"></i>
+          <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" />
         </div>
         <div class="menu-item-info">
           <div class="menu-item-name">${item.name}</div>
@@ -310,11 +289,9 @@ function renderMenu(searchTerm = '', category = 'all') {
       </div>
     `;
   }).join('');
-
   document.querySelectorAll('.menu-item-card').forEach(card => {
     card.addEventListener('click', () => openItemModal(card.dataset.id));
   });
-
   document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -329,13 +306,17 @@ function openItemModal(itemId) {
   const item = allMenuItems.find(i => i.id === itemId);
   if (!item) return;
 
+  // Clean up previous customization
+  const existing = document.getElementById('customizationOptions');
+  if (existing) existing.remove();
+
   document.getElementById('modalName').textContent = item.name;
   document.getElementById('modalPrice').textContent = `₱${Number(item.price).toFixed(2)}`;
   document.getElementById('modalCategory').textContent = item.category || 'N/A';
   document.getElementById('modalAvailability').textContent = item.isAvailable ? '✅ Available' : '❌ Currently unavailable';
 
   const ingredientsList = document.getElementById('modalIngredients');
-  if (item.ingredients && item.ingredients.length > 0) {
+  if (item.ingredients?.length > 0) {
     ingredientsList.innerHTML = item.ingredients.map(ing => {
       const invItem = item.inventoryItems?.find(i => i.id === ing.inventoryItemId);
       const name = invItem ? invItem.name : ing.inventoryItemId;
@@ -345,10 +326,65 @@ function openItemModal(itemId) {
     ingredientsList.innerHTML = '<li>No ingredients specified.</li>';
   }
 
-  document.getElementById('modalQuantity').value = 1;
+  const modalImage = document.getElementById('modalImage');
+  modalImage.src = item.imageUrl || '/image/placeholder-menu.jpg';
+  modalImage.alt = item.name;
+
+  const container = document.createElement('div');
+  container.id = 'customizationOptions';
+  container.className = 'customization-section';
+
+  let html = '';
+
+  // Mood
+  if (item.hasMoods && item.moods?.length > 0) {
+    html += `<div class="customization-group"><strong>Mood:</strong><div class="options">`;
+    html += item.moods.map(mood => {
+      const icon = mood === 'Hot' ? '🔥' : '❄️';
+      return `<button class="custom-option-btn" data-type="mood" data-value="${mood}">${icon} ${mood}</button>`;
+    }).join('');
+    html += `</div></div>`;
+  }
+
+  // Size
+  if (item.hasSizes && item.sizes?.length > 0) {
+    html += `<div class="customization-group"><strong>Size:</strong><div class="options">`;
+    html += item.sizes.map(size => 
+      `<button class="custom-option-btn" data-type="size" data-value="${size}">${size}</button>`
+    ).join('');
+    html += `</div></div>`;
+  }
+
+  // Sugar
+  if (item.hasSugarLevels && item.sugarLevels?.length > 0) {
+    html += `<div class="customization-group"><strong>Sugar:</strong><div class="options">`;
+    html += item.sugarLevels.map(level => 
+      `<button class="custom-option-btn" data-type="sugar" data-value="${level}">${level}%</button>`
+    ).join('');
+    html += `</div></div>`;
+  }
+
+  container.innerHTML = html;
+  const modalActions = document.querySelector('.modal-actions');
+  modalActions.parentNode.insertBefore(container, modalActions);
+
+  // Track selection
+  let selected = { mood: '', size: '', sugar: '' };
+
+  document.querySelectorAll('.custom-option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Reset all buttons of the same type
+      document.querySelectorAll(`.custom-option-btn[data-type="${btn.dataset.type}"]`)
+        .forEach(b => b.classList.remove('active'));
+      // Activate clicked
+      btn.classList.add('active');
+      selected[btn.dataset.type] = btn.dataset.value;
+    });
+  });
+
   document.getElementById('modalAddToCart').onclick = () => {
     const qty = parseInt(document.getElementById('modalQuantity').value) || 1;
-    addToCart(item, qty);
+    addToCart(item, qty, selected.size, selected.mood, selected.sugar);
     document.getElementById('itemModal').style.display = 'none';
   };
 
@@ -356,14 +392,15 @@ function openItemModal(itemId) {
 }
 
 // ===== CART =====
-function addToCart(item, quantity = 1) {
+function addToCart(item, quantity = 1, size = '', mood = '', sugar = '') {
   if (!item.isAvailable) return;
-
-  const existing = cart.find(i => i.id === item.id);
+  const existing = cart.find(i => 
+    i.id === item.id && i.size === size && i.mood === mood && i.sugar === sugar
+  );
   if (existing) {
     existing.quantity += quantity;
   } else {
-    cart.push({ ...item, quantity });
+    cart.push({ ...item, quantity, size, mood, sugar });
   }
   localStorage.setItem('tambayanCart', JSON.stringify(cart));
   updateCartUI();
@@ -381,22 +418,22 @@ function updateCartUI() {
 
 async function placeOrder() {
   if (cart.length === 0) return;
-
   const userData = JSON.parse(localStorage.getItem('userData'));
   const orderItems = cart.map(item => ({
     productId: item.id,
     name: item.name,
     price: item.price,
-    quantity: item.quantity
+    quantity: item.quantity,
+    size: item.size,
+    mood: item.mood,
+    sugar: item.sugar
   }));
-
   const payload = {
     customerId: userData.id,
     customerEmail: userData.email,
     items: orderItems,
     totalAmount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   };
-
   try {
     await apiCall('/orders', {
       method: 'POST',
