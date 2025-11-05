@@ -1,19 +1,23 @@
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
+
 let allMenuItems = [];
 let cart = JSON.parse(localStorage.getItem('tambayanCart')) || [];
 let currentCategory = 'all';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const userData = JSON.parse(localStorage.getItem('userData'));
-  if (!userData || userData.role !== 'customer') {
-    window.location.href = '/login';
+  // ✅ CHECK IF LOGGED IN AS CUSTOMER USING JWT TOKEN
+  const customerToken = localStorage.getItem('customerToken');
+  if (!customerToken) {
+    window.location.href = '/login.html';
     return;
   }
+
   loadCustomerProfile();
   loadRecentOrders();
   loadFavorites();
   loadCurrentOrderForTracker();
   setInterval(loadCurrentOrderForTracker, 10000);
+
   document.querySelectorAll('.nav-item:not(.logout)').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -27,11 +31,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
   document.querySelector('.logout').addEventListener('click', (e) => {
     e.preventDefault();
-    localStorage.removeItem('userData');
-    window.location.href = '/login';
+    localStorage.removeItem('customerToken');
+    localStorage.removeItem('customerInfo');
+    localStorage.removeItem('tambayanCart');
+    window.location.href = '/login.html';
   });
+
   document.querySelector('.bell').addEventListener('click', async () => {
     try {
       const notifs = await apiCall('/customer/notifications?limit=5');
@@ -48,9 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Failed to load notifications: ' + err.message);
     }
   });
+
   document.getElementById('menuSearch')?.addEventListener('input', (e) => {
     renderMenu(e.target.value, currentCategory);
   });
+
   document.querySelectorAll('.category-btn')?.forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
@@ -59,10 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMenu(document.getElementById('menuSearch').value, currentCategory);
     });
   });
+
   document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
   document.getElementById('closeModal')?.addEventListener('click', () => {
     document.getElementById('itemModal').style.display = 'none';
   });
+
   updateCartUI();
 });
 
@@ -73,30 +85,34 @@ function showView(viewId) {
   document.querySelector(`.nav-item[data-view="${viewId}"]`)?.classList.add('active');
 }
 
-// ===== AUTH & API =====
-function getAuthToken() {
-  const userData = JSON.parse(localStorage.getItem('userData'));
-  return userData?.id || null;
-}
-
+// ✅ AUTHORIZED API CALL WITH JWT
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
-  const userData = JSON.parse(localStorage.getItem('userData'));
+  const token = localStorage.getItem('customerToken');
+
+  if (!token) {
+    alert('Customer session expired. Please log in again.');
+    window.location.href = '/login.html';
+    throw new Error('No token');
+  }
+
   const headers = {
     'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
     ...options.headers
   };
-  if (userData && userData.role === 'customer') {
-    headers.Authorization = `Bearer ${getAuthToken()}`;
-  }
+
   const config = { ...options, headers };
   const res = await fetch(url, config);
+
   if (res.status === 401 || res.status === 403) {
-    alert('Session expired. Please log in again.');
-    localStorage.removeItem('userData');
-    window.location.href = '/login';
+    alert('Session expired or access denied. Please log in again.');
+    localStorage.removeItem('customerToken');
+    localStorage.removeItem('customerInfo');
+    window.location.href = '/login.html';
     throw new Error('Unauthorized');
   }
+
   if (!res.ok) {
     let errorText = 'Unknown error';
     try {
@@ -107,6 +123,7 @@ async function apiCall(endpoint, options = {}) {
     }
     throw new Error(`HTTP ${res.status}: ${errorText}`);
   }
+
   return res.json();
 }
 
@@ -116,8 +133,7 @@ async function loadCustomerProfile() {
     const profile = await apiCall('/customer/profile');
     document.querySelector('.welcome').textContent = `Welcome back, ${profile.name}!`;
   } catch (err) {
-    const userData = JSON.parse(localStorage.getItem('userData'));
-    document.querySelector('.welcome').textContent = `Welcome back, ${userData?.name || 'Customer'}!`;
+    document.querySelector('.welcome').textContent = 'Welcome back, Customer!';
   }
 }
 
@@ -306,7 +322,6 @@ function openItemModal(itemId) {
   const item = allMenuItems.find(i => i.id === itemId);
   if (!item) return;
 
-  // Clean up previous customization
   const existing = document.getElementById('customizationOptions');
   if (existing) existing.remove();
 
@@ -336,7 +351,6 @@ function openItemModal(itemId) {
 
   let html = '';
 
-  // Mood
   if (item.hasMoods && item.moods?.length > 0) {
     html += `<div class="customization-group"><strong>Mood:</strong><div class="options">`;
     html += item.moods.map(mood => {
@@ -346,7 +360,6 @@ function openItemModal(itemId) {
     html += `</div></div>`;
   }
 
-  // Size
   if (item.hasSizes && item.sizes?.length > 0) {
     html += `<div class="customization-group"><strong>Size:</strong><div class="options">`;
     html += item.sizes.map(size => 
@@ -355,7 +368,6 @@ function openItemModal(itemId) {
     html += `</div></div>`;
   }
 
-  // Sugar
   if (item.hasSugarLevels && item.sugarLevels?.length > 0) {
     html += `<div class="customization-group"><strong>Sugar:</strong><div class="options">`;
     html += item.sugarLevels.map(level => 
@@ -368,15 +380,12 @@ function openItemModal(itemId) {
   const modalActions = document.querySelector('.modal-actions');
   modalActions.parentNode.insertBefore(container, modalActions);
 
-  // Track selection
   let selected = { mood: '', size: '', sugar: '' };
 
   document.querySelectorAll('.custom-option-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      // Reset all buttons of the same type
       document.querySelectorAll(`.custom-option-btn[data-type="${btn.dataset.type}"]`)
         .forEach(b => b.classList.remove('active'));
-      // Activate clicked
       btn.classList.add('active');
       selected[btn.dataset.type] = btn.dataset.value;
     });
@@ -418,7 +427,7 @@ function updateCartUI() {
 
 async function placeOrder() {
   if (cart.length === 0) return;
-  const userData = JSON.parse(localStorage.getItem('userData'));
+  const customerInfo = JSON.parse(localStorage.getItem('customerInfo'));
   const orderItems = cart.map(item => ({
     productId: item.id,
     name: item.name,
@@ -429,8 +438,8 @@ async function placeOrder() {
     sugar: item.sugar
   }));
   const payload = {
-    customerId: userData.id,
-    customerEmail: userData.email,
+    customerId: customerInfo.id,
+    customerEmail: customerInfo.email,
     items: orderItems,
     totalAmount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   };

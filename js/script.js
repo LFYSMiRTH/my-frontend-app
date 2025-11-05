@@ -266,14 +266,31 @@ if (loginForm && loginUsername && loginPassword) {
         const data = await response.json();
         loginPassword.classList.remove('input-error');
 
-        localStorage.setItem('userData', JSON.stringify(data));
-
+        // ✅ STORE TOKEN PER ROLE
         if (data.role === 'admin') {
-          window.location.href = '/admin';
+          localStorage.setItem('adminToken', data.token);
+          localStorage.setItem('adminInfo', JSON.stringify({
+            id: data.id,
+            username: data.username,
+            email: data.email
+          }));
+          window.location.href = '/html/adminDashboard.html';
         } else if (data.role === 'staff') {
-          window.location.href = '/staff';
-        } else {
-          window.location.href = '/customer';
+          localStorage.setItem('staffToken', data.token);
+          localStorage.setItem('staffInfo', JSON.stringify({
+            id: data.id,
+            username: data.username,
+            email: data.email
+          }));
+          window.location.href = '/staff.html';
+        } else if (data.role === 'customer') {
+          localStorage.setItem('customerToken', data.token);
+          localStorage.setItem('customerInfo', JSON.stringify({
+            id: data.id,
+            username: data.username,
+            email: data.email
+          }));
+          window.location.href = '/customerDashboard.html';
         }
       } else {
         alert('Invalid username or password. Please try again.');
