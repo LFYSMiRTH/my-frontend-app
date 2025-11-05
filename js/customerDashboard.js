@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ✅ CHECK IF LOGGED IN AS CUSTOMER USING JWT TOKEN
   const customerToken = localStorage.getItem('customerToken');
   if (!customerToken) {
-    window.location.href = '/login.html';
+    window.location.href = '/html/login.html';
     return;
   }
 
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('customerToken');
     localStorage.removeItem('customerInfo');
     localStorage.removeItem('tambayanCart');
-    window.location.href = '/login.html';
+    window.location.href = '/html/login.html';
   });
 
   document.querySelector('.bell').addEventListener('click', async () => {
@@ -92,7 +92,7 @@ async function apiCall(endpoint, options = {}) {
 
   if (!token) {
     alert('Customer session expired. Please log in again.');
-    window.location.href = '/login.html';
+    window.location.href = '/html/login.html';
     throw new Error('No token');
   }
 
@@ -109,7 +109,7 @@ async function apiCall(endpoint, options = {}) {
     alert('Session expired or access denied. Please log in again.');
     localStorage.removeItem('customerToken');
     localStorage.removeItem('customerInfo');
-    window.location.href = '/login.html';
+    window.location.href = '/html/login.html';
     throw new Error('Unauthorized');
   }
 

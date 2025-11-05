@@ -1,7 +1,7 @@
-const API_BASE = 'https://tambayan-cafe-backend.onrender.com';
+const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
 
 function goToLogin() {
-  window.location.href = "/login";
+  window.location.href = "/html/login.html";
 }
 
 const modalOverlay = document.getElementById('modalOverlay');
@@ -232,34 +232,22 @@ if (openSignup && closeSignup && signupModal) {
   });
 }
 
+// ===== LOGIN FORM HANDLER =====
 const loginForm = document.getElementById('loginForm');
 const loginUsername = document.getElementById('loginUsername');
 const loginPassword = document.getElementById('loginPassword');
-const forgotPasswordLink = document.getElementById('openForgotPassword');
 
 if (loginForm && loginUsername && loginPassword) {
-  const toggleForgotPassword = () => {
-    const hasInput = loginUsername.value.trim() !== '' || loginPassword.value.trim() !== '';
-    if (forgotPasswordLink) {
-      forgotPasswordLink.style.pointerEvents = hasInput ? 'auto' : 'none';
-      forgotPasswordLink.style.opacity = hasInput ? '1' : '0.5';
-    }
-  };
-
-  loginUsername.addEventListener('input', toggleForgotPassword);
-  loginPassword.addEventListener('input', toggleForgotPassword);
-
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
 
-    const user = { username, password };
     try {
-      const response = await fetch(`${API_BASE}/api/user/login`, {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user)
+        body: JSON.stringify({ username, password })
       });
 
       if (response.ok) {
@@ -282,7 +270,7 @@ if (loginForm && loginUsername && loginPassword) {
             username: data.username,
             email: data.email
           }));
-          window.location.href = '/staff.html';
+          window.location.href = '/html/staff.html';
         } else if (data.role === 'customer') {
           localStorage.setItem('customerToken', data.token);
           localStorage.setItem('customerInfo', JSON.stringify({
@@ -290,7 +278,7 @@ if (loginForm && loginUsername && loginPassword) {
             username: data.username,
             email: data.email
           }));
-          window.location.href = '/customerDashboard.html';
+          window.location.href = '/html/customerDashboard.html';
         }
       } else {
         alert('Invalid username or password. Please try again.');
@@ -301,15 +289,12 @@ if (loginForm && loginUsername && loginPassword) {
       }
     } catch (err) {
       console.error('Login error:', err);
+      alert('Login failed: ' + (err.message || 'Network error'));
       loginPassword.classList.add('input-error');
       setTimeout(() => {
         loginPassword.classList.remove('input-error');
       }, 500);
     }
-  });
-
-  loginPassword.addEventListener('input', () => {
-    loginPassword.classList.remove('input-error');
   });
 }
 
@@ -338,7 +323,7 @@ if (signupForm) {
     if (username.length < 3) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/user/check-username?username=${encodeURIComponent(username)}`);
+      const res = await fetch(`${API_BASE}/user/check-username?username=${encodeURIComponent(username)}`);
       const result = await res.json();
       if (result.exists) {
         usernameError.textContent = 'Username already taken.';
@@ -354,7 +339,7 @@ if (signupForm) {
     if (!email.includes('@')) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/user/check-email?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${API_BASE}/user/check-email?email=${encodeURIComponent(email)}`);
       const result = await res.json();
       if (result.exists) {
         emailError.textContent = 'Email already registered.';
@@ -417,7 +402,7 @@ if (signupForm) {
     const user = { username, email, password };
 
     try {
-      const response = await fetch(`${API_BASE}/api/user/register`, {
+      const response = await fetch(`${API_BASE}/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(user)
@@ -492,7 +477,7 @@ document.getElementById('forgotPasswordForm')?.addEventListener('submit', async 
   if (!email) return;
 
   try {
-    const res = await fetch(`${API_BASE}/api/user/forgot-password`, {
+    const res = await fetch(`${API_BASE}/user/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
@@ -526,7 +511,7 @@ document.getElementById('verifyCodeForm')?.addEventListener('submit', async (e) 
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/user/verify-reset-code`, {
+    const res = await fetch(`${API_BASE}/user/verify-reset-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: window.tempResetEmail, code })
@@ -564,7 +549,7 @@ document.getElementById('newPasswordForm')?.addEventListener('submit', async (e)
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/user/reset-password`, {
+    const res = await fetch(`${API_BASE}/user/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -577,7 +562,7 @@ document.getElementById('newPasswordForm')?.addEventListener('submit', async (e)
     if (res.ok) {
       if (newPasswordModal) newPasswordModal.classList.add('hidden');
       alert('✅ Password reset successfully! You can now log in.');
-      window.location.href = '/login';
+      window.location.href = '/html/login.html';
     } else {
       alert('Failed to reset password. Please try again.');
     }

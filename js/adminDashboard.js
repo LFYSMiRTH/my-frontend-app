@@ -43,7 +43,7 @@ async function apiCall(endpoint, options = {}) {
     alert('Admin access denied. Please log in again.');
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminInfo');
-    window.location.href = '/login.html';
+    window.location.href = '/html/login.html';
     throw new Error('Unauthorized');
   }
 
@@ -1138,7 +1138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminInfo');
-    window.location.href = '/login.html';
+    window.location.href = '/html/login.html';
   });
 
   document.getElementById('nav-dashboard')?.addEventListener('click', () => {
