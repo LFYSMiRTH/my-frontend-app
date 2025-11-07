@@ -1,5 +1,4 @@
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
-
 let allMenuItems = [];
 let cart = JSON.parse(localStorage.getItem('tambayanCart')) || [];
 let currentCategory = 'all';
@@ -11,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/html/login.html';
     return;
   }
-
   loadCustomerProfile();
   loadRecentOrders();
   loadFavorites();
@@ -28,6 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (view === 'menu' && !window.menuLoaded) {
           loadMenuItems();
           window.menuLoaded = true;
+        }
+        // Load My Orders data when the view is shown
+        if (view === 'myOrders') {
+            loadMyOrders();
         }
       }
     });
@@ -75,11 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
-  document.getElementById('closeModal')?.addEventListener('click', () => {
-    document.getElementById('itemModal').style.display = 'none';
-  });
 
-  updateCartUI();
+  // MODAL CLOSE BUTTON
+  document.getElementById('closeModal')?.addEventListener('click', closeModal);
+  // Close modal if clicked outside the content
+  window.onclick = function(event) {
+    const modal = document.getElementById('itemModal');
+    if (event.target === modal) {
+      closeModal();
+    }
+  }
 });
 
 // ------------------- HELPERS -------------------
@@ -91,22 +98,20 @@ function showView(viewId) {
 }
 
 // ✅ AUTHORIZED API CALL
+// ✅ AUTHORIZED API CALL - FIXED
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = localStorage.getItem('customerToken');
-
   if (!token) {
     alert('Customer session expired. Please log in again.');
     window.location.href = '/html/login.html';
     throw new Error('No token');
   }
-
   const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
     ...options.headers
   };
-
   const config = { ...options, headers };
   const res = await fetch(url, config);
 
@@ -118,17 +123,30 @@ async function apiCall(endpoint, options = {}) {
     throw new Error('Unauthorized');
   }
 
+  // Check for non-OK status codes and handle the error body here
   if (!res.ok) {
-    let errorText = 'Unknown error';
+    let errorText = `HTTP ${res.status}`; // Default error text
+    // Attempt to read the response body *only once* if it's an error
     try {
-      const errorJson = await res.json();
-      errorText = errorJson.message || JSON.stringify(errorJson);
-    } catch {
-      errorText = await res.text() || `HTTP ${res.status}`;
+      // Check if the response has content and is JSON
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorJson = await res.json(); // This consumes the stream
+        errorText = errorJson.message || JSON.stringify(errorJson);
+      } else {
+        // If not JSON, try to get text
+        const errorTextBody = await res.text(); // This consumes the stream
+        errorText = errorTextBody || `HTTP ${res.status}`;
+      }
+    } catch (e) {
+      // If parsing fails, use the status text or a generic message
+      console.warn("Could not parse error response body:", e);
+      errorText = res.statusText || `HTTP ${res.status}`;
     }
-    throw new Error(`HTTP ${res.status}: ${errorText}`);
+    throw new Error(errorText);
   }
 
+  // If the response is OK, parse the JSON
   return res.json();
 }
 
@@ -206,7 +224,6 @@ async function loadFavorites() {
         </div>
       </div>
     `).join('');
-
     // Updated selector to match the new button class
     document.querySelectorAll('.add-to-billing-btn-large').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -282,45 +299,8 @@ function renderMenu(searchTerm = '', category = 'all') {
   }
   if (category !== 'all') filtered = filtered.filter(item => item.category === category);
   if (filtered.length === 0) { grid.innerHTML = '<p>No items found.</p>'; return; }
-
   grid.innerHTML = filtered.map(item => {
-    const isDrink = item.category === 'Drinks';
-    let customizationHtml = '';
-    
-    if (isDrink) {
-      customizationHtml = `
-        <div class="customization-row">
-          <span>Mood</span>
-          <div class="options-row">
-            <button class="custom-option-btn-small" data-type="mood" data-value="Hot" data-item-id="${item.id}">
-              <i class="ri-fire-line"></i>
-            </button>
-            <button class="custom-option-btn-small" data-type="mood" data-value="Ice" data-item-id="${item.id}">
-              <i class="ri-snowy-line"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="customization-row">
-          <span>Size</span>
-          <div class="options-row">
-            <button class="custom-option-btn-small" data-type="size" data-value="S" data-item-id="${item.id}">S</button>
-            <button class="custom-option-btn-small" data-type="size" data-value="M" data-item-id="${item.id}">M</button>
-            <button class="custom-option-btn-small" data-type="size" data-value="L" data-item-id="${item.id}">L</button>
-          </div>
-        </div>
-
-        <div class="customization-row">
-          <span>Sugar</span>
-          <div class="options-row">
-            <button class="custom-option-btn-small" data-type="sugar" data-value="30%" data-item-id="${item.id}">30%</button>
-            <button class="custom-option-btn-small" data-type="sugar" data-value="50%" data-item-id="${item.id}">50%</button>
-            <button class="custom-option-btn-small" data-type="sugar" data-value="70%" data-item-id="${item.id}">70%</button>
-          </div>
-        </div>
-      `;
-    }
-
+    // Removed the inline customization HTML for drinks
     return `
       <div class="menu-item-card ${!item.isAvailable ? 'unavailable' : ''}" data-id="${item.id}">
         <div class="product-image">
@@ -330,9 +310,7 @@ function renderMenu(searchTerm = '', category = 'all') {
           <div class="product-name">${item.name}</div>
           <div class="product-description">${item.description || 'Delicious item!'}</div>
           <div class="product-price">₱${Number(item.price).toFixed(2)}</div>
-
-          ${customizationHtml}
-
+          <!-- Removed customization rows from here -->
           <div class="action-row">
             <input type="number" class="quantity-input-small" value="1" min="1" data-item-id="${item.id}">
             <button class="add-to-billing-btn-large" data-id="${item.id}" ${!item.isAvailable ? 'disabled' : ''}>
@@ -344,63 +322,148 @@ function renderMenu(searchTerm = '', category = 'all') {
     `;
   }).join('');
 
-  // Add event listeners for customization buttons
-  document.querySelectorAll('.custom-option-btn-small').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const item_id = e.target.dataset.itemId;
-      const type = e.target.dataset.type;
-      const value = e.target.dataset.value;
-
-      document.querySelectorAll(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="${type}"]`).forEach(b => {
-        b.classList.remove('active');
-      });
-      e.target.classList.add('active');
-    });
-  });
-
-  // Add event listeners for add to cart buttons
-  document.querySelectorAll('.add-to-billing-btn-large').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const item_id = btn.dataset.id;
-      const item = allMenuItems.find(i => i.id === item_id);
-      if (item) {
-        const quantity = parseInt(document.querySelector(`.quantity-input-small[data-item-id="${item_id}"]`).value) || 1;
-        
-        let mood = 'Hot';
-        let size = 'M';
-        let sugar = '50%';
-
-        if (item.category === 'Drinks') {
-          const moodBtn = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="mood"].active`);
-          const sizeBtn = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="size"].active`);
-          const sugarBtn = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="sugar"].active`);
-          
-          mood = moodBtn ? moodBtn.dataset.value : 'Hot';
-          size = sizeBtn ? sizeBtn.dataset.value : 'M';
-          sugar = sugarBtn ? sugarBtn.dataset.value : '50%';
+  // Add event listeners for clicking on the menu item card to open the modal
+  document.querySelectorAll('.menu-item-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      // Prevent the click from propagating to the "Add to Billing" button if they click the card itself
+      if (e.target === card || e.target.closest('.product-details')) {
+        const itemId = card.dataset.id;
+        const item = allMenuItems.find(i => i.id === itemId);
+        if (item) {
+          openItemModal(item);
         }
-        
-        addToCart(item, quantity, size, mood, sugar);
       }
     });
   });
 
-  // Set default selections for drinks
-  document.querySelectorAll('.menu-item-card').forEach(card => {
-    const item_id = card.dataset.id;
-    const item = allMenuItems.find(i => i.id === item_id);
-    
-    if (item.category === 'Drinks') {
-      const defaultMood = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="mood"][data-value="Hot"]`);
-      if (defaultMood) defaultMood.classList.add('active');
-      
-      const defaultSize = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="size"][data-value="M"]`);
-      if (defaultSize) defaultSize.classList.add('active');
-      
-      const defaultSugar = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="sugar"][data-value="50%"]`);
-      if (defaultSugar) defaultSugar.classList.add('active');
-    }
+  // Add event listeners for the "Add to Billing" buttons (for direct add without modal)
+  document.querySelectorAll('.add-to-billing-btn-large').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering the card click event
+      const item_id = btn.dataset.id;
+      const item = allMenuItems.find(i => i.id === item_id);
+      if (item) {
+        // Instead of adding to cart directly, open the modal
+        openItemModal(item);
+      }
+    });
   });
+}
+
+// Function to open the modal and populate it with item details
+function openItemModal(item) {
+  const modal = document.getElementById('itemModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalName = document.getElementById('modalName');
+  const modalPrice = document.getElementById('modalPrice');
+  const modalCategory = document.getElementById('modalCategory');
+  const modalIngredients = document.getElementById('modalIngredients');
+  const modalAvailability = document.getElementById('modalAvailability');
+  const modalQuantity = document.getElementById('modalQuantity');
+  const modalAddToCart = document.getElementById('modalAddToCart');
+
+  // Set item details
+  modalImage.src = item.imageUrl || '/image/placeholder-menu.jpg';
+  modalName.textContent = item.name;
+  modalPrice.textContent = `₱${Number(item.price).toFixed(2)}`;
+  modalCategory.textContent = item.category;
+
+  // Clear previous ingredients list
+  modalIngredients.innerHTML = '';
+  // Assuming ingredients are stored in an array in the item object.
+  // If not, you might need to adjust this based on your API response.
+  if (item.ingredients && Array.isArray(item.ingredients)) {
+    item.ingredients.forEach(ingredient => {
+      const li = document.createElement('li');
+      li.textContent = ingredient;
+      modalIngredients.appendChild(li);
+    });
+  } else {
+    // Fallback if no ingredients array exists
+    modalIngredients.innerHTML = '<li>Details not available</li>';
+  }
+
+  // Set availability status
+  if (item.isAvailable) {
+    modalAvailability.textContent = 'Available';
+    modalAvailability.style.color = '#4CAF50'; // Green
+    modalAvailability.style.fontWeight = 'bold';
+    modalAddToCart.disabled = false;
+  } else {
+    modalAvailability.textContent = 'Currently Unavailable';
+    modalAvailability.style.color = '#E53E3E'; // Red
+    modalAvailability.style.fontWeight = 'bold';
+    modalAddToCart.disabled = true;
+  }
+
+  // Reset the quantity input
+  modalQuantity.value = '1';
+
+  // Set up customization buttons in the modal (only for drinks)
+  // Initialize default selections for the modal
+  let selectedMood = 'Hot';
+  let selectedSize = 'M';
+  let selectedSugar = '50%';
+
+  // Only show and set up customization if the item is a drink
+  const customizationSection = document.querySelector('.customization-section');
+  if (item.category === 'Drinks') {
+    customizationSection.style.display = 'block'; // Show customization
+
+    // Add event listeners to customization buttons
+    document.querySelectorAll('.custom-option-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const type = e.target.dataset.type;
+        const value = e.target.dataset.value;
+        // Remove active class from all buttons of the same type
+        document.querySelectorAll(`.custom-option-btn[data-type="${type}"]`).forEach(b => {
+          b.classList.remove('active');
+        });
+        // Add active class to the clicked button
+        e.target.classList.add('active');
+        // Update the selected value
+        if (type === 'mood') selectedMood = value;
+        else if (type === 'size') selectedSize = value;
+        else if (type === 'sugar') selectedSugar = value;
+      });
+    });
+
+    // Set default active states for the modal buttons
+    document.querySelector(`.custom-option-btn[data-type="mood"][data-value="${selectedMood}"]`).classList.add('active');
+    document.querySelector(`.custom-option-btn[data-type="size"][data-value="${selectedSize}"]`).classList.add('active');
+    document.querySelector(`.custom-option-btn[data-type="sugar"][data-value="${selectedSugar}"]`).classList.add('active');
+
+  } else {
+    // Hide customization section for non-drinks
+    customizationSection.style.display = 'none';
+  }
+
+  // Set up the "Add to Billing" button in the modal
+  modalAddToCart.onclick = () => {
+    if (!item.isAvailable) {
+      alert("This item is currently unavailable.");
+      return;
+    }
+    const quantity = parseInt(modalQuantity.value) || 1;
+    // Use selected customizations if it's a drink, otherwise use defaults or empty strings
+    const sizeToUse = item.category === 'Drinks' ? selectedSize : '';
+    const moodToUse = item.category === 'Drinks' ? selectedMood : '';
+    const sugarToUse = item.category === 'Drinks' ? selectedSugar : '';
+    addToCart(item, quantity, sizeToUse, moodToUse, sugarToUse);
+    // Close the modal after adding to cart
+    closeModal();
+  };
+
+  // Show the modal
+  modal.style.display = 'block';
+}
+
+// Function to close the modal
+function closeModal() {
+  const modal = document.getElementById('itemModal');
+  modal.style.display = 'none';
+  // Also remove active classes from modal buttons to reset them for next time
+  document.querySelectorAll('.custom-option-btn').forEach(btn => btn.classList.remove('active'));
 }
 
 // ------------------- CART -------------------
@@ -409,14 +472,12 @@ function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') 
     alert("This item is currently unavailable.");
     return;
   }
-
   const existing = cart.find(i =>
     i.id === item.id &&
     i.size === size &&
     i.mood === mood &&
     i.sugar === sugar
   );
-
   if (existing) {
     existing.quantity += quantity;
   } else {
@@ -428,10 +489,9 @@ function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') 
       sugar
     });
   }
-
   localStorage.setItem('tambayanCart', JSON.stringify(cart));
   updateCartUI();
-  alert(`"${item.name}" (Mood: ${mood}, Size: ${size}, Sugar: ${sugar}) added to cart!`);
+  alert(`"${item.name}" (Mood: ${mood || 'N/A'}, Size: ${size || 'N/A'}, Sugar: ${sugar || 'N/A'}) added to cart!`);
 }
 
 function updateCartUI() {
@@ -471,7 +531,104 @@ async function placeOrder() {
     localStorage.setItem('tambayanCart', JSON.stringify(cart));
     updateCartUI();
     showView('dashboard');
+    // Reload recent orders and current order tracker after placing an order
+    loadRecentOrders();
+    loadCurrentOrderForTracker();
   } catch (err) {
     alert('Failed to place order: ' + err.message);
   }
+}
+
+// ------------------- MY ORDERS -------------------
+async function loadMyOrders() {
+    const tbody = document.getElementById('myOrdersTableBody');
+    if (!tbody) return; // Guard clause if element doesn't exist
+
+    tbody.innerHTML = '<tr><td colspan="5">Loading your orders...</td></tr>';
+
+    try {
+        // Fetch all orders for the current customer
+        // Assuming the API endpoint returns all orders associated with the authenticated customer
+        const orders = await apiCall('/customer/orders'); // Adjust endpoint if needed
+
+        if (!orders || orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">You have no orders yet.</td></tr>';
+            return;
+        }
+
+        // Clear loading message
+        tbody.innerHTML = '';
+
+        // Sort orders by date, newest first (optional, depends on API response)
+        orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        orders.forEach(order => {
+            const row = document.createElement('tr');
+            const statusClass = getStatusClass(order.status);
+
+            // Format date and time
+            const orderDate = new Date(order.createdAt);
+            const formattedDateTime = orderDate.toLocaleString(); // Adjust format as needed
+
+            // Create action buttons (Reorder, Leave Feedback)
+            const actionsCell = document.createElement('td');
+            actionsCell.classList.add('actions-cell'); // Add a class for potential styling
+
+            const reorderBtn = document.createElement('button');
+            reorderBtn.textContent = 'Reorder';
+            reorderBtn.className = 'action-btn reorder-btn';
+            reorderBtn.onclick = () => handleReorder(order);
+
+            const feedbackBtn = document.createElement('button');
+            feedbackBtn.textContent = 'Feedback';
+            feedbackBtn.className = 'action-btn feedback-btn';
+            feedbackBtn.onclick = () => handleFeedback(order);
+
+            actionsCell.appendChild(reorderBtn);
+            actionsCell.appendChild(feedbackBtn);
+
+            row.innerHTML = `
+                <td>#${order.orderNumber}</td>
+                <td>${formattedDateTime}</td>
+                <td><span class="status ${statusClass}">${order.status}</span></td>
+                <td>₱${Number(order.totalAmount).toFixed(2)}</td>
+            `;
+
+            // Append the actions cell after the other cells are added via innerHTML
+            row.appendChild(actionsCell);
+
+            tbody.appendChild(row);
+        });
+
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:#e74c3c;">Error loading orders: ${err.message}</td></tr>`;
+    }
+}
+
+// Placeholder functions for Reorder and Feedback actions
+function handleReorder(order) {
+    // Logic to add the items from the order back to the cart
+    // This is a simplified version - you might want to handle customizations more carefully
+    order.items.forEach(item => {
+        // Assuming the order item structure matches the cart item structure
+        // You might need to map fields like productId -> id
+        addToCart(
+            { ...item, id: item.productId }, // Map productId if needed
+            item.quantity,
+            item.size || 'M',
+            item.mood || 'Hot',
+            item.sugar || '50%'
+        );
+    });
+    alert(`Items from order #${order.orderNumber} added to your cart!`);
+    updateCartUI(); // Update the cart UI after adding items
+    showView('menu'); // Optionally switch to the menu view to see the cart
+}
+
+function handleFeedback(order) {
+    // Logic to open a feedback form or modal for the specific order
+    // This is a placeholder - implement the actual feedback mechanism
+    alert(`Feedback form for order #${order.orderNumber} would open here.`);
+    // Example: Open a modal with order details and a feedback input
+    // You could pass the order ID to a function that displays the feedback UI
 }
