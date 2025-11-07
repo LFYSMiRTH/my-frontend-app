@@ -5,7 +5,7 @@ let cart = JSON.parse(localStorage.getItem('tambayanCart')) || [];
 let currentCategory = 'all';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ✅ CHECK IF LOGGED IN AS CUSTOMER USING JWT TOKEN
+  // ✅ CHECK IF LOGGED IN AS CUSTOMER
   const customerToken = localStorage.getItem('customerToken');
   if (!customerToken) {
     window.location.href = '/html/login.html';
@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCurrentOrderForTracker();
   setInterval(loadCurrentOrderForTracker, 10000);
 
+  // NAVIGATION
   document.querySelectorAll('.nav-item:not(.logout)').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -40,10 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/html/login.html';
   });
 
+  // NOTIFICATIONS
   document.querySelector('.bell').addEventListener('click', async () => {
     try {
       const notifs = await apiCall('/customer/notifications?limit=5');
-      if (notifs.length === 0) {
+      if (!notifs || notifs.length === 0) {
         alert('No new notifications.');
         return;
       }
@@ -57,10 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // MENU SEARCH
   document.getElementById('menuSearch')?.addEventListener('input', (e) => {
     renderMenu(e.target.value, currentCategory);
   });
 
+  // CATEGORY BUTTONS
   document.querySelectorAll('.category-btn')?.forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
@@ -78,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartUI();
 });
 
+// ------------------- HELPERS -------------------
 function showView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelector(`#${viewId}View`)?.classList.add('active');
@@ -85,7 +90,7 @@ function showView(viewId) {
   document.querySelector(`.nav-item[data-view="${viewId}"]`)?.classList.add('active');
 }
 
-// ✅ AUTHORIZED API CALL WITH JWT
+// ✅ AUTHORIZED API CALL
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = localStorage.getItem('customerToken');
@@ -127,12 +132,13 @@ async function apiCall(endpoint, options = {}) {
   return res.json();
 }
 
-// ===== DASHBOARD =====
+// ------------------- DASHBOARD -------------------
 async function loadCustomerProfile() {
   try {
     const profile = await apiCall('/customer/profile');
     document.querySelector('.welcome').textContent = `Welcome back, ${profile.name}!`;
-  } catch (err) {
+    localStorage.setItem('customerInfo', JSON.stringify(profile));
+  } catch {
     document.querySelector('.welcome').textContent = 'Welcome back, Customer!';
   }
 }
@@ -153,7 +159,7 @@ async function loadRecentOrders() {
   tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
   try {
     const orders = await apiCall('/customer/orders?limit=3');
-    if (!Array.isArray(orders) || orders.length === 0) {
+    if (!orders || orders.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4">No recent orders.</td></tr>';
       return;
     }
@@ -180,31 +186,31 @@ async function loadFavorites() {
   grid.innerHTML = '<p>Loading recommendations...</p>';
   try {
     const favorites = await apiCall('/customer/favorites');
-    if (!Array.isArray(favorites) || favorites.length === 0) {
+    if (!favorites || favorites.length === 0) {
       grid.innerHTML = '<p>No recommended items yet.</p>';
       return;
     }
-    let html = '';
-    favorites.slice(0, 2).forEach(item => {
-      html += `
-        <div class="item-card">
-          <div class="item-image">
-            <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" />
-          </div>
-          <div class="item-info">
-            <div class="item-title">${item.name}</div>
-            <div class="item-price">₱${Number(item.price).toFixed(2)}</div>
-            <p>${item.description || 'Delicious item!'}</p>
-            <button class="add-btn" data-id="${item.id}">
-              <i class="ri-add-line"></i> Add to Billing
-            </button>
-          </div>
+    // Updated HTML template for dashboard favorites to use new button style
+    grid.innerHTML = favorites.slice(0, 2).map(item => `
+      <div class="item-card">
+        <div class="item-image">
+          <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" />
         </div>
-      `;
-    });
-    grid.innerHTML = html;
-    document.querySelectorAll('.add-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+        <div class="item-info">
+          <div class="item-title">${item.name}</div>
+          <div class="item-price">₱${Number(item.price).toFixed(2)}</div>
+          <p>${item.description || 'Delicious item!'}</p>
+          <button class="add-to-billing-btn-large" data-id="${item.id}">
+            <i class="ri-add-line"></i> Add to Billing
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    // Updated selector to match the new button class
+    document.querySelectorAll('.add-to-billing-btn-large').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const btn = e.currentTarget; // Get the clicked button
         try {
           await apiCall('/cart/add', {
             method: 'POST',
@@ -221,6 +227,7 @@ async function loadFavorites() {
   }
 }
 
+// ------------------- ORDER TRACKER -------------------
 let currentOrderId = null;
 async function loadCurrentOrderForTracker() {
   try {
@@ -245,16 +252,12 @@ async function loadCurrentOrderForTracker() {
 function updateTracker(status) {
   const steps = document.querySelectorAll('.step');
   steps.forEach(s => s.classList.remove('active'));
-  if (status === 'Preparing') {
-    steps[0].classList.add('active');
-  } else if (status === 'Ready') {
-    steps[1].classList.add('active');
-  } else if (status === 'Served' || status === 'Completed') {
-    steps[2].classList.add('active');
-  }
+  if (status === 'Preparing') steps[0].classList.add('active');
+  else if (status === 'Ready') steps[1].classList.add('active');
+  else if (status === 'Served' || status === 'Completed') steps[2].classList.add('active');
 }
 
-// ===== MENU VIEW =====
+// ------------------- MENU -------------------
 async function loadMenuItems() {
   const grid = document.getElementById('menuGrid');
   grid.innerHTML = '<p>Loading menu...</p>';
@@ -277,143 +280,158 @@ function renderMenu(searchTerm = '', category = 'all') {
       (item.description && item.description.toLowerCase().includes(term))
     );
   }
-  if (category !== 'all') {
-    filtered = filtered.filter(item => item.category === category);
-  }
-  if (filtered.length === 0) {
-    grid.innerHTML = '<p>No items found.</p>';
-    return;
-  }
+  if (category !== 'all') filtered = filtered.filter(item => item.category === category);
+  if (filtered.length === 0) { grid.innerHTML = '<p>No items found.</p>'; return; }
+
   grid.innerHTML = filtered.map(item => {
-    const isAvailable = item.isAvailable;
-    const unavailableClass = !isAvailable ? 'unavailable' : '';
+    const isDrink = item.category === 'Drinks';
+    let customizationHtml = '';
+    
+    if (isDrink) {
+      customizationHtml = `
+        <div class="customization-row">
+          <span>Mood</span>
+          <div class="options-row">
+            <button class="custom-option-btn-small" data-type="mood" data-value="Hot" data-item-id="${item.id}">
+              <i class="ri-fire-line"></i>
+            </button>
+            <button class="custom-option-btn-small" data-type="mood" data-value="Ice" data-item-id="${item.id}">
+              <i class="ri-snowy-line"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="customization-row">
+          <span>Size</span>
+          <div class="options-row">
+            <button class="custom-option-btn-small" data-type="size" data-value="S" data-item-id="${item.id}">S</button>
+            <button class="custom-option-btn-small" data-type="size" data-value="M" data-item-id="${item.id}">M</button>
+            <button class="custom-option-btn-small" data-type="size" data-value="L" data-item-id="${item.id}">L</button>
+          </div>
+        </div>
+
+        <div class="customization-row">
+          <span>Sugar</span>
+          <div class="options-row">
+            <button class="custom-option-btn-small" data-type="sugar" data-value="30%" data-item-id="${item.id}">30%</button>
+            <button class="custom-option-btn-small" data-type="sugar" data-value="50%" data-item-id="${item.id}">50%</button>
+            <button class="custom-option-btn-small" data-type="sugar" data-value="70%" data-item-id="${item.id}">70%</button>
+          </div>
+        </div>
+      `;
+    }
+
     return `
-      <div class="menu-item-card ${unavailableClass}" data-id="${item.id}">
-        <div class="menu-item-image">
+      <div class="menu-item-card ${!item.isAvailable ? 'unavailable' : ''}" data-id="${item.id}">
+        <div class="product-image">
           <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" />
         </div>
-        <div class="menu-item-info">
-          <div class="menu-item-name">${item.name}</div>
-          <div class="menu-item-price">₱${Number(item.price).toFixed(2)}</div>
-          <div class="menu-item-actions">
-            <small>${item.category}</small>
-            <button class="add-to-cart-btn" ${!isAvailable ? 'disabled' : ''}>
-              ${isAvailable ? 'Add' : 'Unavailable'}
+        <div class="product-details">
+          <div class="product-name">${item.name}</div>
+          <div class="product-description">${item.description || 'Delicious item!'}</div>
+          <div class="product-price">₱${Number(item.price).toFixed(2)}</div>
+
+          ${customizationHtml}
+
+          <div class="action-row">
+            <input type="number" class="quantity-input-small" value="1" min="1" data-item-id="${item.id}">
+            <button class="add-to-billing-btn-large" data-id="${item.id}" ${!item.isAvailable ? 'disabled' : ''}>
+              <i class="ri-add-line"></i> Add to Billing
             </button>
           </div>
         </div>
       </div>
     `;
   }).join('');
-  document.querySelectorAll('.menu-item-card').forEach(card => {
-    card.addEventListener('click', () => openItemModal(card.dataset.id));
-  });
-  document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+
+  // Add event listeners for customization buttons
+  document.querySelectorAll('.custom-option-btn-small').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = btn.closest('.menu-item-card').dataset.id;
-      const item = allMenuItems.find(i => i.id === id);
-      if (item) addToCart(item);
-    });
-  });
-}
+      const item_id = e.target.dataset.itemId;
+      const type = e.target.dataset.type;
+      const value = e.target.dataset.value;
 
-function openItemModal(itemId) {
-  const item = allMenuItems.find(i => i.id === itemId);
-  if (!item) return;
-
-  const existing = document.getElementById('customizationOptions');
-  if (existing) existing.remove();
-
-  document.getElementById('modalName').textContent = item.name;
-  document.getElementById('modalPrice').textContent = `₱${Number(item.price).toFixed(2)}`;
-  document.getElementById('modalCategory').textContent = item.category || 'N/A';
-  document.getElementById('modalAvailability').textContent = item.isAvailable ? '✅ Available' : '❌ Currently unavailable';
-
-  const ingredientsList = document.getElementById('modalIngredients');
-  if (item.ingredients?.length > 0) {
-    ingredientsList.innerHTML = item.ingredients.map(ing => {
-      const invItem = item.inventoryItems?.find(i => i.id === ing.inventoryItemId);
-      const name = invItem ? invItem.name : ing.inventoryItemId;
-      return `<li>${name}: ${ing.quantityRequired} ${ing.unit || 'pcs'}</li>`;
-    }).join('');
-  } else {
-    ingredientsList.innerHTML = '<li>No ingredients specified.</li>';
-  }
-
-  const modalImage = document.getElementById('modalImage');
-  modalImage.src = item.imageUrl || '/image/placeholder-menu.jpg';
-  modalImage.alt = item.name;
-
-  const container = document.createElement('div');
-  container.id = 'customizationOptions';
-  container.className = 'customization-section';
-
-  let html = '';
-
-  if (item.hasMoods && item.moods?.length > 0) {
-    html += `<div class="customization-group"><strong>Mood:</strong><div class="options">`;
-    html += item.moods.map(mood => {
-      const icon = mood === 'Hot' ? '🔥' : '❄️';
-      return `<button class="custom-option-btn" data-type="mood" data-value="${mood}">${icon} ${mood}</button>`;
-    }).join('');
-    html += `</div></div>`;
-  }
-
-  if (item.hasSizes && item.sizes?.length > 0) {
-    html += `<div class="customization-group"><strong>Size:</strong><div class="options">`;
-    html += item.sizes.map(size => 
-      `<button class="custom-option-btn" data-type="size" data-value="${size}">${size}</button>`
-    ).join('');
-    html += `</div></div>`;
-  }
-
-  if (item.hasSugarLevels && item.sugarLevels?.length > 0) {
-    html += `<div class="customization-group"><strong>Sugar:</strong><div class="options">`;
-    html += item.sugarLevels.map(level => 
-      `<button class="custom-option-btn" data-type="sugar" data-value="${level}">${level}%</button>`
-    ).join('');
-    html += `</div></div>`;
-  }
-
-  container.innerHTML = html;
-  const modalActions = document.querySelector('.modal-actions');
-  modalActions.parentNode.insertBefore(container, modalActions);
-
-  let selected = { mood: '', size: '', sugar: '' };
-
-  document.querySelectorAll('.custom-option-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll(`.custom-option-btn[data-type="${btn.dataset.type}"]`)
-        .forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selected[btn.dataset.type] = btn.dataset.value;
+      document.querySelectorAll(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="${type}"]`).forEach(b => {
+        b.classList.remove('active');
+      });
+      e.target.classList.add('active');
     });
   });
 
-  document.getElementById('modalAddToCart').onclick = () => {
-    const qty = parseInt(document.getElementById('modalQuantity').value) || 1;
-    addToCart(item, qty, selected.size, selected.mood, selected.sugar);
-    document.getElementById('itemModal').style.display = 'none';
-  };
+  // Add event listeners for add to cart buttons
+  document.querySelectorAll('.add-to-billing-btn-large').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const item_id = btn.dataset.id;
+      const item = allMenuItems.find(i => i.id === item_id);
+      if (item) {
+        const quantity = parseInt(document.querySelector(`.quantity-input-small[data-item-id="${item_id}"]`).value) || 1;
+        
+        let mood = 'Hot';
+        let size = 'M';
+        let sugar = '50%';
 
-  document.getElementById('itemModal').style.display = 'block';
+        if (item.category === 'Drinks') {
+          const moodBtn = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="mood"].active`);
+          const sizeBtn = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="size"].active`);
+          const sugarBtn = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="sugar"].active`);
+          
+          mood = moodBtn ? moodBtn.dataset.value : 'Hot';
+          size = sizeBtn ? sizeBtn.dataset.value : 'M';
+          sugar = sugarBtn ? sugarBtn.dataset.value : '50%';
+        }
+        
+        addToCart(item, quantity, size, mood, sugar);
+      }
+    });
+  });
+
+  // Set default selections for drinks
+  document.querySelectorAll('.menu-item-card').forEach(card => {
+    const item_id = card.dataset.id;
+    const item = allMenuItems.find(i => i.id === item_id);
+    
+    if (item.category === 'Drinks') {
+      const defaultMood = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="mood"][data-value="Hot"]`);
+      if (defaultMood) defaultMood.classList.add('active');
+      
+      const defaultSize = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="size"][data-value="M"]`);
+      if (defaultSize) defaultSize.classList.add('active');
+      
+      const defaultSugar = document.querySelector(`.custom-option-btn-small[data-item-id="${item_id}"][data-type="sugar"][data-value="50%"]`);
+      if (defaultSugar) defaultSugar.classList.add('active');
+    }
+  });
 }
 
-// ===== CART =====
-function addToCart(item, quantity = 1, size = '', mood = '', sugar = '') {
-  if (!item.isAvailable) return;
-  const existing = cart.find(i => 
-    i.id === item.id && i.size === size && i.mood === mood && i.sugar === sugar
+// ------------------- CART -------------------
+function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') {
+  if (!item.isAvailable) {
+    alert("This item is currently unavailable.");
+    return;
+  }
+
+  const existing = cart.find(i =>
+    i.id === item.id &&
+    i.size === size &&
+    i.mood === mood &&
+    i.sugar === sugar
   );
+
   if (existing) {
     existing.quantity += quantity;
   } else {
-    cart.push({ ...item, quantity, size, mood, sugar });
+    cart.push({
+      ...item,
+      quantity,
+      size,
+      mood,
+      sugar
+    });
   }
+
   localStorage.setItem('tambayanCart', JSON.stringify(cart));
   updateCartUI();
-  alert(`"${item.name}" added to cart!`);
+  alert(`"${item.name}" (Mood: ${mood}, Size: ${size}, Sugar: ${sugar}) added to cart!`);
 }
 
 function updateCartUI() {

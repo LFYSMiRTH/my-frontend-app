@@ -102,7 +102,6 @@ let currentCategory = null;
 if (modalOverlay && drinkGrid) {
   function openCategoryModal(category) {
     if (isModalOpen) return;
-
     currentCategory = category;
     let items = [];
     let title = '';
@@ -121,19 +120,17 @@ if (modalOverlay && drinkGrid) {
     }
 
     modalTitle.textContent = title;
-
     drinkGrid.innerHTML = '';
+
     items.forEach((item, index) => {
       const card = document.createElement('div');
       card.classList.add('drink-card');
       card.setAttribute('data-index', index);
-
       card.innerHTML = `
         <img src="${item.image}" alt="${item.name}">
         <div class="drink-name">${item.name}</div>
       `;
       drinkGrid.appendChild(card);
-
       card.addEventListener('click', () => showItemDetail(index));
     });
 
@@ -187,26 +184,13 @@ if (modalOverlay && drinkGrid) {
   const sandwichesCategory = document.querySelector('.category-item[data-category="sandwiches"]');
   const dessertCategory = document.querySelector('.category-item[data-category="dessert"]');
 
-  if (drinksCategory) {
-    drinksCategory.addEventListener('click', () => openCategoryModal('drinks'));
-  }
-
-  if (sandwichesCategory) {
-    sandwichesCategory.addEventListener('click', () => openCategoryModal('sandwiches'));
-  }
-
-  if (dessertCategory) {
-    dessertCategory.addEventListener('click', () => openCategoryModal('dessert'));
-  }
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeModal);
-  }
+  if (drinksCategory) drinksCategory.addEventListener('click', () => openCategoryModal('drinks'));
+  if (sandwichesCategory) sandwichesCategory.addEventListener('click', () => openCategoryModal('sandwiches'));
+  if (dessertCategory) dessertCategory.addEventListener('click', () => openCategoryModal('dessert'));
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
 
   modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) {
-      closeModal();
-    }
+    if (e.target === modalOverlay) closeModal();
   });
 }
 
@@ -226,9 +210,7 @@ if (openSignup && closeSignup && signupModal) {
   });
 
   window.addEventListener('click', (e) => {
-    if (e.target === signupModal) {
-      signupModal.classList.add('hidden');
-    }
+    if (e.target === signupModal) signupModal.classList.add('hidden');
   });
 }
 
@@ -250,36 +232,42 @@ if (loginForm && loginUsername && loginPassword) {
         body: JSON.stringify({ username, password })
       });
 
+      console.log("Response status:", response.status);
+      console.log("Response headers:", [...response.headers]);
+
       if (response.ok) {
         const data = await response.json();
+        console.log("Login response data:", data);
         loginPassword.classList.remove('input-error');
 
-        // ✅ STORE TOKEN PER ROLE
-        if (data.role === 'admin') {
-          localStorage.setItem('adminToken', data.token);
-          localStorage.setItem('adminInfo', JSON.stringify({
-            id: data.id,
-            username: data.username,
-            email: data.email
-          }));
-          window.location.href = '/html/adminDashboard.html';
-        } else if (data.role === 'staff') {
-          localStorage.setItem('staffToken', data.token);
-          localStorage.setItem('staffInfo', JSON.stringify({
-            id: data.id,
-            username: data.username,
-            email: data.email
-          }));
-          window.location.href = '/html/staff.html';
-        } else if (data.role === 'customer') {
-          localStorage.setItem('customerToken', data.token);
-          localStorage.setItem('customerInfo', JSON.stringify({
-            id: data.id,
-            username: data.username,
-            email: data.email
-          }));
-          window.location.href = '/html/customerDashboard.html';
+        // ✅ STORE TOKEN BASED ON USER ROLE
+        const user = data.user;
+
+        if (!user || !user.role) {
+          alert("Login response format invalid.");
+          return;
         }
+
+        const role = user.role.toLowerCase().trim();
+
+        if (role === 'admin') {
+          localStorage.setItem('adminToken', data.token);
+          localStorage.setItem('adminInfo', JSON.stringify(user));
+          setTimeout(() => {
+            window.location.href = '/html/adminDashboard.html';
+          }, 100);
+        } else if (role === 'staff') {
+          localStorage.setItem('staffToken', data.token);
+          localStorage.setItem('staffInfo', JSON.stringify(user));
+          window.location.href = '/html/staff.html';
+        } else if (role === 'customer') {
+          localStorage.setItem('customerToken', data.token);
+          localStorage.setItem('customerInfo', JSON.stringify(user));
+          window.location.href = '/html/customerDashboard.html';
+        } else {
+          alert("Unknown role. Access denied.");
+        }
+
       } else {
         alert('Invalid username or password. Please try again.');
         loginPassword.classList.add('input-error');
@@ -287,6 +275,7 @@ if (loginForm && loginUsername && loginPassword) {
           loginPassword.classList.remove('input-error');
         }, 500);
       }
+
     } catch (err) {
       console.error('Login error:', err);
       alert('Login failed: ' + (err.message || 'Network error'));
@@ -580,26 +569,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (teamImage && teamName && prevBtn && nextBtn) {
     const teamMembers = [
-      {
-        name: "John Timothy Yanto",
-        image: "/Team/image1.jpg"
-      },
-      {
-        name: "Marq Kenjie Buencosejo",
-        image: "/Team/image2.jpeg"
-      },
-      {
-        name: "Russel Pelea",
-        image: "/Team/image3.jpeg"
-      },
-      {
-        name: "Allan Alamo",
-        image: "/Team/image4.jpg"
-      },
-      {
-        name: "Timothy Jade Montano",
-        image: "/Team/image5.jpg"
-      }
+      { name: "John Timothy Yanto", image: "/Team/image1.jpg" },
+      { name: "Marq Kenjie Buencosejo", image: "/Team/image2.jpeg" },
+      { name: "Russel Pelea", image: "/Team/image3.jpeg" },
+      { name: "Allan Alamo", image: "/Team/image4.jpg" },
+      { name: "Timothy Jade Montano", image: "/Team/image5.jpg" }
     ];
 
     let currentIndex = 0;

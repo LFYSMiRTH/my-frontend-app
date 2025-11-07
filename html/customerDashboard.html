@@ -124,7 +124,41 @@
         <p><strong>Ingredients:</strong></p>
         <ul id="modalIngredients"></ul>
         <p id="modalAvailability"></p>
-        <!-- Customization injected by JS -->
+
+        <!-- Customization Options -->
+        <div class="customization-section">
+          <div class="customization-group">
+            <strong>Mood</strong>
+            <div class="options">
+              <button class="custom-option-btn" data-type="mood" data-value="Hot">
+                <i class="ri-fire-line"></i> Hot
+              </button>
+              <button class="custom-option-btn" data-type="mood" data-value="Ice">
+                <i class="ri-snowy-line"></i> Ice
+              </button>
+            </div>
+          </div>
+
+          <div class="customization-group">
+            <strong>Size</strong>
+            <div class="options">
+              <button class="custom-option-btn" data-type="size" data-value="S">S</button>
+              <button class="custom-option-btn" data-type="size" data-value="M">M</button>
+              <button class="custom-option-btn" data-type="size" data-value="L">L</button>
+            </div>
+          </div>
+
+          <div class="customization-group">
+            <strong>Sugar</strong>
+            <div class="options">
+              <button class="custom-option-btn" data-type="sugar" data-value="30%">30%</button>
+              <button class="custom-option-btn" data-type="sugar" data-value="50%">50%</button>
+              <button class="custom-option-btn" data-type="sugar" data-value="70%">70%</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quantity & Add Button -->
         <div class="modal-actions">
           <input type="number" id="modalQuantity" min="1" value="1" />
           <button id="modalAddToCart" class="add-btn">Add to Billing</button>
@@ -134,5 +168,13 @@
   </div>
 
   <script src="/js/customerDashboard.js"></script>
+  <script>
+    console.log("Customer Dashboard loaded!");
+    console.log("Token:", localStorage.getItem('customerToken'));
+    console.log("Customer Info:", localStorage.getItem('customerInfo'));
+  </script>
+  <script>
+    console.log("Customer token on dashboard:", localStorage.getItem('customerToken'));
+  </script>
 </body>
 </html>
