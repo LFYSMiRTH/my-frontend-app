@@ -279,7 +279,8 @@ async function loadMenuItems() {
   const grid = document.getElementById('menuGrid');
   grid.innerHTML = '<p>Loading menu...</p>';
   try {
-    const items = await apiCall('/customer/menu');
+    // ✅ FIXED: Use enriched endpoint + no trailing space
+    const items = await apiCall('/product/customer/menu');
     allMenuItems = Array.isArray(items) ? items : [];
     renderMenu('', 'all');
   } catch (err) {
@@ -370,14 +371,23 @@ function openItemModal(item) {
 
   // Clear previous ingredients list
   modalIngredients.innerHTML = '';
-  // Assuming ingredients are stored in an array in the item object.
-  // If not, you might need to adjust this based on your API response.
+  // ✅ FIXED: Safely render ingredient names from new enriched API
   if (item.ingredients && Array.isArray(item.ingredients)) {
-    item.ingredients.forEach(ingredient => {
-      const li = document.createElement('li');
-      li.textContent = ingredient;
-      modalIngredients.appendChild(li);
-    });
+    if (item.ingredients.length === 0) {
+      modalIngredients.innerHTML = '<li>No ingredients listed</li>';
+    } else {
+      item.ingredients.forEach(ingredient => {
+        let name = 'Unknown ingredient';
+        if (typeof ingredient === 'string') {
+          name = ingredient;
+        } else if (typeof ingredient === 'object' && ingredient !== null) {
+          name = ingredient.name || ingredient.Name || `Unknown (${ingredient.inventoryItemId || ''})`;
+        }
+        const li = document.createElement('li');
+        li.textContent = name;
+        modalIngredients.appendChild(li);
+      });
+    }
   } else {
     // Fallback if no ingredients array exists
     modalIngredients.innerHTML = '<li>Details not available</li>';

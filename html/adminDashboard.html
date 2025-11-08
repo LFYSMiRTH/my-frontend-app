@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/adminDashboard.css" />
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <!-- ✅ Chart.js for Sales Trends -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <aside class="sidebar">
@@ -49,8 +51,7 @@
           <p>Let’s see an overview</p>
         </div>
         <div class="actions">
-          <button type="button" class="btn" title="Search"><i class="ri-search-line"></i></button>
-          <button type="button" class="btn" title="Notifications"><i class="ri-notification-line"></i></button>
+          <!-- ❌ REMOVED STATIC NOTIFICATION BELL -->
           <div class="user-avatar">
             <img src="/image/Profile.jpg" alt="User" />
           </div>
@@ -60,32 +61,22 @@
       <div class="sales-trends">
         <div class="trends-header">
           <div class="trends-title">Sales Trends</div>
-          <select class="dropdown">
-            <option>Yearly</option>
-            <option>Monthly</option>
-            <option>Weekly</option>
+          <select id="periodSelector" class="dropdown">
+            <option value="yearly">Yearly</option>
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
           </select>
         </div>
         <div class="legend">
           <div class="legend-item">
-            <div class="legend-color" style="background:#E76F51;"></div> Current
+            <div class="legend-color" style="background:green;"></div> Current
           </div>
           <div class="legend-item">
-            <div class="legend-color" style="background:#2EC4B6;"></div> Previous
+            <div class="legend-color" style="background:red;"></div> Previous
           </div>
         </div>
-        <div class="chart-placeholder">
-          <div class="y-axis">
-            <span>100%</span>
-            <span>75%</span>
-            <span>50%</span>
-            <span>25%</span>
-            <span>0%</span>
-          </div>
-          <div class="x-axis">
-            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-            <span>July</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
-          </div>
+        <div style="position: relative; height: 300px; margin-top: 16px;">
+          <canvas id="salesTrendChart"></canvas>
         </div>
       </div>
       <div class="top-selling-items">
@@ -374,8 +365,6 @@
   </div>
 
   <!-- OTHER MODALS (Inventory, Suppliers, Users) -->
-  <!-- (Keep all your existing modals exactly as they were — no changes needed) -->
-
   <div id="addInventoryItemModal" class="modal hidden">
     <div class="modal-content">
       <h3>Add New Ingredient</h3>
@@ -533,12 +522,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="/js/adminDashboard.js"></script>
   <script>
-  console.log("Admin Dashboard loaded!");
-  console.log("Token:", localStorage.getItem('adminToken'));
-  console.log("Admin Info:", localStorage.getItem('adminInfo'));
-</script>
-<script>
-  console.log("Admin token on dashboard:", localStorage.getItem('adminToken'));
-</script>
+    console.log("Admin Dashboard loaded!");
+    console.log("Token:", localStorage.getItem('adminToken'));
+    console.log("Admin Info:", localStorage.getItem('adminInfo'));
+  </script>
 </body>
 </html>

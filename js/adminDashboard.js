@@ -11,6 +11,8 @@ let allSuppliers = [];
 let allMenuItems = [];
 let allUsers = [];
 let allCustomers = [];
+let lastNotificationId = null;
+
 // ✅ GET ADMIN TOKEN FROM LOCAL STORAGE
 function getAdminToken() {
   const token = localStorage.getItem('adminToken');
@@ -22,6 +24,7 @@ function getAdminToken() {
   }
   return token;
 }
+
 // ✅ AUTHORIZED API CALL WITH JWT
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
@@ -62,6 +65,190 @@ async function apiCall(endpoint, options = {}) {
     return { success: true };
   }
 }
+
+// 📈 SALES TRENDS CHART (NEW)
+let salesTrendChart = null;
+
+async function loadSalesTrendGraph(period = 'yearly') {
+  const periodSelector = document.getElementById('periodSelector');
+  if (periodSelector) periodSelector.value = period;
+
+  try {
+    const response = await apiCall(`/dashboard/sales-trends?period=${period}`);
+    const { current, previous } = response;
+
+    // Merge labels (union of both periods)
+    const allLabels = Array.from(
+      new Set([
+        ...current.map(x => x.label),
+        ...previous.map(x => x.label)
+      ])
+    ).sort((a, b) => {
+      // Try to sort chronologically (works for "2025", "Nov 2025", "11/01")
+      const parse = s => {
+        const y = parseInt(s);
+        if (!isNaN(y)) return new Date(y, 0, 1);
+        const d = new Date(s);
+        return isNaN(d) ? s : d;
+      };
+      const aParsed = parse(a), bParsed = parse(b);
+      if (aParsed instanceof Date && bParsed instanceof Date) {
+        return aParsed - bParsed;
+      }
+      return a.localeCompare(b);
+    });
+
+    const currentValues = allLabels.map(label => 
+      (current.find(x => x.label === label)?.value || 0)
+    );
+    const previousValues = allLabels.map(label => 
+      (previous.find(x => x.label === label)?.value || 0)
+    );
+
+    const ctx = document.getElementById('salesTrendChart').getContext('2d');
+
+    // Destroy previous chart if exists
+    if (salesTrendChart) salesTrendChart.destroy();
+  salesTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        {
+          label: 'Current',
+          data: currentValues,
+          borderColor: 'green',
+          backgroundColor: 'rgba(0, 255, 0, 0.1)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'Previous',
+          data: previousValues,
+          borderColor: 'red',
+          backgroundColor: 'rgba(255, 0, 0, 0.1)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 6
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const label = context.dataset.label || '';
+              const value = context.parsed.y;
+              return `${label}: ₱${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          title: { display: true, text: 'Time Period' }
+        },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Sales (₱)' },
+          ticks: {
+            callback: (value) => `₱${value}`
+          }
+        }
+      },
+      interaction: {
+        mode: 'index',
+        intersect: false
+      }
+    }
+  });
+
+  } catch (err) {
+    console.error('Failed to load sales trend graph:', err);
+    // Optional: show error in UI
+    const canvas = document.getElementById('salesTrendChart');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#e74c3c';
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚠️ Failed to load chart', canvas.width / 2, canvas.height / 2);
+    }
+  }
+}
+
+// ===== NOTIFICATION SYSTEM =====
+async function loadNotifications() {
+  try {
+    const notifications = await apiCall('/dashboard/notifications/unread');
+    const badge = document.getElementById('notificationBadge');
+    const bell = document.getElementById('notificationBell');
+    const dropdown = document.getElementById('notificationDropdown');
+    // Update badge
+    badge.textContent = notifications.length;
+    badge.style.display = notifications.length > 0 ? 'flex' : 'none';
+    // Render dropdown
+    if (notifications.length === 0) {
+      dropdown.innerHTML = '<div style="padding:12px; color:#777;">No new notifications.</div>';
+    } else {
+      let html = '';
+      notifications.forEach(n => {
+        const icon = n.type === 'warning' ? '⚠️' : n.type === 'info' ? '🧾' : 'ℹ️';
+        const timeAgo = new Date(n.createdAt).toLocaleTimeString();
+        html += `
+          <div style="padding:10px 12px; border-bottom:1px solid #eee;">
+            <div><strong>${icon}</strong> ${n.message}</div>
+            <div style="font-size:0.75rem; color:#888;">${timeAgo}</div>
+          </div>
+        `;
+      });
+      dropdown.innerHTML = html;
+    }
+    // Show toast for newest unseen notification
+    const newest = notifications[0];
+    if (newest && newest.id !== lastNotificationId) {
+      lastNotificationId = newest.id;
+      showToast(newest.message, newest.type === 'warning' ? 'warn' : 'info');
+    }
+  } catch (err) {
+    console.error('Failed to load notifications:', err);
+  }
+}
+
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.innerHTML = `
+    <div style="position:fixed; top:80px; right:20px; background:${type === 'warn' ? '#fff3cd' : '#d4edda'}; 
+                color:${type === 'warn' ? '#856404' : '#155724'}; padding:12px 20px; border-radius:6px; 
+                box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; animation: slideIn 0.3s;">
+      <strong>${type === 'warn' ? '⚠️' : '✅'}</strong> ${message}
+    </div>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => document.body.removeChild(toast), 300);
+  }, 5000);
+}
+
+document.head.innerHTML += `
+  <style>
+    @keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+  </style>
+`;
+
 // ===== USER & CUSTOMER MANAGEMENT =====
 async function loadUsers() {
   const el = document.getElementById('usersList');
@@ -74,6 +261,7 @@ async function loadUsers() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadCustomers() {
   const el = document.getElementById('customersList');
   el.innerHTML = '<p>Loading customers...</p>';
@@ -85,6 +273,7 @@ async function loadCustomers() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 function renderUsersList(searchTerm = '') {
   const container = document.getElementById('usersList');
   let filtered = allUsers;
@@ -134,6 +323,7 @@ function renderUsersList(searchTerm = '') {
     btn.addEventListener('click', resetUserPassword)
   );
 }
+
 function renderCustomersList(searchTerm = '') {
   const container = document.getElementById('customersList');
   let filtered = allCustomers;
@@ -172,6 +362,7 @@ function renderCustomersList(searchTerm = '') {
     btn.addEventListener('click', () => viewCustomerOrders(btn.dataset.id))
   );
 }
+
 async function resetUserPassword(e) {
   const userId = e.target.closest('.reset-pw-btn').dataset.id;
   const user = allUsers.find(u => u.id === userId);
@@ -184,9 +375,11 @@ async function resetUserPassword(e) {
     alert('Failed to send reset: ' + err.message);
   }
 }
+
 function openAddUserModal() {
   document.getElementById('addUserModal').classList.remove('hidden');
 }
+
 async function handleAddUserSubmit(e) {
   e.preventDefault();
   const name = document.getElementById('newUserName').value.trim();
@@ -196,6 +389,7 @@ async function handleAddUserSubmit(e) {
     alert('Please fill in all fields correctly.');
     return;
   }
+
   function generateUsername(fullName) {
     const parts = fullName.trim().toLowerCase().split(/\s+/);
     const first = parts[0] || 'user';
@@ -203,6 +397,7 @@ async function handleAddUserSubmit(e) {
     let base = (first + (last ? last.substring(0, 3) : '')).substring(0, 6) || 'user';
     return base;
   }
+
   function generateStrongPassword() {
     const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const lower = 'abcdefghijklmnopqrstuvwxyz';
@@ -222,8 +417,10 @@ async function handleAddUserSubmit(e) {
       .sort(() => 0.5 - Math.random())
       .join('');
   }
+
   const username = generateUsername(name);
   const password = generateStrongPassword();
+
   const formData = {
     name,
     email,
@@ -232,8 +429,9 @@ async function handleAddUserSubmit(e) {
     password,
     isActive: true
   };
+
   try {
-    await apiCall('/user/admin/users', { method: 'POST', body: JSON.stringify(formData) });
+    await apiCall('/admin/users', { method: 'POST', body: JSON.stringify(formData) });
     alert('User added successfully! A welcome email with login instructions has been sent.');
     document.getElementById('addUserForm').reset();
     closeAddUserModal();
@@ -242,6 +440,7 @@ async function handleAddUserSubmit(e) {
     alert('Failed to add user: ' + err.message);
   }
 }
+
 function openEditUserModal(e) {
   const btn = e.target.closest('.edit-user-btn');
   const userId = btn.dataset.id;
@@ -254,6 +453,7 @@ function openEditUserModal(e) {
   document.getElementById('editUserActive').checked = user.isActive;
   document.getElementById('editUserModal').classList.remove('hidden');
 }
+
 async function handleEditUserSubmit(e) {
   e.preventDefault();
   const updated = {
@@ -272,12 +472,14 @@ async function handleEditUserSubmit(e) {
     alert('Update failed: ' + err.message);
   }
 }
+
 function openDeleteUserConfirm(e) {
   const btn = e.target.closest('.delete-user-btn');
   document.getElementById('deleteUserId').value = btn.dataset.id;
   document.getElementById('deleteUserName').textContent = btn.dataset.name;
   document.getElementById('deleteUserConfirmModal').classList.remove('hidden');
 }
+
 async function handleDeleteUserConfirm() {
   const id = document.getElementById('deleteUserId').value;
   try {
@@ -289,18 +491,23 @@ async function handleDeleteUserConfirm() {
     alert('Delete failed: ' + err.message);
   }
 }
+
 function viewCustomerOrders(id) {
   alert(`Order history for customer ID ${id} will appear here once implemented.`);
 }
+
 function closeAddUserModal() {
   document.getElementById('addUserModal').classList.add('hidden');
 }
+
 function closeEditUserModal() {
   document.getElementById('editUserModal').classList.add('hidden');
 }
+
 function closeDeleteUserModal() {
   document.getElementById('deleteUserConfirmModal').classList.add('hidden');
 }
+
 // ===== REPORTS, INVENTORY, ETC. (UNCHANGED) =====
 async function loadReportHistory() {
   const el = document.getElementById('reportHistoryList');
@@ -330,6 +537,7 @@ async function loadReportHistory() {
     el.innerHTML = `<p style="color:#e74c3c;">Error loading history: ${err.message}</p>`;
   }
 }
+
 function generateCSV(data, headers) {
   const csvContent = [
     headers.join(','),
@@ -339,7 +547,7 @@ function generateCSV(data, headers) {
         return `"${String(val).replace(/"/g, '""')}"`;
       }).join(',')
     )
-  ].join('');
+  ].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -350,6 +558,7 @@ function generateCSV(data, headers) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 function generatePDF(data, headers, title) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -368,8 +577,10 @@ function generatePDF(data, headers, title) {
   });
   doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
 }
+
 let currentReportData = null;
 let currentReportTitle = '';
+
 async function generateReport() {
   const type = document.getElementById('reportType').value;
   const startDate = document.getElementById('startDate').value;
@@ -431,6 +642,7 @@ async function generateReport() {
     });
     tableHTML += '</tbody></table>';
     tableContainer.innerHTML = tableHTML;
+
     document.getElementById('exportCSV').onclick = () => {
       generateCSV(data, headers);
       apiCall('/admin/reports/history', {
@@ -443,6 +655,7 @@ async function generateReport() {
         })
       });
     };
+
     document.getElementById('exportPDF').onclick = () => {
       generatePDF(data, headers, title);
       apiCall('/admin/reports/history', {
@@ -455,12 +668,14 @@ async function generateReport() {
         })
       });
     };
+
     loadReportHistory(); 
   } catch (err) {
     console.error('Report generation failed:', err);
     tableContainer.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadDetailedTopSelling() {
   const el = document.getElementById('detailedTopSellingList');
   el.innerHTML = '<p>Loading...</p>';
@@ -486,6 +701,7 @@ async function loadDetailedTopSelling() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadCustomerInsights() {
   const el = document.getElementById('customerInsights');
   el.innerHTML = '<p>Loading...</p>';
@@ -500,6 +716,7 @@ async function loadCustomerInsights() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadExpenses() {
   const el = document.getElementById('expenseTracker');
   el.innerHTML = '<p>Loading...</p>';
@@ -521,6 +738,7 @@ async function loadExpenses() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadProfitLossReport() {
   const el = document.getElementById('profitLossReport');
   el.innerHTML = '<p>Loading...</p>';
@@ -540,6 +758,7 @@ async function loadProfitLossReport() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadTopSellingItems() {
   const container = document.getElementById('topSellingList');
   container.innerHTML = '<p>Loading top sellers...</p>';
@@ -564,59 +783,44 @@ async function loadTopSellingItems() {
     container.innerHTML = '<p style="color: #e74c3c;">Failed to load top sellers.</p>';
   }
 }
+
+// ✅ UPDATED: Load dashboard stats from new endpoint
 async function loadDashboardData() {
   overviewContainer.innerHTML = '<p>Loading...</p>';
-  const token = localStorage.getItem('adminToken');
-  if (!token) {
-    console.log("No admin token found → redirect");
-    window.location.href = "/html/login.html";
-    return;
-  }
-  fetch(`${API_BASE}/admin/dashboard`, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json"
-    }
-  })
-  .then(res => {
-    if (res.status === 401 || res.status === 403) {
-      alert("Admin access denied. Please log in again.");
-      localStorage.removeItem("adminToken");
-      localStorage.removeItem("adminInfo");
-      window.location.href = "/html/login.html";
-      return;
-    }
-    return res.json();
-  })
-  .then(data => {
+  try {
+    const data = await apiCall('/dashboard/stats'); // ✅ NOW USES NEW ENDPOINT
     console.log("Dashboard data:", data);
     renderOverviewCards(data);
-  })
-  .catch(err => {
+  } catch (err) {
     console.error("Dashboard load error:", err);
     overviewContainer.innerHTML =
       `<p class="no-data">Error loading dashboard: ${err.message}</p>`;
-  });
+  }
 }
+
+// ✅ FIXED: Ensure lowStockAlerts card always shows (defaults to 0 if invalid)
 function renderOverviewCards(data) {
   overviewContainer.innerHTML = '';
   cardsConfig.forEach(cfg => {
-    const val = data[cfg.key];
-    if (typeof val === 'number' && !isNaN(val)) {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <div class="card-header">
-          <div class="card-icon" style="background:${cfg.color};">${cfg.icon}</div>
-          <span>${cfg.title}</span>
-        </div>
-        <div class="card-value">${cfg.formatter(val)}</div>
-      `;
-      overviewContainer.appendChild(card);
+    // ✅ FIX: Default to 0 if val is missing/NaN/non-number
+    let val = data[cfg.key];
+    if (typeof val !== 'number' || isNaN(val)) {
+      console.warn(`Invalid value for ${cfg.key}: "${val}". Defaulting to 0.`);
+      val = 0;
     }
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-icon" style="background:${cfg.color};">${cfg.icon}</div>
+        <span>${cfg.title}</span>
+      </div>
+      <div class="card-value">${cfg.formatter(val)}</div>
+    `;
+    overviewContainer.appendChild(card);
   });
 }
+
 async function loadInventoryItems() {
   const container = document.getElementById('inventoryList');
   container.innerHTML = '<p>Loading inventory...</p>';
@@ -633,6 +837,7 @@ async function loadInventoryItems() {
     container.innerHTML = '<p style="color:red;">Failed to load inventory.</p>';
   }
 }
+
 function renderInventoryList(searchTerm = '') {
   const container = document.getElementById('inventoryList');
   let filtered = allInventoryItems;
@@ -667,6 +872,7 @@ function renderInventoryList(searchTerm = '') {
   });
   container.innerHTML = html;
 }
+
 async function loadSuppliers() {
   const container = document.getElementById('suppliersList');
   container.innerHTML = '<p>Loading suppliers...</p>';
@@ -683,6 +889,7 @@ async function loadSuppliers() {
     container.innerHTML = '<p style="color:red;">Failed to load suppliers.</p>';
   }
 }
+
 function renderSuppliersList() {
   const container = document.getElementById('suppliersList');
   if (allSuppliers.length === 0) {
@@ -703,6 +910,7 @@ function renderSuppliersList() {
   });
   container.innerHTML = html;
 }
+
 // ===== MENU MANAGEMENT =====
 // ✅ FIXED LOGIC: Availability respects user toggle first, then checks stock
 function renderMenuList(searchTerm = '', category = 'all') {
@@ -726,24 +934,13 @@ function renderMenuList(searchTerm = '', category = 'all') {
   }
   let html = '';
   filtered.forEach(item => {
-    // Start with the user's setting from the database.
+    // ✅ USE `item.ingredients[i].name` DIRECTLY (NO inventory lookup needed)
     let isAvailable = item.isAvailable;
-
-    // Only check inventory if the item is marked as available by the user.
-    // If the user has turned it off, it stays off regardless of stock.
-    if (isAvailable && item.ingredients && item.ingredients.length > 0) {
-      for (const ing of item.ingredients) {
-        const invItem = allInventoryItems.find(i => i.id === ing.inventoryItemId);
-        // If any ingredient is missing or below required quantity, mark as unavailable.
-        if (!invItem || invItem.currentStock < ing.quantityRequired) {
-          isAvailable = false;
-          break; // No need to check other ingredients if one is insufficient.
-        }
-      }
-    }
-
-    const statusText = isAvailable ? '' : '<span style="color:#e74c3c; font-size:0.85rem;">(Unavailable)</span>';
     const ingredientCount = item.ingredients?.length || 0;
+    const ingredientNames = ingredientCount > 0
+      ? item.ingredients.map(ing => ing.name || `Unknown (${ing.inventoryItemId})`).join(', ')
+      : 'None';
+    const statusText = isAvailable ? '' : '<span style="color:#e74c3c; font-size:0.85rem;">(Unavailable)</span>';
     const imgSrc = item.imageUrl 
       ? item.imageUrl 
       : '/image/placeholder.jpg';
@@ -754,7 +951,7 @@ function renderMenuList(searchTerm = '', category = 'all') {
           <strong>${item.name}</strong> ${statusText}<br>
           ₱${(item.price ?? 0).toFixed(2)} | Stock: ${item.stockQuantity ?? 0}
           <br><small>Category: ${item.category || 'N/A'}</small>
-          ${ingredientCount > 0 ? `<br><small>Requires ${ingredientCount} ingredient${ingredientCount > 1 ? 's' : ''}</small>` : ''}
+          ${ingredientCount > 0 ? `<br><small>Ingredients: ${ingredientNames}</small>` : ''}
         </div>
         <div class="menu-actions">
           <button class="edit-btn" 
@@ -779,11 +976,14 @@ function renderMenuList(searchTerm = '', category = 'all') {
     btn.addEventListener('click', openDeleteConfirm)
   );
 }
+
+// ✅ FIXED: Use `/api/product/admin/menu` to get enriched data (with ingredient names)
 async function loadMenuItems() {
   const container = document.getElementById('menuListContainer');
   container.innerHTML = '<p>Loading menu...</p>';
   try {
-    const items = await apiCall('/admin/menu');
+    // ✅ CALL ENRICHED ENDPOINT
+    const items = await apiCall('/product/admin/menu');
     if (!Array.isArray(items)) {
       container.innerHTML = '<p style="color:red;">Invalid menu data.</p>';
       return;
@@ -795,27 +995,27 @@ async function loadMenuItems() {
     container.innerHTML = '<p style="color:red;">Failed to load menu.</p>';
   }
 }
+
+// ✅ FIXED: Use `ing.name` directly — no dependency on `allInventoryItems`
 async function loadAndRenderIngredients(menuItemId) {
   const listContainer = document.getElementById('ingredientList');
   const select = document.getElementById('addIngredientSelect');
   const qtyInput = document.getElementById('addIngredientQty');
   const addButton = document.getElementById('addIngredientBtn');
-
   if (!listContainer || !select || !qtyInput || !addButton) {
     console.warn('Missing ingredient UI elements in edit modal');
     return;
   }
-
   try {
-    const ingredients = await apiCall(`/admin/menu/${menuItemId}/ingredients`);
+    // ✅ Fetch enriched ingredients (contains `.name`)
+    const ingredients = await apiCall(`/product/admin/menu/${menuItemId}/ingredients`);
     if (ingredients.length === 0) {
       listContainer.innerHTML = '<p style="color:#777; font-size:0.9rem;">No ingredients linked.</p>';
     } else {
       let html = '';
       ingredients.forEach(ing => {
-        const invItem = allInventoryItems.find(i => i.id === ing.inventoryItemId);
-        // Escape quotes in the name to prevent breaking the HTML string
-        const name = (invItem ? invItem.name : `Unknown (${ing.inventoryItemId})`).replace(/"/g, '&quot;');
+        // ✅ USE `.name` DIRECTLY — no inventory lookup
+        const name = (ing.name || `Unknown (${ing.inventoryItemId})`).replace(/"/g, '&quot;');
         html += `
           <div class="ingredient-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #eee;">
             <span>${name}: ${ing.quantityRequired} ${ing.unit || 'pcs'}</span>
@@ -824,52 +1024,43 @@ async function loadAndRenderIngredients(menuItemId) {
         `;
       });
       listContainer.innerHTML = html;
-
       // Attach event listener to the remove buttons *after* the HTML is updated
       document.querySelectorAll('.remove-ingredient-btn').forEach(btn => {
-        btn.addEventListener('click', async (event) => { // Use 'event' parameter
-          event.preventDefault(); // Prevent any default button action
-          const clickedBtn = event.target; // Get the clicked button
-          const inventoryItemIdToRemove = clickedBtn.dataset.id; // Get the ID to remove
-
-          // Create a new array excluding the item to be removed
+        btn.addEventListener('click', async (event) => {
+          event.preventDefault();
+          const clickedBtn = event.target;
+          const inventoryItemIdToRemove = clickedBtn.dataset.id;
           const updatedIngredients = ingredients.filter(ing => ing.inventoryItemId !== inventoryItemIdToRemove);
-
           try {
-            // Save the updated list to the backend
             await saveIngredientsForMenuItem(menuItemId, updatedIngredients);
-            // Re-render the list with the new data
             await loadAndRenderIngredients(menuItemId);
           } catch (err) {
             console.error('Failed to remove ingredient:', err);
             alert('Failed to remove ingredient: ' + err.message);
-            // Optionally, re-render again to show the original state if the save failed
-            // await loadAndRenderIngredients(menuItemId);
           }
         });
       });
     }
-
-    // Populate the select dropdown
+    // Populate select dropdown (still needs inventory items for adding new ones)
     select.innerHTML = '<option value="">Select ingredient...</option>';
+    // ⚠️ Still need to preload inventory for *adding new* ingredients
+    if (allInventoryItems.length === 0) {
+      // Preload inventory once if not yet loaded
+      allInventoryItems = await apiCall('/admin/inventory');
+    }
     allInventoryItems.forEach(item => {
       const opt = document.createElement('option');
       opt.value = item.id;
-      // Escape quotes in the option text as well
       opt.textContent = `${item.name.replace(/"/g, '&quot;')} (${item.currentStock} ${item.unit || 'pcs'})`;
       select.appendChild(opt);
     });
-
     // Re-attach event listener to the 'Add Ingredient' button
-    // Clone the button to ensure the event listener is fresh
     const newAddButton = addButton.cloneNode(true);
     addButton.parentNode.replaceChild(newAddButton, addButton);
-
     newAddButton.addEventListener('click', async (event) => {
-      event.preventDefault(); // Prevent form submission if inside a form
+      event.preventDefault();
       const inventoryItemId = select.value;
       const quantityRequired = parseFloat(qtyInput.value);
-
       if (!inventoryItemId) {
         alert('Please select an ingredient.');
         return;
@@ -882,29 +1073,27 @@ async function loadAndRenderIngredients(menuItemId) {
         alert('This ingredient is already added.');
         return;
       }
-
       const newIngredient = {
         inventoryItemId,
         quantityRequired,
         unit: allInventoryItems.find(i => i.id === inventoryItemId)?.unit || 'pcs'
       };
-
-      const updated = [...ingredients, newIngredient]; // Add new ingredient to the list
+      const updated = [...ingredients, newIngredient];
       try {
         await saveIngredientsForMenuItem(menuItemId, updated);
-        await loadAndRenderIngredients(menuItemId); // Re-render after successful add
-        qtyInput.value = ''; // Clear input
+        await loadAndRenderIngredients(menuItemId);
+        qtyInput.value = '';
       } catch (err) {
         console.error('Add ingredient failed:', err);
         alert('Failed to add ingredient: ' + err.message);
       }
     });
-
   } catch (err) {
     console.error('Failed to load ingredients:', err);
     listContainer.innerHTML = '<p style="color:#e74c3c;">Failed to load ingredients.</p>';
   }
 }
+
 async function saveIngredientsForMenuItem(menuItemId, ingredients) {
   try {
     await apiCall(`/admin/menu/${menuItemId}/ingredients`, {
@@ -917,6 +1106,7 @@ async function saveIngredientsForMenuItem(menuItemId, ingredients) {
     throw err;
   }
 }
+
 function openEditModal(e) {
   const btn = e.target.closest('.edit-btn');
   const menuItem = btn.closest('.menu-item');
@@ -932,12 +1122,14 @@ function openEditModal(e) {
   loadAndRenderIngredients(id);
   document.getElementById('editMenuItemModal').classList.remove('hidden');
 }
+
 function openDeleteConfirm(e) {
   const btn = e.target.closest('.delete-btn');
   document.getElementById('deleteItemId').value = btn.dataset.id;
   document.getElementById('deleteItemName').textContent = btn.dataset.name;
   document.getElementById('deleteConfirmModal').classList.remove('hidden');
 }
+
 async function handleEditSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('editItemId').value;
@@ -985,6 +1177,7 @@ async function handleEditSubmit(e) {
     alert('Update failed: ' + err.message);
   }
 }
+
 async function handleDeleteConfirm() {
   const id = document.getElementById('deleteItemId').value;
   try {
@@ -999,6 +1192,7 @@ async function handleDeleteConfirm() {
     alert('Delete failed: ' + err.message);
   }
 }
+
 async function handleAddSubmit(e) {
   e.preventDefault();
   const newItem = {
@@ -1031,21 +1225,27 @@ async function handleAddSubmit(e) {
     alert('Add failed: ' + err.message);
   }
 }
+
 function closeEditModal() {
   document.getElementById('editMenuItemModal').classList.add('hidden');
 }
+
 function closeDeleteModal() {
   document.getElementById('deleteConfirmModal').classList.add('hidden');
 }
+
 function closeAddModal() {
   document.getElementById('addMenuItemModal').classList.add('hidden');
 }
+
 function openAddInventoryModal() {
   document.getElementById('addInventoryItemModal').classList.remove('hidden');
 }
+
 function closeAddInventoryModal() {
   document.getElementById('addInventoryItemModal').classList.add('hidden');
 }
+
 async function handleAddInventorySubmit(e) {
   e.preventDefault();
   const newItem = {
@@ -1073,12 +1273,15 @@ async function handleAddInventorySubmit(e) {
     alert('Failed to add ingredient: ' + err.message);
   }
 }
+
 function openAddSupplierModal() {
   document.getElementById('supplierModal').classList.remove('hidden');
 }
+
 function closeSupplierModal() {
   document.getElementById('supplierModal').classList.add('hidden');
 }
+
 async function handleSupplierSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('supplierId').value;
@@ -1114,15 +1317,45 @@ async function handleSupplierSubmit(e) {
     alert('Failed to save supplier: ' + err.message);
   }
 }
+
 function highlightNavItem(id) {
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
 }
+
 function showView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(viewId).classList.add('active');
 }
+
+// ✅ DOM READY — WITH NOTIFICATION SETUP
 document.addEventListener('DOMContentLoaded', () => {
+  // ✅ ADD NOTIFICATION BELL + DROPDOWN TO HEADER
+  const headerActions = document.querySelector('.header .actions');
+  if (headerActions && !document.getElementById('notificationBell')) {
+    const bellHTML = `
+      <div class="notification-bell" id="notificationBell" style="cursor:pointer; position:relative; margin-left:15px;">
+        <i class="ri-notification-3-line" style="font-size:24px; color:#555;"></i>
+        <span id="notificationBadge" style="position:absolute; top:-6px; right:-6px; background:#e74c3c; color:white; border-radius:50%; width:18px; height:18px; font-size:10px; display:flex; align-items:center; justify-content:center;"></span>
+      </div>
+      <div id="notificationDropdown" style="position:absolute; top:50px; right:20px; background:white; border:1px solid #ddd; border-radius:6px; width:300px; max-height:400px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:1000; display:none;"></div>
+    `;
+    headerActions.insertAdjacentHTML('afterbegin', bellHTML);
+    // Bell interaction
+    document.getElementById('notificationBell').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dropdown = document.getElementById('notificationDropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    });
+    document.addEventListener('click', () => {
+      document.getElementById('notificationDropdown').style.display = 'none';
+    });
+  }
+
+  // ✅ POLL NOTIFICATIONS EVERY 30 SECONDS
+  loadNotifications();
+  setInterval(loadNotifications, 30_000);
+
   // ✅ LOGOUT HANDLER
   document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
@@ -1130,10 +1363,12 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('adminInfo');
     window.location.href = '/html/login.html';
   });
+
   document.getElementById('nav-dashboard')?.addEventListener('click', () => {
     showView('dashboardView');
     highlightNavItem('nav-dashboard');
   });
+
   document.getElementById('nav-sales-analytics')?.addEventListener('click', async () => {
     showView('salesAnalyticsView');
     highlightNavItem('nav-sales-analytics');
@@ -1142,17 +1377,20 @@ document.addEventListener('DOMContentLoaded', () => {
     await loadExpenses();
     await loadProfitLossReport();
   });
+
   document.getElementById('nav-menu-management')?.addEventListener('click', async () => {
     showView('menuManagementView');
     highlightNavItem('nav-menu-management');
     await loadMenuItems();
   });
+
   document.getElementById('nav-inventory-management')?.addEventListener('click', async () => {
     showView('inventoryManagementView');
     highlightNavItem('nav-inventory-management');
     await loadInventoryItems();
     await loadSuppliers();
   });
+
   document.getElementById('nav-reports')?.addEventListener('click', async () => {
     showView('reportsView');
     highlightNavItem('nav-reports');
@@ -1163,6 +1401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('startDate').valueAsDate = lastMonth;
     document.getElementById('endDate').valueAsDate = today;
   });
+
   document.getElementById('nav-user-management')?.addEventListener('click', async () => {
     showView('userManagementView');
     highlightNavItem('nav-user-management');
@@ -1185,13 +1424,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('customerSearch')?.addEventListener('input', e => renderCustomersList(e.target.value));
     document.getElementById('addUserBtn')?.addEventListener('click', openAddUserModal);
   });
+
   document.getElementById('generateReportBtn')?.addEventListener('click', generateReport);
+
   document.getElementById('addItemBtn')?.addEventListener('click', () => {
     document.getElementById('addMenuItemModal').classList.remove('hidden');
   });
+
   document.getElementById('editMenuItemForm')?.addEventListener('submit', handleEditSubmit);
   document.getElementById('confirmDelete')?.addEventListener('click', handleDeleteConfirm);
   document.getElementById('addMenuItemForm')?.addEventListener('submit', handleAddSubmit);
+
   let currentSearch = '';
   let currentCategory = 'all';
   const searchInput = document.getElementById('menuSearch');
@@ -1209,6 +1452,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMenuList(currentSearch, currentCategory);
     });
   });
+
   document.getElementById('addInventoryItemBtn')?.addEventListener('click', openAddInventoryModal);
   document.getElementById('addSupplierBtn')?.addEventListener('click', openAddSupplierModal);
   document.getElementById('inventorySearch')?.addEventListener('input', (e) => {
@@ -1221,6 +1465,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cancelEdit')?.addEventListener('click', closeEditModal);
   document.getElementById('cancelDelete')?.addEventListener('click', closeDeleteModal);
   document.getElementById('closeModal')?.addEventListener('click', closeAddModal);
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1230,10 +1475,19 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById(`${tab}Tab`)?.classList.add('active');
     });
   });
+
   document.getElementById('addUserForm')?.addEventListener('submit', handleAddUserSubmit);
   document.getElementById('editUserForm')?.addEventListener('submit', handleEditUserSubmit);
   document.getElementById('confirmDeleteUser')?.addEventListener('click', handleDeleteUserConfirm);
+
   highlightNavItem('nav-dashboard');
   loadDashboardData();
   loadTopSellingItems();
+  // ✅ LOAD SALES TRENDS CHART
+  loadSalesTrendGraph('yearly');
+
+  // ✅ BIND PERIOD SELECTOR
+  document.getElementById('periodSelector')?.addEventListener('change', (e) => {
+    loadSalesTrendGraph(e.target.value);
+  });
 });
