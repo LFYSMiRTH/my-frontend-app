@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambayan Cafe | Staff Dashboard</title>
+    <link rel="stylesheet" href="/css/staffDashboard.css">
+</head>
+<body>
+    <!-- Main Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <h1>🏷️ WELCOME, <span id="staff-name">Loading...</span>!</h1>
+            <div class="header-info">
+                <span>🕒 <span id="current-date">14 Nov 2025</span></span>
+                <span>🕘 <span id="current-time">10:15 AM</span></span>
+                <div class="profile-trigger" onclick="toggleProfileDropdown()">
+                    <img src="https://via.placeholder.com/32?text=👤" alt="User Avatar" class="avatar">
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Profile Dropdown (Hidden by default) -->
+        <div id="profileDropdown" class="profile-dropdown">
+            <div class="dropdown-item" data-action="logout">🔐 Logout</div>
+        </div>
+
+        <!-- Main Grid Layout -->
+        <div class="dashboard-grid">
+
+            <!-- Column 1: Shift Summary -->
+            <section class="shift-summary">
+                <h3>📅 Your Shift Today</h3>
+                <p><strong>Hours:</strong> 8:00 AM – 4:00 PM</p>
+                <p><strong>Orders Handled:</strong> <span id="orders-handled">12</span></p>
+                <p><strong>Current Status:</strong> <span class="status-badge active">Active</span></p>
+            </section>
+
+            <!-- Column 2: Orders Queue -->
+            <section class="orders-queue">
+                <h3>📋 CURRENT ORDERS QUEUE</h3>
+
+                <!-- Order Filters -->
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="new">New</button>
+                    <button class="filter-btn" data-filter="preparing">Preparing</button>
+                    <button class="filter-btn" data-filter="ready">Ready</button>
+                </div>
+
+                <!-- Orders Table -->
+                <div class="orders-table">
+                    <div class="table-header">
+                        <div class="col">Order #</div>
+                        <div class="col">Customer</div>
+                        <div class="col">Items</div>
+                        <div class="col">Status</div>
+                        <div class="col">Time</div>
+                        <div class="col">Action</div>
+                    </div>
+                    <div class="table-body" id="ordersBody">
+                        <!-- Populated by StaffDashboard.js -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Column 3: Notifications -->
+            <section class="notifications">
+                <h3>🔔 NOTIFICATIONS <span class="notification-badge">3</span></h3>
+                <ul class="notification-list" id="notificationList">
+                    <!-- Populated by StaffDashboard.js -->
+                </ul>
+            </section>
+
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="action-btn primary">✅ Take New Order</button>
+            <button class="action-btn secondary">📦 Check Low Stock</button>
+            <button class="action-btn secondary">🧾 Print All Ready</button>
+        </div>
+    </div>
+
+    <script src="Staff.js"></script>
+</body>
+</html>
