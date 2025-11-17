@@ -259,7 +259,7 @@ if (loginForm && loginUsername && loginPassword) {
         } else if (role === 'staff') {
           localStorage.setItem('staffToken', data.token);
           localStorage.setItem('staffInfo', JSON.stringify(user));
-          window.location.href = '/html/staff.html';
+          window.location.href = '/html/staffDashboard.html';
         } else if (role === 'customer') {
           localStorage.setItem('customerToken', data.token);
           localStorage.setItem('customerInfo', JSON.stringify(user));

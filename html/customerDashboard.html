@@ -12,11 +12,10 @@
 </head>
 <body>
   <div class="container">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="logo">
         <img src="/Logo/TambayanLogo.png" alt="TMBYN CAFE" class="logo-img" />
-        <div class="logo-text">TBYN CAFE</div>
+        <div class="logo-text">TMBYN CAFE</div>
       </div>
       <div class="nav-section">MAIN</div>
       <a href="#" class="nav-item active" data-view="dashboard">
@@ -25,23 +24,17 @@
       <a href="#" class="nav-item" data-view="menu">
         <i class="ri-menu-2-line"></i> Menu
       </a>
-      <!-- Added My Orders Navigation Item -->
       <a href="#" class="nav-item" data-view="myOrders">
         <i class="ri-shopping-bag-line"></i> My Orders
       </a>
-      <a href="#" class="nav-item">
-        <i class="ri-notification-3-line"></i> Notifications
-      </a>
-      <a href="#" class="nav-item">
+      <a href="#" class="nav-item" data-view="profile">
         <i class="ri-user-settings-line"></i> Profile Settings
       </a>
       <a href="#" class="nav-item logout">
         <i class="ri-logout-box-r-line"></i> Logout
       </a>
     </aside>
-    <!-- Main Content -->
     <main class="main-content">
-      <!-- Dashboard View -->
       <div id="dashboardView" class="view active">
         <div class="header">
           <h1 class="welcome">Welcome back, Guest!</h1>
@@ -51,15 +44,13 @@
           </div>
         </div>
         <section class="section">
-          <h2 class="section-title"><i class="ri-file-list-3-line"></i> Recent Orders</h2>
-          <table class="orders-table">
-            <thead><tr><th>Order #</th><th>Date</th><th>Status</th><th>Total</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </section>
-        <section class="section">
           <h2 class="section-title"><i class="ri-star-line"></i> You might like…</h2>
-          <div class="favorites-grid"></div>
+          <div class="carousel-container">
+            <div class="carousel-wrapper">
+              <div class="favorites-carousel" id="favoritesCarousel">
+            <button class="carousel-nav prev" aria-label="Previous item">❮</button>
+            <button class="carousel-nav next" aria-label="Next item">❯</button>
+          </div>
         </section>
         <section class="section">
           <h2 class="section-title"><i class="ri-time-line"></i> Order Status Tracker</h2>
@@ -81,7 +72,6 @@
           <p><small id="trackerTime">Last updated: just now</small></p>
         </section>
       </div>
-      <!-- Menu View -->
       <div id="menuView" class="view">
         <div class="header">
           <h2>Menu</h2>
@@ -108,7 +98,6 @@
           <button id="checkoutBtn" class="checkout-btn" disabled>Place Order</button>
         </div>
       </div>
-      <!-- My Orders View -->
       <div id="myOrdersView" class="view">
         <div class="header">
           <h1>My Orders</h1>
@@ -126,14 +115,125 @@
               </tr>
             </thead>
             <tbody id="myOrdersTableBody">
-              <!-- Orders will be populated here by JavaScript -->
             </tbody>
           </table>
         </section>
       </div>
+      <div id="profileView" class="view">
+        <div class="header">
+          <h1>Profile Settings</h1>
+          <p>Manage your personal information and preferences</p>
+        </div>
+        <div class="profile-container">
+          <div class="profile-picture-section">
+            <div class="profile-picture">
+  <div class="default-avatar-icon">
+    <i class="ri-user-line"></i>
+  </div>
+  <img id="profileImage" src="/image/default-avatar.jpg alt="Profile Picture" />
+  <div class="profile-picture-overlay">
+    <i class="ri-camera-line"></i>
+    <span>Change Photo</span>
+  </div>
+  <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+</div>
+            <button class="change-photo-btn" onclick="document.getElementById('profilePictureInput').click()">
+              Change Photo
+            </button>
+          </div>
+          <div class="profile-form">
+            <h3>Personal Information</h3>
+            <form id="profileForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firstName">First Name</label>
+                  <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                  <label for="lastName">Last Name</label>
+                  <input type="text" id="lastName" name="lastName" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required>
+              </div>
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" required>
+              </div>
+              <div class="form-group">
+                <label for="address">Address</label>
+                <textarea id="address" name="address" rows="3"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="birthday">Birthday</label>
+                  <input type="date" id="birthday" name="birthday">
+                </div>
+                <div class="form-group">
+                  <label for="gender">Gender</label>
+                  <select id="gender" name="gender">
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+          <div class="security-section">
+            <h3>Security</h3>
+            <div class="security-options">
+              <div class="security-option">
+                <div class="option-info">
+                  <h4>Change Password</h4>
+                  <p>Update your account password</p>
+                </div>
+                <button class="btn-secondary" onclick="openChangePasswordModal()">Change</button>
+              </div>             
+            </div>
+          </div>
+          <div class="account-actions">
+            <h3>Account Actions</h3>
+            <div class="action-buttons">
+              <button class="btn-danger" onclick="confirmDeleteAccount()">Delete Account</button>
+              <button class="btn-secondary">Export Data</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
-  <!-- Modal -->
+  <div class="modal" id="changePasswordModal">
+    <div class="modal-content">
+      <span class="close" id="closePasswordModal">&times;</span>
+      <h3>Change Password</h3>
+      <form id="passwordForm">
+        <div class="form-group">
+          <label for="currentPassword">Current Password</label>
+          <input type="password" id="currentPassword" name="currentPassword" required>
+        </div>
+        <div class="form-group">
+          <label for="newPassword">New Password</label>
+          <input type="password" id="newPassword" name="newPassword" required>
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm New Password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" required>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelPasswordBtn">Cancel</button>
+          <button type="submit" class="btn-primary">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <div class="modal" id="itemModal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
@@ -145,7 +245,6 @@
         <p><strong>Ingredients:</strong></p>
         <ul id="modalIngredients"></ul>
         <p id="modalAvailability"></p>
-        <!-- Customization Options -->
         <div class="customization-section">
           <div class="customization-group">
             <strong>Mood</strong>
@@ -175,7 +274,6 @@
             </div>
           </div>
         </div>
-        <!-- Quantity & Add Button -->
         <div class="modal-actions">
           <input type="number" id="modalQuantity" min="1" value="1" />
           <button id="modalAddToCart" class="add-btn">Add to Billing</button>
@@ -193,4 +291,44 @@
     console.log("Customer token on dashboard:", localStorage.getItem('customerToken'));
   </script>
 </body>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const carousel = document.getElementById('favoritesCarousel');
+    const prevBtn = document.querySelector('.carousel-nav.prev');
+    const nextBtn = document.querySelector('.carousel-nav.next');
+    let currentIndex = 0;
+    const items = document.querySelectorAll('.carousel-item');
+    const itemWidth = 300;
+    const gap = 16;
+  
+    function updateCarousel() {
+      const translateX = -(currentIndex * (itemWidth + gap));
+      carousel.style.transform = `translateX(${translateX}px)`;
+    }
+  
+    prevBtn.addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateCarousel();
+      }
+    });
+  
+    nextBtn.addEventListener('click', () => {
+      if (currentIndex < items.length - 1) {
+        currentIndex++;
+        updateCarousel();
+      }
+    });
+
+    setInterval(() => {
+      if (currentIndex < items.length - 1) {
+        currentIndex++;
+      } else {
+        currentIndex = 0;
+      }
+      updateCarousel();
+    }, 5000);
+  });
+</script>
 </html>
