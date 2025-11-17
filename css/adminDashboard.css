@@ -7,9 +7,10 @@
 
 body {
   display: flex;
-  background-color: #fafafa;
+  background-color: #faf8f3; /* Warm off-white for coffee shop ambiance */
   color: #333;
   min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .sidebar {
@@ -26,6 +27,7 @@ body {
   flex-direction: column;
   transition: width 0.3s ease;
   z-index: 1000;
+  overflow-x: hidden; /* Prevent horizontal scrolling in sidebar */
 }
 
 .sidebar .logo {
@@ -36,6 +38,7 @@ body {
   border-bottom: 1px solid #eee;
   transition: all 0.3s ease;
   background: white;
+  border-bottom: 2px solid #6b4a3a; /* Coffee brown accent */
 }
 
 .logo-icon {
@@ -49,9 +52,10 @@ body {
 .logo-text {
   font-size: 1.25rem;
   font-weight: 700;
-  color: rgb(90, 54, 3);
+  color: #6b4a3a; /* Coffee brown color matching title */
   line-height: 1;
   transition: all 0.3s ease;
+  text-shadow: 1px 1px 2px rgba(107, 74, 58, 0.1);
 }
 
 .nav-section {
@@ -73,6 +77,9 @@ body {
   font-weight: 500;
   letter-spacing: 0.5px;
   transition: padding 0.3s ease;
+  font-weight: 600;
+  color: #6b4a3a; /* Match coffee shop theme */
+  opacity: 0.8;
 }
 
 .nav-item {
@@ -93,11 +100,14 @@ body {
   justify-content: center;
   margin-right: 8px;
   transition: font-size 0.3s ease;
+  color: #6b4a3a; /* Coffee brown icon color */
 }
 
 .nav-item:hover,
 .nav-item.active {
-  background: #f5f7fa;
+  background: #f5f2eb; /* Light coffee cream background */
+  color: #6b4a3a; /* Coffee brown text */
+  border-left: 4px solid #6b4a3a; /* Coffee brown accent */
 }
 
 /* MAIN CONTENT */
@@ -105,8 +115,9 @@ body {
   flex: 1;
   margin-left: 260px;
   padding: 24px;
-  background: #fafafa;
+  background: #faf8f3; /* Warm off-white background */
   transition: margin-left 0.3s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling in main content */
 }
 
 .view {
@@ -125,8 +136,9 @@ body {
 
 .user-info h2 {
   font-size: 1.8rem;
-  color: #2c3e50;
+  color: #6b4a3a; /* Coffee brown heading */
   font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(107, 74, 58, 0.1);
 }
 
 .user-info p {
@@ -143,7 +155,7 @@ body {
 
 .btn {
   border: none;
-  background: #ecf0f1;
+  background: #f5f2eb; /* Light coffee cream */
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -152,7 +164,13 @@ body {
   justify-content: center;
   cursor: pointer;
   font-size: 1rem;
-  color: #333;
+  color: #6b4a3a; /* Coffee brown */
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: #e8e0d5; /* Slightly darker coffee cream */
+  transform: translateY(-2px);
 }
 
 .user-avatar img {
@@ -160,6 +178,7 @@ body {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid #6b4a3a; /* Coffee brown border */
 }
 
 /* OVERVIEW CARDS */
@@ -168,6 +187,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
   margin-bottom: 32px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .card {
@@ -176,6 +196,13 @@ body {
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   border: 1px solid #f0f0f0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(107, 74, 58, 0.08);
 }
 
 .card-header {
@@ -194,14 +221,21 @@ body {
   justify-content: center;
   color: white;
   font-size: 1.2rem;
-  background: #2c3e50;
+  background: #6b4a3a; /* Coffee brown */
+  box-shadow: 0 2px 6px rgba(107, 74, 58, 0.2);
 }
 
 .card-value {
   font-size: 1.8rem;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #2c3e50;
+  color: #6b4a3a; /* Coffee brown */
+}
+
+.card-title {
+  font-size: 0.95rem;
+  color: #7f8c8d;
+  font-weight: 500;
 }
 
 /* SALES TRENDS */
@@ -211,6 +245,13 @@ body {
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   border: 1px solid #f0f0f0;
+  transition: transform 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.sales-trends:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(107, 74, 58, 0.08);
 }
 
 .trends-header {
@@ -223,7 +264,7 @@ body {
 .trends-title {
   font-size: 1.3rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #6b4a3a; /* Coffee brown */
 }
 
 .dropdown {
@@ -233,6 +274,14 @@ body {
   background: white;
   font-size: 0.9rem;
   font-family: inherit;
+  border: 1px solid #6b4a3a; /* Coffee brown border */
+  color: #6b4a3a; /* Coffee brown text */
+}
+
+.dropdown:focus {
+  outline: none;
+  border-color: #5a3e30; /* Darker coffee brown */
+  box-shadow: 0 0 0 2px rgba(107, 74, 58, 0.1);
 }
 
 .legend {
@@ -253,6 +302,7 @@ body {
   width: 16px;
   height: 16px;
   border-radius: 4px;
+  background: #6b4a3a; /* Coffee brown */
 }
 
 .chart-placeholder {
@@ -263,6 +313,7 @@ body {
   justify-content: space-between;
   border-bottom: 1px solid #eee;
   padding-bottom: 20px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .y-axis {
@@ -282,11 +333,15 @@ body {
   margin-top: 10px;
   font-size: 0.7rem;
   color: #777;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .x-axis span {
   flex: 1;
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* TOP SELLING ITEMS */
@@ -297,12 +352,19 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   border: 1px solid #f0f0f0;
   margin-top: 24px;
+  transition: transform 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.top-selling-items:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(107, 74, 58, 0.08);
 }
 
 .top-selling-items .section-header h3 {
   font-size: 1.3rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #6b4a3a; /* Coffee brown */
   margin-bottom: 16px;
 }
 
@@ -318,6 +380,12 @@ body {
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.item-row:hover {
+  background-color: #f5f2eb; /* Light coffee cream */
 }
 
 .item-row:last-child {
@@ -327,21 +395,26 @@ body {
 .item-info {
   font-size: 1rem;
   color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-quantity {
-  background: #e0f7fa;
-  color: #006064;
+  background: #f5f2eb; /* Light coffee cream */
+  color: #6b4a3a; /* Coffee brown */
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 500;
+  border: 1px solid #6b4a3a; /* Coffee brown border */
 }
 
 .analytics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .analytics-card {
@@ -350,12 +423,19 @@ body {
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   border: 1px solid #f0f0f0;
+  transition: transform 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.analytics-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(107, 74, 58, 0.08);
 }
 
 .analytics-card h3 {
   font-size: 1.2rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #6b4a3a; /* Coffee brown */
   margin-bottom: 16px;
 }
 
@@ -364,6 +444,7 @@ body {
   flex-direction: column;
   gap: 12px;
   margin-bottom: 20px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 #menuSearch {
@@ -373,18 +454,27 @@ body {
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
+  border: 1px solid #6b4a3a; /* Coffee brown border */
+  color: #6b4a3a; /* Coffee brown text */
+}
+
+#menuSearch:focus {
+  outline: none;
+  border-color: #5a3e30; /* Darker coffee brown */
+  box-shadow: 0 0 0 2px rgba(107, 74, 58, 0.1);
 }
 
 .category-filters {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .category-btn {
   padding: 8px 16px;
   font-size: 0.9rem;
-  background: #f0f2f5;
+  background: #f5f2eb; /* Light coffee cream */
   border: 1px solid #ddd;
   border-radius: 20px;
   cursor: pointer;
@@ -395,9 +485,10 @@ body {
 
 .category-btn:hover,
 .category-btn.active {
-  background: #6b4a3a;
+  background: #6b4a3a; /* Coffee brown */
   color: white;
-  border-color: #6b4a3a;
+  border-color: #6b4a3a; /* Coffee brown */
+  transform: translateY(-1px);
 }
 
 .menu-list-container {
@@ -408,6 +499,13 @@ body {
   border: 1px solid #f0f0f0;
   margin-bottom: 24px;
   min-height: 300px;
+  transition: transform 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.menu-list-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(107, 74, 58, 0.08);
 }
 
 /* ===== MENU ITEM WITH IMAGE ===== */
@@ -417,10 +515,18 @@ body {
   gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid #eee;
+  transition: background-color 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
+
+#menuListContainer .menu-item:hover {
+  background-color: #f5f2eb; /* Light coffee cream */
+}
+
 #menuListContainer .menu-item:last-child {
   border-bottom: none;
 }
+
 .menu-item-image {
   width: 60px;
   height: 60px;
@@ -435,6 +541,7 @@ body {
   gap: 10px;
   margin-left: auto;
   flex-shrink: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 #menuListContainer .menu-actions button {
@@ -442,8 +549,16 @@ body {
   font-size: 0.9rem;
   border-radius: 8px;
   cursor: pointer;
-  background: #f0f2f5;
+  background: #f5f2eb; /* Light coffee cream */
   border: 1px solid #ddd;
+  color: #6b4a3a; /* Coffee brown */
+  transition: all 0.2s ease;
+}
+
+#menuListContainer .menu-actions button:hover {
+  background: #e8e0d5; /* Slightly darker coffee cream */
+  border-color: #6b4a3a; /* Coffee brown */
+  transform: translateY(-1px);
 }
 
 /* INVENTORY MANAGEMENT */
@@ -451,23 +566,31 @@ body {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .tab-btn {
   padding: 10px 20px;
-  background: #f0f2f5;
+  background: #f5f2eb; /* Light coffee cream */
   border: 1px solid #ddd;
   border-radius: 10px;
   cursor: pointer;
   font-family: inherit;
   font-size: 1rem;
   color: #555;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background: #e8e0d5; /* Slightly darker coffee cream */
+  transform: translateY(-1px);
 }
 
 .tab-btn.active {
-  background: #6b4a3a;
+  background: #6b4a3a; /* Coffee brown */
   color: white;
-  border-color: #6b4a3a;
+  border-color: #6b4a3a; /* Coffee brown */
+  transform: translateY(-1px);
 }
 
 .tab-content {
@@ -479,6 +602,7 @@ body {
 
 .inventory-filters {
   margin-bottom: 16px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 #inventorySearch {
@@ -488,6 +612,14 @@ body {
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
+  border: 1px solid #6b4a3a; /* Coffee brown border */
+  color: #6b4a3a; /* Coffee brown text */
+}
+
+#inventorySearch:focus {
+  outline: none;
+  border-color: #5a3e30; /* Darker coffee brown */
+  box-shadow: 0 0 0 2px rgba(107, 74, 58, 0.1);
 }
 
 .inventory-item {
@@ -496,10 +628,19 @@ body {
   align-items: center;
   padding: 14px 0;
   border-bottom: 1px solid #eee;
+  transition: background-color 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.inventory-item:hover {
+  background-color: #f5f2eb; /* Light coffee cream */
 }
 
 .inventory-info {
   font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .inventory-name {
@@ -517,7 +658,14 @@ body {
   padding: 14px;
   border-radius: 10px;
   margin-bottom: 12px;
-  border-left: 4px solid #6b4a3a;
+  border-left: 4px solid #6b4a3a; /* Coffee brown accent */
+  transition: transform 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.supplier-card:hover {
+  transform: translateX(4px);
+  background: #f5f2eb; /* Light coffee cream */
 }
 
 .supplier-name {
@@ -546,6 +694,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 .modal.hidden {
   display: none;
@@ -563,12 +712,14 @@ body {
   overflow-x: hidden;
   max-height: 90vh;
   overflow-y: auto;
+  position: relative;
 }
 .modal-content h3 {
   margin-bottom: 16px;
-  color: #2c3e50;
+  color: #6b4a3a; /* Coffee brown */
   font-size: 1.4rem;
   font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(107, 74, 58, 0.1);
 }
 
 /* FORM STYLING */
@@ -593,11 +744,13 @@ body {
   font-size: 1rem;
   font-family: inherit;
   transition: border-color 0.2s;
+  border: 1px solid #6b4a3a; /* Coffee brown border */
+  color: #6b4a3a; /* Coffee brown text */
 }
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: #6b4a3a;
+  border-color: #5a3e30; /* Darker coffee brown */
   outline: none;
   box-shadow: 0 0 0 2px rgba(107, 74, 58, 0.1);
 }
@@ -650,7 +803,7 @@ body {
   border-radius: 50%;
 }
 input:checked + .slider {
-  background-color: #6b4a3a;
+  background-color: #6b4a3a; /* Coffee brown */
 }
 input:checked + .slider:before {
   transform: translateX(18px);
@@ -679,18 +832,20 @@ input:checked + .slider:before {
   font-family: inherit;
 }
 .btn-primary {
-  background: #6b4a3a;
+  background: #6b4a3a; /* Coffee brown */
   color: white;
 }
 .btn-primary:hover {
-  background: #5a3e30;
+  background: #5a3e30; /* Darker coffee brown */
+  transform: translateY(-1px);
 }
 .btn-secondary {
-  background: #f0f2f5;
-  color: #2c3e50;
+  background: #f5f2eb; /* Light coffee cream */
+  color: #6b4a3a; /* Coffee brown */
 }
 .btn-secondary:hover {
-  background: #e1e5e9;
+  background: #e8e0d5; /* Slightly darker coffee cream */
+  transform: translateY(-1px);
 }
 .btn-danger {
   background: #e74c3c;
@@ -698,11 +853,12 @@ input:checked + .slider:before {
 }
 .btn-danger:hover {
   background: #c0392b;
+  transform: translateY(-1px);
 }
 #addItemBtn,
 .btn-add-ingredient,
 .btn-add-supplier {
-  background: #6b4a3a;
+  background: #6b4a3a; /* Coffee brown */
   color: white;
   display: flex;
   align-items: center;
@@ -718,6 +874,14 @@ input:checked + .slider:before {
   width: 100%;
   max-width: 280px;
   margin: 0 auto;
+  transition: all 0.2s ease;
+}
+
+#addItemBtn:hover,
+.btn-add-ingredient:hover,
+.btn-add-supplier:hover {
+  background: #5a3e30; /* Darker coffee brown */
+  transform: translateY(-1px);
 }
 
 /* INGREDIENT SECTION */
@@ -727,22 +891,34 @@ input:checked + .slider:before {
   border: 1px solid #ddd;
   border-radius: 10px;
   background: #fcfcfc;
+  transition: transform 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
+
+.ingredient-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(107, 74, 58, 0.05);
+}
+
 .ingredient-section h4 {
   margin: 0 0 16px;
   font-size: 1.15rem;
-  color: #2c3e50;
+  color: #6b4a3a; /* Coffee brown */
   font-weight: 600;
 }
+
 .ingredient-list {
   min-height: 50px;
   margin-bottom: 16px;
 }
+
 .ingredient-add-row {
   display: flex;
   gap: 10px;
   align-items: center;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
+
 .ingredient-select,
 .ingredient-qty {
   padding: 10px;
@@ -750,20 +926,25 @@ input:checked + .slider:before {
   border-radius: 8px;
   font-family: inherit;
   font-size: 0.95rem;
+  border: 1px solid #6b4a3a; /* Coffee brown border */
+  color: #6b4a3a; /* Coffee brown text */
 }
+
 .ingredient-select {
   flex: 1;
   height: 42px;
 }
+
 .ingredient-qty {
   width: 90px;
   height: 42px;
 }
+
 .btn-icon-small {
   width: 42px;
   height: 42px;
   border-radius: 8px;
-  background: #6b4a3a;
+  background: #6b4a3a; /* Coffee brown */
   color: white;
   border: none;
   font-size: 1.2rem;
@@ -771,6 +952,12 @@ input:checked + .slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-icon-small:hover {
+  background: #5a3e30; /* Darker coffee brown */
+  transform: translateY(-1px);
 }
 
 /* REPORTS */
@@ -780,7 +967,15 @@ input:checked + .slider:before {
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   border: 1px solid #f0f0f0;
+  transition: transform 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
+
+#reportOutput:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(107, 74, 58, 0.08);
+}
+
 .report-table {
   width: 100%;
   border-collapse: collapse;
@@ -791,16 +986,25 @@ input:checked + .slider:before {
   padding: 10px;
   text-align: left;
   border-bottom: 1px solid #eee;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .report-table th {
-  background: #f9f9f9;
-  color: #2c3e50;
+  background: #f5f2eb; /* Light coffee cream */
+  color: #6b4a3a; /* Coffee brown */
   font-weight: 600;
+  border-bottom: 2px solid #6b4a3a; /* Coffee brown accent */
 }
 .report-history-item {
   padding: 12px;
   border-bottom: 1px solid #eee;
   font-size: 0.95rem;
+  transition: background-color 0.2s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+.report-history-item:hover {
+  background-color: #f5f2eb; /* Light coffee cream */
 }
 .report-history-item:last-child {
   border-bottom: none;
@@ -821,21 +1025,27 @@ input:checked + .slider:before {
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 .user-management-tabs .tab-btn {
   padding: 10px 20px;
   border-radius: 20px;
   font-size: 0.95rem;
   cursor: pointer;
-  background: #f0f2f5;
+  background: #f5f2eb; /* Light coffee cream */
   color: #555;
   border: none;
   font-family: inherit;
   transition: all 0.2s ease;
 }
+.user-management-tabs .tab-btn:hover {
+  background: #e8e0d5; /* Slightly darker coffee cream */
+  transform: translateY(-1px);
+}
 .user-management-tabs .tab-btn.active {
-  background: #6b4a3a;
+  background: #6b4a3a; /* Coffee brown */
   color: white;
+  transform: translateY(-1px);
 }
 .user-management-header {
   display: flex;
@@ -843,6 +1053,7 @@ input:checked + .slider:before {
   align-items: center;
   margin-bottom: 20px;
   gap: 16px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 .search-input {
   width: 100%;
@@ -857,9 +1068,11 @@ input:checked + .slider:before {
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   outline: none;
   transition: border-color 0.2s ease;
+  border: 1px solid #6b4a3a; /* Coffee brown border */
+  color: #6b4a3a; /* Coffee brown text */
 }
 .search-input:focus {
-  border-color: #6b4a3a;
+  border-color: #5a3e30; /* Darker coffee brown */
   box-shadow: 0 2px 6px rgba(107, 74, 58, 0.1);
 }
 .search-input::placeholder {
@@ -867,7 +1080,7 @@ input:checked + .slider:before {
   font-style: italic;
 }
 .btn-add-user {
-  background: #6b4a3a;
+  background: #6b4a3a; /* Coffee brown */
   color: white;
   border: none;
   padding: 10px 20px;
@@ -881,7 +1094,8 @@ input:checked + .slider:before {
   transition: background-color 0.2s ease;
 }
 .btn-add-user:hover {
-  background: #5a3e30;
+  background: #5a3e30; /* Darker coffee brown */
+  transform: translateY(-1px);
 }
 
 #userManagementView .menu-item {
@@ -892,16 +1106,18 @@ input:checked + .slider:before {
   border-bottom: 1px solid #eee;
   font-size: 0.95rem;
   transition: background-color 0.1s ease;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 #userManagementView .menu-item:last-child {
   border-bottom: none;
 }
 #userManagementView .menu-item:hover {
-  background-color: #f9f9f9;
+  background-color: #f5f2eb; /* Light coffee cream */
 }
 #userManagementView .menu-actions {
   display: flex;
   gap: 8px;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 #userManagementView .menu-actions button {
   width: 32px;
@@ -913,11 +1129,13 @@ input:checked + .slider:before {
   font-size: 0.85rem;
   cursor: pointer;
   border: none;
-  background: #f0f2f5;
+  background: #f5f2eb; /* Light coffee cream */
+  color: #6b4a3a; /* Coffee brown */
   transition: background-color 0.2s ease;
 }
 #userManagementView .menu-actions button:hover {
   background: #ddd;
+  transform: translateY(-1px);
 }
 
 .role-badge {
@@ -930,7 +1148,7 @@ input:checked + .slider:before {
 }
 .role-badge.admin { background: #FF9F1C; }
 .role-badge.staff { background: #2A9D8F; }
-.role-badge.customer { background: #6B4A3A; }
+.role-badge.customer { background: #6B4A3A; } /* Coffee brown */
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
@@ -1001,5 +1219,13 @@ input:checked + .slider:before {
     width: 36px;
     height: 36px;
     font-size: 1rem;
+  }
+  
+  /* Add responsive overflow control */
+  .main-content {
+    overflow-x: hidden;
+  }
+  .container {
+    overflow-x: hidden;
   }
 }

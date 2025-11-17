@@ -31,8 +31,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (view === 'myOrders') {
             loadMyOrders();
         }
+        // Load profile settings when the profile view is shown
+        if (view === 'profile') {
+            loadProfileSettings();
+        }
       }
     });
+  });
+
+  // Add event listener for Profile Settings navigation
+  document.querySelector('.nav-item[data-view="profile"]').addEventListener('click', (e) => {
+    e.preventDefault();
+    openProfileSettings();
   });
 
   document.querySelector('.logout').addEventListener('click', (e) => {
@@ -86,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target === modal) {
       closeModal();
     }
-  }
+  };
 });
 
 // ------------------- HELPERS -------------------
@@ -208,40 +218,111 @@ async function loadFavorites() {
       grid.innerHTML = '<p>No recommended items yet.</p>';
       return;
     }
-    // Updated HTML template for dashboard favorites to use new button style
-    grid.innerHTML = favorites.slice(0, 2).map(item => `
-      <div class="item-card">
-        <div class="item-image">
-          <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" />
+
+    // Render favorites as a carousel for the "You might like..." section
+    if (favorites.length > 0) {
+      // Create the carousel HTML structure
+      grid.innerHTML = `
+        <div class="you-might-like-carousel-container">
+          <div class="carousel-arrow left"><i class="fas fa-chevron-left"></i></div>
+          <div class="you-might-like-carousel-wrapper" id="favoritesCarousel">
+            ${favorites.map(item => `
+              <div class="you-might-like-carousel-item ${!item.isAvailable ? 'unavailable' : ''}" data-id="${item.id}">
+                <div class="product-image">
+                  <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" />
+                  ${!item.isAvailable ? '<div class="unavailable-overlay">Out of Stock</div>' : ''}
+                </div>
+                <div class="product-name">${item.name}</div>
+                <div class="product-price">₱${Number(item.price).toFixed(2)}</div>
+                <div class="product-description">${item.description || 'Delicious item!'}</div>
+                <button class="add-to-billing-btn-large" data-id="${item.id}" ${!item.isAvailable ? 'disabled' : ''}>
+                  <i class="ri-add-line"></i> Add to Billing
+                </button>
+              </div>
+            `).join('')}
+          </div>
+          <div class="carousel-arrow right"><i class="fas fa-chevron-right"></i></div>
         </div>
-        <div class="item-info">
-          <div class="item-title">${item.name}</div>
-          <div class="item-price">₱${Number(item.price).toFixed(2)}</div>
-          <p>${item.description || 'Delicious item!'}</p>
-          <button class="add-to-billing-btn-large" data-id="${item.id}">
-            <i class="ri-add-line"></i> Add to Billing
-          </button>
-        </div>
-      </div>
-    `).join('');
-    // Updated selector to match the new button class
-    document.querySelectorAll('.add-to-billing-btn-large').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const btn = e.currentTarget; // Get the clicked button
-        try {
-          await apiCall('/cart/add', {
-            method: 'POST',
-            body: JSON.stringify({ menuItemId: btn.dataset.id, quantity: 1 })
-          });
-          alert('Added to your order!');
-        } catch (err) {
-          alert('Failed to add item: ' + err.message);
-        }
-      });
-    });
+      `;
+
+      // Initialize the carousel after rendering
+      initializeFavoritesCarousel();
+    }
+
   } catch (err) {
     grid.innerHTML = `<p style="color:#e74c3c;">Error loading favorites: ${err.message}</p>`;
   }
+}
+
+// ===== NEW: FAVORITES CAROUSEL FUNCTIONALITY =====
+function initializeFavoritesCarousel() {
+  const carouselWrapper = document.getElementById('favoritesCarousel');
+  const arrowLeft = document.querySelector('.carousel-arrow.left');
+  const arrowRight = document.querySelector('.carousel-arrow.right');
+  const items = document.querySelectorAll('#favoritesCarousel .you-might-like-carousel-item');
+
+  if (!carouselWrapper || !arrowLeft || !arrowRight || items.length === 0) {
+    return; // Exit if elements don't exist
+  }
+
+  const itemWidth = items[0].offsetWidth + parseInt(getComputedStyle(items[0]).marginRight); // Adjust for margin if any
+  let currentPosition = 0;
+
+  // Function to move carousel
+  function moveCarousel(direction) {
+    if (direction === 'left') {
+      currentPosition += itemWidth;
+    } else if (direction === 'right') {
+      currentPosition -= itemWidth;
+    }
+
+    // Prevent going past the edges
+    const maxPosition = -(items.length - 1) * itemWidth;
+    if (currentPosition > 0) {
+      currentPosition = 0;
+    } else if (currentPosition < maxPosition) {
+      currentPosition = maxPosition;
+    }
+
+    carouselWrapper.style.transform = `translateX(${currentPosition}px)`;
+
+    // Optional: Update active item (if you want to highlight the center one)
+    // updateActiveItem();
+  }
+
+  // Event listeners for arrows
+  arrowLeft.addEventListener('click', () => moveCarousel('left'));
+  arrowRight.addEventListener('click', () => moveCarousel('right'));
+
+  // Add event listeners for clicking on the carousel item to open the modal
+  document.querySelectorAll('#favoritesCarousel .you-might-like-carousel-item').forEach(card => {
+    card.addEventListener('click', (e) => {
+      // Prevent the click from propagating to the "Add to Billing" button if they click the card itself
+      if (e.target === card || e.target.closest('.product-name, .product-price, .product-description')) {
+        const itemId = card.dataset.id;
+        const item = allMenuItems.find(i => i.id === itemId);
+        if (item) {
+          openItemModal(item);
+        }
+      }
+    });
+  });
+
+  // Add event listeners for the "Add to Billing" buttons inside the carousel
+  document.querySelectorAll('#favoritesCarousel .add-to-billing-btn-large').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering the card click event
+      const item_id = btn.dataset.id;
+      const item = allMenuItems.find(i => i.id === item_id);
+      if (item) {
+        // Instead of adding to cart directly, open the modal
+        openItemModal(item);
+      }
+    });
+  });
+
+  // Initial setup
+  // updateActiveItem();
 }
 
 // ------------------- ORDER TRACKER -------------------
@@ -641,4 +722,138 @@ function handleFeedback(order) {
     alert(`Feedback form for order #${order.orderNumber} would open here.`);
     // Example: Open a modal with order details and a feedback input
     // You could pass the order ID to a function that displays the feedback UI
+}
+
+// ------------------- PROFILE SETTINGS -------------------
+
+// Open profile settings modal
+function openProfileSettings() {
+    // Create or show profile settings modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'profileModal';
+    modal.innerHTML = `
+        <div class="modal-content" style="width: 500px; max-width: 90vw; padding: 24px;">
+            <span class="close" id="closeProfileModal" style="position: absolute; top: 10px; right: 15px; font-size: 28px; cursor: pointer;">&times;</span>
+            <h2 style="margin-bottom: 20px; color: #6b4a3a;">Profile Settings</h2>
+            <form id="profileForm">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="profileName" style="display: block; margin-bottom: 5px; font-weight: 500;">Full Name</label>
+                    <input type="text" id="profileName" name="name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="profileEmail" style="display: block; margin-bottom: 5px; font-weight: 500;">Email Address</label>
+                    <input type="email" id="profileEmail" name="email" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="profilePhone" style="display: block; margin-bottom: 5px; font-weight: 500;">Phone Number</label>
+                    <input type="tel" id="profilePhone" name="phone" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="profileAddress" style="display: block; margin-bottom: 5px; font-weight: 500;">Address</label>
+                    <textarea id="profileAddress" name="address" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="profileBirthday" style="display: block; margin-bottom: 5px; font-weight: 500;">Birthday</label>
+                    <input type="date" id="profileBirthday" name="birthday" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="profileGender" style="display: block; margin-bottom: 5px; font-weight: 500;">Gender</label>
+                    <select id="profileGender" name="gender" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" id="cancelProfileBtn" class="btn-secondary" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 8px; background: #f5f2eb; color: #6b4a3a; cursor: pointer;">Cancel</button>
+                    <button type="submit" class="btn-primary" style="padding: 10px 20px; border: none; border-radius: 8px; background: #6b4a3a; color: white; cursor: pointer;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Load current profile data
+    loadProfileSettings();
+
+    // Add event listeners
+    document.getElementById('closeProfileModal').addEventListener('click', closeProfileModal);
+    document.getElementById('cancelProfileBtn').addEventListener('click', closeProfileModal);
+    document.getElementById('profileForm').addEventListener('submit', saveProfileSettings);
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeProfileModal();
+        }
+    });
+}
+
+// Load profile settings from API
+async function loadProfileSettings() {
+    try {
+        const profile = await apiCall('/customer/profile');
+        document.getElementById('profileName').value = profile.name || '';
+        document.getElementById('profileEmail').value = profile.email || '';
+        document.getElementById('profilePhone').value = profile.phone || '';
+        document.getElementById('profileAddress').value = profile.address || '';
+        document.getElementById('profileBirthday').value = profile.birthday || '';
+        document.getElementById('profileGender').value = profile.gender || '';
+    } catch (err) {
+        console.error('Error loading profile settings:', err);
+        alert('Failed to load profile data: ' + err.message);
+    }
+}
+
+// Save profile settings
+async function saveProfileSettings(e) {
+    e.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('profileName').value,
+        email: document.getElementById('profileEmail').value,
+        phone: document.getElementById('profilePhone').value,
+        address: document.getElementById('profileAddress').value,
+        birthday: document.getElementById('profileBirthday').value,
+        gender: document.getElementById('profileGender').value
+    };
+
+    // Validate required fields
+    if (!formData.name || !formData.email || !formData.phone) {
+        alert('Please fill in all required fields (Name, Email, Phone)');
+        return;
+    }
+
+    try {
+        // Update profile via API
+        const response = await apiCall('/customer/profile', {
+            method: 'PUT',
+            body: JSON.stringify(formData)
+        });
+
+        // Save to localStorage
+        localStorage.setItem('customerInfo', JSON.stringify(response));
+
+        // Update welcome message
+        document.querySelector('.welcome').textContent = `Welcome back, ${response.name}!`;
+
+        // Show success message
+        alert('Profile updated successfully!');
+
+        // Close modal
+        closeProfileModal();
+    } catch (err) {
+        alert('Failed to update profile: ' + err.message);
+    }
+}
+
+// Close profile modal
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.remove();
+    }
 }

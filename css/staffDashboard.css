@@ -625,4 +625,461 @@ body {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+/* StaffDashboard.css - Clean Staff Operations Dashboard */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+/* --- Main Container --- */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* --- Header --- */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 25px;
+}
+
+.dashboard-header h1 {
+    font-size: 1.8rem;
+    color: #5d4037;
+    font-weight: 600;
+}
+
+.dashboard-header h1 span {
+    color: #ff6f00;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.header-info span {
+    color: #5d4037;
+}
+
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 6px 10px;
+    background: #f9f9f9;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+}
+
+.profile-trigger:hover {
+    background: #f0f0f0;
+}
+
+.avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
+
+.dropdown-arrow {
+    font-size: 0.8rem;
+    color: #ff6f00;
+}
+
+/* --- Profile Dropdown --- */
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 160px;
+    z-index: 1000;
+    font-size: 0.95rem;
+}
+
+.profile-dropdown.show {
+    display: block;
+}
+
+.dropdown-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #4e342e;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #ffe0cc;
+    color: #e65100;
+}
+
+/* --- Dashboard Grid --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+/* --- Shift Summary --- */
+.shift-summary {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e0e0e0;
+    height: fit-content;
+}
+
+.shift-summary h3 {
+    color: #5d4037;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #d4a574;
+    padding-bottom: 8px;
+}
+
+.shift-summary p {
+    margin: 8px 0;
+    color: #555;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: white;
+}
+
+.status-badge.active {
+    background-color: #4caf50;
+}
+
+/* --- Orders Queue --- */
+.orders-queue {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e0e0e0;
+}
+
+.orders-queue h3 {
+    color: #5d4037;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #d4a574;
+    padding-bottom: 8px;
+}
+
+/* --- Filter Bar --- */
+.filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #d4a574;
+    border-radius: 20px;
+    background: #f9f9f9;
+    color: #5d4037;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    background: #f0f0f0;
+}
+
+.filter-btn.active {
+    background: #ff6f00;
+    color: white;
+    border-color: #ff6f00;
+}
+
+/* --- Orders Table --- */
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-header,
+.table-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 2fr 1fr 1fr 1fr;
+    gap: 12px;
+    padding: 12px 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.table-header {
+    background-color: #fafafa;
+    font-weight: 600;
+    color: #5d4037;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.table-row:hover {
+    background-color: #f9f9f9;
+}
+
+.table-row[data-status="new"] .col.status {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.table-row[data-status="preparing"] .col.status {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.table-row[data-status="ready"] .col.status {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.col {
+    font-size: 0.9rem;
+    padding: 8px;
+}
+
+.time {
+    color: #777;
+}
+
+.action {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.serve-btn {
+    background-color: #4caf50;
+    color: white;
+}
+
+.print-btn {
+    background-color: #2196f3;
+    color: white;
+}
+
+.prep-btn {
+    background-color: #ff9800;
+    color: white;
+}
+
+.action-btn:hover {
+    transform: scale(1.05);
+}
+
+/* --- Notifications --- */
+.notifications {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e0e0e0;
+}
+
+.notifications h3 {
+    color: #5d4037;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-badge {
+    background-color: #ff6f00;
+    color: white;
+    border-radius: 50%;
+    padding: 3px 8px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.notification-list {
+    list-style: none;
+    margin-top: 10px;
+}
+
+.notification-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.notification-list li:last-child {
+    border-bottom: none;
+}
+
+/* --- Quick Actions --- */
+.quick-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.action-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.action-btn.primary {
+    background-color: #ff6f00;
+    color: white;
+    box-shadow: 0 3px 10px rgba(255, 111, 0, 0.2);
+}
+
+.action-btn.secondary {
+    background-color: #f9f9f9;
+    color: #5d4037;
+    border: 1px solid #d4a574;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .orders-queue,
+    .shift-summary,
+    .notifications {
+        margin-bottom: 20px;
+    }
+
+    .table-header,
+    .table-row {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        font-size: 0.85rem;
+    }
+
+    .col:nth-child(3) {
+        display: none;
+    }
+
+    .action-btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .header-info {
+        justify-content: center;
+    }
+
+    .quick-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .action-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .table-header,
+    .table-row {
+        grid-template-columns: 1fr 1fr 1fr;
+        font-size: 0.8rem;
+    }
+
+    .col:nth-child(2),
+    .col:nth-child(3) {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .shift-summary,
+    .orders-queue,
+    .notifications {
+        padding: 15px;
+    }
+
+    .notification-list li {
+        font-size: 0.9rem;
+    }
+}
 }
