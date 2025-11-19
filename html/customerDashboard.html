@@ -44,12 +44,13 @@
           </div>
         </div>
         <section class="section">
-          <h2 class="section-title"><i class="ri-star-line"></i> You might like…</h2>
+          <h2 class="section-title"><i class="ri-heart-3-line"></i> You Might Like...</h2>
           <div class="carousel-container">
             <div class="carousel-wrapper">
-              <div class="favorites-carousel" id="favoritesCarousel">
-            <button class="carousel-nav prev" aria-label="Previous item">❮</button>
-            <button class="carousel-nav next" aria-label="Next item">❯</button>
+              <div class="carousel-nav prev"><i class="ri-arrow-left-s-line"></i></div>
+              <div class="favorites-carousel" id="favoritesCarousel"></div>
+              <div class="carousel-nav next"><i class="ri-arrow-right-s-line"></i></div>
+            </div>
           </div>
         </section>
         <section class="section">
@@ -90,13 +91,7 @@
           </div>
         </div>
         <div class="menu-grid" id="menuGrid"></div>
-        <div class="checkout-bar">
-          <div class="cart-summary">
-            <span id="cartTotal">₱0.00</span>
-            <span id="cartItemCount">0 items</span>
-          </div>
-          <button id="checkoutBtn" class="checkout-btn" disabled>Place Order</button>
-        </div>
+        <!-- Removed old checkout bar -->
       </div>
       <div id="myOrdersView" class="view">
         <div class="header">
@@ -130,7 +125,7 @@
   <div class="default-avatar-icon">
     <i class="ri-user-line"></i>
   </div>
-  <img id="profileImage" src="/image/default-avatar.jpg alt="Profile Picture" />
+  <img id="profileImage" src="/image/default-avatar.jpg" alt="Profile Picture" />
   <div class="profile-picture-overlay">
     <i class="ri-camera-line"></i>
     <span>Change Photo</span>
@@ -155,16 +150,16 @@
                 </div>
               </div>
               <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required>
+                  <label for="email">Email Address</label>
+                  <input type="email" id="email" name="email" required>
               </div>
               <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" required>
+                  <label for="phone">Phone Number</label>
+                  <input type="tel" id="phone" name="phone" required>
               </div>
               <div class="form-group">
-                <label for="address">Address</label>
-                <textarea id="address" name="address" rows="3"></textarea>
+                  <label for="address">Address</label>
+                  <textarea id="address" name="address" rows="3"></textarea>
               </div>
               <div class="form-row">
                 <div class="form-group">
@@ -210,6 +205,32 @@
       </div>
     </main>
   </div>
+
+  <!-- === CART MODAL (POPUP) === -->
+  <div class="modal" id="cartModal">
+    <div class="modal-content">
+      <span class="modal-close-btn" id="closeCartModal">&times;</span>
+      <h2 class="section-title"><i class="ri-shopping-cart-line"></i> Your Cart</h2>
+      <div class="cart-items-container">
+        <!-- Items will be loaded here by JS -->
+      </div>
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Total Items:</span>
+          <span id="cartItemCount">0</span>
+        </div>
+        <div class="summary-row">
+          <strong>Total Amount:</strong>
+          <strong id="cartTotal">₱0.00</strong>
+        </div>
+      </div>
+      <div class="cart-actions">
+        <button id="checkoutBtn" class="checkout-btn" disabled>Place Order</button>
+        <button id="clearCartBtn" class="btn-secondary">Clear Cart</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="changePasswordModal">
     <div class="modal-content">
       <span class="close" id="closePasswordModal">&times;</span>
@@ -235,52 +256,65 @@
     </div>
   </div>
   <div class="modal" id="itemModal">
-    <div class="modal-content">
-      <span class="close" id="closeModal">&times;</span>
-      <div class="modal-body">
+  <div class="modal-content">
+    <div class="modal-body">
+      <!-- Modal Header: Image + Close Button -->
+      <div class="modal-header">
         <img id="modalImage" alt="Item" />
-        <h2 id="modalName"></h2>
-        <p id="modalPrice"></p>
-        <p><strong>Category:</strong> <span id="modalCategory"></span></p>
-        <p><strong>Ingredients:</strong></p>
-        <ul id="modalIngredients"></ul>
-        <p id="modalAvailability"></p>
-        <div class="customization-section">
-          <div class="customization-group">
-            <strong>Mood</strong>
-            <div class="options">
-              <button class="custom-option-btn" data-type="mood" data-value="Hot">
-                <i class="ri-fire-line"></i> Hot
-              </button>
-              <button class="custom-option-btn" data-type="mood" data-value="Ice">
-                <i class="ri-snowy-line"></i> Ice
-              </button>
-            </div>
-          </div>
-          <div class="customization-group">
-            <strong>Size</strong>
-            <div class="options">
-              <button class="custom-option-btn" data-type="size" data-value="S">S</button>
-              <button class="custom-option-btn" data-type="size" data-value="M">M</button>
-              <button class="custom-option-btn" data-type="size" data-value="L">L</button>
-            </div>
-          </div>
-          <div class="customization-group">
-            <strong>Sugar</strong>
-            <div class="options">
-              <button class="custom-option-btn" data-type="sugar" data-value="30%">30%</button>
-              <button class="custom-option-btn" data-type="sugar" data-value="50%">50%</button>
-              <button class="custom-option-btn" data-type="sugar" data-value="70%">70%</button>
-            </div>
+        <button type="button" class="modal-close-btn" id="closeModal">&times;</button>
+      </div>
+
+      <!-- Item Info -->
+      <h2 id="modalName"></h2>
+      <p id="modalPrice"></p>
+      <p><strong>Category:</strong> <span id="modalCategory"></span></p>
+      <p><strong>Ingredients:</strong></p>
+      <ul id="modalIngredients"></ul>
+      <p id="modalAvailability"></p>
+
+      <!-- Enhanced Customization Section -->
+      <div class="customization-section">
+        <div class="customization-group">
+          <strong>Mood</strong>
+          <div class="options">
+            <button class="custom-option-btn" data-type="mood" data-value="Hot">
+              <i class="ri-fire-line"></i> Hot
+            </button>
+            <button class="custom-option-btn" data-type="mood" data-value="Ice">
+              <i class="ri-snowy-line"></i> Ice
+            </button>
           </div>
         </div>
-        <div class="modal-actions">
-          <input type="number" id="modalQuantity" min="1" value="1" />
-          <button id="modalAddToCart" class="add-btn">Add to Billing</button>
+        <div class="customization-group">
+          <strong>Size</strong>
+          <div class="options">
+            <button class="custom-option-btn" data-type="size" data-value="S">S</button>
+            <button class="custom-option-btn" data-type="size" data-value="M">M</button>
+            <button class="custom-option-btn" data-type="size" data-value="L">L</button>
+          </div>
+        </div>
+        <div class="customization-group">
+          <strong>Sugar</strong>
+          <div class="options">
+            <button class="custom-option-btn" data-type="sugar" data-value="30%">30%</button>
+            <button class="custom-option-btn" data-type="sugar" data-value="50%">50%</button>
+            <button class="custom-option-btn" data-type="sugar" data-value="70%">70%</button>
+          </div>
         </div>
       </div>
+
+      <!-- Quantity Control & Add to Cart -->
+      <div class="modal-actions">
+  <div class="quantity-control">
+    <button type="button" class="qty-btn minus" id="modalQtyMinus">−</button>
+    <input type="number" id="modalQuantity" min="1" value="1" />
+    <button type="button" class="qty-btn plus" id="modalQtyPlus">+</button>
+  </div>
+  <button id="modalAddToCart" class="add-btn">ADD TO BILLING</button>
+</div>
     </div>
   </div>
+</div>
   <script src="/js/customerDashboard.js"></script>
   <script>
     console.log("Customer Dashboard loaded!");
@@ -291,44 +325,4 @@
     console.log("Customer token on dashboard:", localStorage.getItem('customerToken'));
   </script>
 </body>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const carousel = document.getElementById('favoritesCarousel');
-    const prevBtn = document.querySelector('.carousel-nav.prev');
-    const nextBtn = document.querySelector('.carousel-nav.next');
-    let currentIndex = 0;
-    const items = document.querySelectorAll('.carousel-item');
-    const itemWidth = 300;
-    const gap = 16;
-  
-    function updateCarousel() {
-      const translateX = -(currentIndex * (itemWidth + gap));
-      carousel.style.transform = `translateX(${translateX}px)`;
-    }
-  
-    prevBtn.addEventListener('click', () => {
-      if (currentIndex > 0) {
-        currentIndex--;
-        updateCarousel();
-      }
-    });
-  
-    nextBtn.addEventListener('click', () => {
-      if (currentIndex < items.length - 1) {
-        currentIndex++;
-        updateCarousel();
-      }
-    });
-
-    setInterval(() => {
-      if (currentIndex < items.length - 1) {
-        currentIndex++;
-      } else {
-        currentIndex = 0;
-      }
-      updateCarousel();
-    }, 5000);
-  });
-</script>
 </html>

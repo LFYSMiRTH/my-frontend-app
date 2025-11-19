@@ -5,37 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambayan Cafe | Staff Dashboard</title>
     <link rel="stylesheet" href="/css/staffDashboard.css">
-    <!-- Fixed Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Remix Icon for custom icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Main Dashboard Container -->
     <div class="dashboard-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="logo">
-                <h2>TBYN CAFE</h2>
-            </div>
+     <aside class="sidebar">
+    <div class="logo">
+        <i class="fas fa-mug-hot logo-icon"></i>
+        <h2>TMBYN CAFE</h2>
+    </div>
             <nav class="main-nav">
-                <h3>MAIN</h3>
-                <ul>
-                    <li class="nav-item active" data-view="dashboard"><a href="#"><i class="fas fa-home"></i> Dashboard</a></li>
-                    <li class="nav-item" data-view="orders"><a href="#"><i class="fas fa-list"></i> Order Management</a></li>
-                    <li class="nav-item" data-view="inventory"><a href="#"><i class="fas fa-boxes"></i> Inventory</a></li>
-                    <li class="nav-item" data-view="notifications"><a href="#"><i class="fas fa-bell"></i> Notifications</a></li>
-                    <li class="nav-item" data-view="profile"><a href="#"><i class="fas fa-user"></i> Profile</a></li>
-                </ul>
-                <div class="logout-section">
-                    <a href="#" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                </div>
-            </nav>
-        </aside>
+            <h3 data-text="MAIN">MAIN</h3>
+            <ul>
+                <li class="nav-item active" data-view="dashboard"><a href="#"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="nav-item" data-view="Menu"><a href="#"><i class="ri-menu-2-line"></i> Menu</a></li>
+                <li class="nav-item" data-view="orders"><a href="#"><i class="fas fa-list"></i> Order Management</a></li>
+                <li class="nav-item" data-view="inventory"><a href="#"><i class="fas fa-boxes"></i> Inventory</a></li>
+            </ul>
+            <div class="logout-section">
+                <a href="#" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </nav>
+</aside>
 
-        <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Header -->
             <header class="page-header">
                 <h1 class="welcome">Welcome back, <span id="staff-name">Loading...</span>!</h1>
                 <div class="user-actions">
@@ -43,16 +37,21 @@
                         <i class="fas fa-bell bell"></i>
                         <span class="notification-count">0</span>
                     </div>
+                    <!-- Profile dropdown trigger -->
                     <div class="profile-dropdown-trigger" onclick="toggleProfileDropdown()">
                         <i class="fas fa-user-circle"></i>
+                    </div>
+                    
+                    <!-- Profile Dropdown -->
+                    <div id="profile-dropdown" class="profile-dropdown">
+                        <a href="#" onclick="viewStaffAccount(); return false;">View Staff Account</a>
+                        <a href="#" onclick="showChangePasswordForm(); return false;">Change Password</a>
                     </div>
                 </div>
             </header>
 
-            <!-- Dashboard View -->
             <div id="dashboardView" class="view active">
                 <h2>Dashboard Overview</h2>
-                <!-- Quick Actions Section -->
                 <section class="quick-actions">
                     <div class="action-card">
                         <div class="action-icon">☕</div>
@@ -76,7 +75,6 @@
                     </div>
                 </section>
 
-                <!-- Recent Orders Section -->
                 <section class="dashboard-cards">
                     <div class="card">
                         <div class="card-header">
@@ -93,21 +91,36 @@
                                     </tr>
                                 </thead>
                                 <tbody id="recent-orders-body">
-                                    <!-- Dynamic content will be inserted here by loadRecentOrders -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </section>
             </div>
-            <!-- Order Management View -->
+
+            <div id="MenuView" class="view">
+                <h2>Menu</h2>
+                <div class="menu-section">
+                    <h3>🍽️ Menu Viewing</h3>
+                    <div class="menu-controls">
+                        <input type="text" id="menuSearch" placeholder="Search menu items...">
+                        <div class="category-buttons">
+                            <button class="category-btn active" data-category="all">All</button>
+                            <button class="category-btn" data-category="Drinks">Drinks</button>
+                            <button class="category-btn" data-category="Food">Food</button>
+                            <button class="category-btn" data-category="Desserts">Desserts</button>
+                        </div>
+                    </div>
+                    <div id="menuGrid" class="menu-grid">
+                    </div>
+                </div>
+            </div>
+
             <div id="ordersView" class="view">
                 <h2>Order Management</h2>
                 <div class="section-header">
-                    <button class="btn-primary" id="takeNewOrderBtn">✅ Take New Order</button>
                 </div>
 
-                <!-- Section for taking a new order (Initially hidden) -->
                 <section id="newOrderSection" class="new-order-section" style="display: none;">
                     <h3>Take New Order</h3>
                     <div class="customer-info">
@@ -119,7 +132,6 @@
                     <div class="cart-container">
                         <h4>Current Order</h4>
                         <div id="cartItems">
-                            <!-- Cart items will appear here -->
                         </div>
                         <div class="cart-footer">
                             <p>Total Items: <span id="cartItemCount">0</span></p>
@@ -129,7 +141,6 @@
                     </div>
                 </section>
 
-                <!-- Section for viewing and managing existing orders -->
                 <section id="manageOrdersSection" class="manage-orders-section">
                     <div class="filter-bar">
                         <button class="filter-btn active" data-filter="all">All</button>
@@ -139,165 +150,39 @@
                     </div>
 
                     <div id="orders-list" class="orders-list">
-                        <!-- Dynamic content will be inserted here by loadOrders -->
                     </div>
                 </section>
             </div>
 
-            <!-- Inventory View -->
             <div id="inventoryView" class="view">
                 <h2>Inventory Access</h2>
                 <div id="inventory-list" class="inventory-list">
-                    <!-- Dynamic content will be inserted here by loadInventory -->
                 </div>
             </div>
 
-            <!-- Notifications View -->
             <div id="notificationsView" class="view">
                 <h2>Notifications</h2>
                 <div id="notifications-list" class="notifications-list">
-                    <!-- Dynamic content will be inserted here by loadNotifications -->
                 </div>
             </div>
 
-            <!-- Profile View -->
             <div id="profileView" class="view">
                 <h2>Profile Settings</h2>
                 <div id="profile-info">
-                    <!-- Dynamic content will be inserted here by loadProfile -->
                 </div>
             </div>
 
         </main>
     </div>
 
-    <!-- Item Detail Modal (for adding items to the new order cart) -->
-    <div id="itemModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" id="closeModal">&times;</span>
-            <img id="modalImage" src="" alt="Item Image">
-            <h3 id="modalName">Item Name</h3>
-            <p id="modalPrice">₱0.00</p>
-            <p id="modalCategory">Category</p>
-            <h4>Ingredients:</h4>
-            <ul id="modalIngredients">
-                <li>Details not available</li>
-            </ul>
-            <p id="modalAvailability">Status</p>
-            <div class="customization-section">
-                <h4>Customize:</h4>
-                <div class="customization-group">
-                    <label>Mood:</label>
-                    <div class="custom-options">
-                        <button class="custom-option-btn" data-type="mood" data-value="Hot">Hot</button>
-                        <button class="custom-option-btn" data-type="mood" data-value="Cold">Cold</button>
-                        <button class="custom-option-btn" data-type="mood" data-value="Iced">Iced</button>
-                    </div>
-                </div>
-                <div class="customization-group">
-                    <label>Size:</label>
-                    <div class="custom-options">
-                        <button class="custom-option-btn" data-type="size" data-value="S">S</button>
-                        <button class="custom-option-btn" data-type="size" data-value="M">M</button>
-                        <button class="custom-option-btn" data-type="size" data-value="L">L</button>
-                    </div>
-                </div>
-                <div class="customization-group">
-                    <label>Sugar:</label>
-                    <div class="custom-options">
-                        <button class="custom-option-btn" data-type="sugar" data-value="0%">0%</button>
-                        <button class="custom-option-btn" data-type="sugar" data-value="25%">25%</button>
-                        <button class="custom-option-btn" data-type="sugar" data-value="50%">50%</button>
-                        <button class="custom-option-btn" data-type="sugar" data-value="75%">75%</button>
-                        <button class="custom-option-btn" data-type="sugar" data-value="100%">100%</button>
-                    </div>
-                </div>
-            </div>
-            <div class="quantity-section">
-                <label for="modalQuantity">Quantity:</label>
-                <input type="number" id="modalQuantity" value="1" min="1">
-            </div>
-            <button id="modalAddToCart" class="btn-primary">Add to Order</button>
-        </div>
-    </div>
-
     <script src="/js/staffDashboard.js"></script>
-=======
-        <!-- Header -->
-        <header class="dashboard-header">
-            <h1>🏷️ WELCOME, <span id="staff-name">Loading...</span>!</h1>
-            <div class="header-info">
-                <span>🕒 <span id="current-date">14 Nov 2025</span></span>
-                <span>🕘 <span id="current-time">10:15 AM</span></span>
-                <div class="profile-trigger" onclick="toggleProfileDropdown()">
-                    <img src="https://via.placeholder.com/32?text=👤" alt="User Avatar" class="avatar">
-                    <span class="dropdown-arrow">▼</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- Profile Dropdown (Hidden by default) -->
-        <div id="profileDropdown" class="profile-dropdown">
-            <div class="dropdown-item" data-action="logout">🔐 Logout</div>
-        </div>
-
-        <!-- Main Grid Layout -->
-        <div class="dashboard-grid">
-
-            <!-- Column 1: Shift Summary -->
-            <section class="shift-summary">
-                <h3>📅 Your Shift Today</h3>
-                <p><strong>Hours:</strong> 8:00 AM – 4:00 PM</p>
-                <p><strong>Orders Handled:</strong> <span id="orders-handled">12</span></p>
-                <p><strong>Current Status:</strong> <span class="status-badge active">Active</span></p>
-            </section>
-
-            <!-- Column 2: Orders Queue -->
-            <section class="orders-queue">
-                <h3>📋 CURRENT ORDERS QUEUE</h3>
-
-                <!-- Order Filters -->
-                <div class="filter-bar">
-                    <button class="filter-btn active" data-filter="all">All</button>
-                    <button class="filter-btn" data-filter="new">New</button>
-                    <button class="filter-btn" data-filter="preparing">Preparing</button>
-                    <button class="filter-btn" data-filter="ready">Ready</button>
-                </div>
-
-                <!-- Orders Table -->
-                <div class="orders-table">
-                    <div class="table-header">
-                        <div class="col">Order #</div>
-                        <div class="col">Customer</div>
-                        <div class="col">Items</div>
-                        <div class="col">Status</div>
-                        <div class="col">Time</div>
-                        <div class="col">Action</div>
-                    </div>
-                    <div class="table-body" id="ordersBody">
-                        <!-- Populated by StaffDashboard.js -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Column 3: Notifications -->
-            <section class="notifications">
-                <h3>🔔 NOTIFICATIONS <span class="notification-badge">3</span></h3>
-                <ul class="notification-list" id="notificationList">
-                    <!-- Populated by StaffDashboard.js -->
-                </ul>
-            </section>
-
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-            <button class="action-btn primary">✅ Take New Order</button>
-            <button class="action-btn secondary">📦 Check Low Stock</button>
-            <button class="action-btn secondary">🧾 Print All Ready</button>
-        </div>
-    </div>
-
-    <script src="Staff.js"></script>
+    <script>
+    console.log("Staff Dashboard loaded!");
+    console.log("Token:", localStorage.getItem('staffToken'));
+    console.log("Staff Info:", localStorage.getItem('staffInfo'));
+  </script>
+  <script>
+    console.log("Staff token on dashboard:", localStorage.getItem('staffToken'));
+  </script>
 </body>
 </html>

@@ -4,19 +4,20 @@ let cart = JSON.parse(localStorage.getItem('tambayanCart')) || [];
 let currentCategory = 'all';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ✅ CHECK IF LOGGED IN AS CUSTOMER
   const customerToken = localStorage.getItem('customerToken');
   if (!customerToken) {
     window.location.href = '/html/login.html';
     return;
   }
+
+  updateCartUI();
+
   loadCustomerProfile();
   loadRecentOrders();
   loadFavorites();
   loadCurrentOrderForTracker();
   setInterval(loadCurrentOrderForTracker, 10000);
 
-  // NAVIGATION
   document.querySelectorAll('.nav-item:not(.logout)').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -27,11 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
           loadMenuItems();
           window.menuLoaded = true;
         }
-        // Load My Orders data when the view is shown
         if (view === 'myOrders') {
             loadMyOrders();
         }
-        // Load profile settings when the profile view is shown
         if (view === 'profile') {
             loadProfileSettings();
         }
@@ -39,22 +38,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Add event listener for Profile Settings navigation
-  document.querySelector('.nav-item[data-view="profile"]').addEventListener('click', (e) => {
-    e.preventDefault();
-    openProfileSettings();
+  document.querySelector('.cart-badge')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      openCartModal();
   });
 
-  document.querySelector('.logout').addEventListener('click', (e) => {
-    e.preventDefault();
+  document.querySelector('.logout')?.addEventListener('click', (e) => {
+    e?.preventDefault();
     localStorage.removeItem('customerToken');
     localStorage.removeItem('customerInfo');
     localStorage.removeItem('tambayanCart');
     window.location.href = '/html/login.html';
   });
 
-  // NOTIFICATIONS
-  document.querySelector('.bell').addEventListener('click', async () => {
+  document.querySelector('.bell')?.addEventListener('click', async () => {
     try {
       const notifs = await apiCall('/customer/notifications?limit=5');
       if (!notifs || notifs.length === 0) {
@@ -71,35 +68,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // MENU SEARCH
   document.getElementById('menuSearch')?.addEventListener('input', (e) => {
     renderMenu(e.target.value, currentCategory);
   });
 
-  // CATEGORY BUTTONS
   document.querySelectorAll('.category-btn')?.forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentCategory = btn.dataset.category;
-      renderMenu(document.getElementById('menuSearch').value, currentCategory);
+      renderMenu(document.getElementById('menuSearch')?.value || '', currentCategory);
     });
   });
 
-  document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
-
-  // MODAL CLOSE BUTTON
   document.getElementById('closeModal')?.addEventListener('click', closeModal);
-  // Close modal if clicked outside the content
   window.onclick = function(event) {
     const modal = document.getElementById('itemModal');
     if (event.target === modal) {
       closeModal();
     }
   };
+
+  document.getElementById('profileForm')?.addEventListener('submit', saveProfileSettings);
+  document.getElementById('cancelBtn')?.addEventListener('click', () => {
+      loadProfileSettings();
+  });
+
+  document.getElementById('closeCartModal')?.addEventListener('click', closeCartModal);
+  window.onclick = function(event) {
+    const modal = document.getElementById('itemModal');
+    if (event.target === modal) {
+      closeModal();
+    }
+    const cartModal = document.getElementById('cartModal');
+    if (event.target === cartModal) {
+      closeCartModal();
+    }
+  };
 });
 
-// ------------------- HELPERS -------------------
 function showView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelector(`#${viewId}View`)?.classList.add('active');
@@ -107,8 +114,6 @@ function showView(viewId) {
   document.querySelector(`.nav-item[data-view="${viewId}"]`)?.classList.add('active');
 }
 
-// ✅ AUTHORIZED API CALL
-// ✅ AUTHORIZED API CALL - FIXED
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = localStorage.getItem('customerToken');
@@ -133,40 +138,38 @@ async function apiCall(endpoint, options = {}) {
     throw new Error('Unauthorized');
   }
 
-  // Check for non-OK status codes and handle the error body here
   if (!res.ok) {
-    let errorText = `HTTP ${res.status}`; // Default error text
-    // Attempt to read the response body *only once* if it's an error
+    let errorText = `HTTP ${res.status}`;
     try {
-      // Check if the response has content and is JSON
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
-        const errorJson = await res.json(); // This consumes the stream
+        const errorJson = await res.json();
         errorText = errorJson.message || JSON.stringify(errorJson);
       } else {
-        // If not JSON, try to get text
-        const errorTextBody = await res.text(); // This consumes the stream
+        const errorTextBody = await res.text();
         errorText = errorTextBody || `HTTP ${res.status}`;
       }
     } catch (e) {
-      // If parsing fails, use the status text or a generic message
       console.warn("Could not parse error response body:", e);
       errorText = res.statusText || `HTTP ${res.status}`;
     }
     throw new Error(errorText);
   }
 
-  // If the response is OK, parse the JSON
   return res.json();
 }
 
-// ------------------- DASHBOARD -------------------
 async function loadCustomerProfile() {
   try {
     const profile = await apiCall('/customer/profile');
-    document.querySelector('.welcome').textContent = `Welcome back, ${profile.name}!`;
-    localStorage.setItem('customerInfo', JSON.stringify(profile));
-  } catch {
+    if (profile && profile.firstName && profile.lastName) {
+      document.querySelector('.welcome').textContent = `Welcome back, ${profile.firstName} ${profile.lastName}!`;
+      localStorage.setItem('customerInfo', JSON.stringify(profile));
+    } else {
+      document.querySelector('.welcome').textContent = 'Welcome back, Customer!';
+    }
+  } catch (err) {
+    console.error('Error loading customer profile:', err);
     document.querySelector('.welcome').textContent = 'Welcome back, Customer!';
   }
 }
@@ -209,96 +212,181 @@ async function loadRecentOrders() {
 }
 
 async function loadFavorites() {
-  const grid = document.querySelector('.favorites-grid');
-  if (!grid) return;
-  grid.innerHTML = '<p>Loading recommendations...</p>';
+  const grid = document.getElementById('favoritesCarousel');
+  if (!grid) {
+    console.error("Favorites carousel container (#favoritesCarousel) not found in HTML.");
+    return;
+  }
+  
+  grid.innerHTML = '<div class="loading-spinner">Loading recommendations...</div>';
+  
   try {
     const favorites = await apiCall('/customer/favorites');
+    
     if (!favorites || favorites.length === 0) {
-      grid.innerHTML = '<p>No recommended items yet.</p>';
+      grid.innerHTML = '<div class="no-items">No recommended items yet.</div>';
       return;
     }
 
-    // Render favorites as a carousel for the "You might like..." section
-    if (favorites.length > 0) {
-      // Create the carousel HTML structure
-      grid.innerHTML = `
-        <div class="you-might-like-carousel-container">
-          <div class="carousel-arrow left"><i class="fas fa-chevron-left"></i></div>
-          <div class="you-might-like-carousel-wrapper" id="favoritesCarousel">
-            ${favorites.map(item => `
-              <div class="you-might-like-carousel-item ${!item.isAvailable ? 'unavailable' : ''}" data-id="${item.id}">
-                <div class="product-image">
-                  <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" />
-                  ${!item.isAvailable ? '<div class="unavailable-overlay">Out of Stock</div>' : ''}
-                </div>
-                <div class="product-name">${item.name}</div>
-                <div class="product-price">₱${Number(item.price).toFixed(2)}</div>
-                <div class="product-description">${item.description || 'Delicious item!'}</div>
-                <button class="add-to-billing-btn-large" data-id="${item.id}" ${!item.isAvailable ? 'disabled' : ''}>
-                  <i class="ri-add-line"></i> Add to Billing
-                </button>
-              </div>
-            `).join('')}
+    grid.innerHTML = '';
+    
+    favorites.forEach((item, index) => {
+      const itemElement = document.createElement('div');
+      itemElement.className = `carousel-item ${!item.isAvailable ? 'unavailable' : ''} view-only`;
+      itemElement.dataset.id = item.id;
+      itemElement.style.opacity = '0';
+      itemElement.style.transform = 'translateY(20px)';
+      
+      itemElement.innerHTML = `
+        <div class="item-card">
+          <div class="item-image">
+            <img src="${item.imageUrl || '/image/placeholder-menu.jpg'}" alt="${item.name}" loading="lazy" />
           </div>
-          <div class="carousel-arrow right"><i class="fas fa-chevron-right"></i></div>
+          <div class="item-info">
+            <div class="item-title">${item.name}</div>
+            <div class="item-price">₱${Number(item.price).toFixed(2)}</div>
+          </div>
         </div>
       `;
+      
+      grid.appendChild(itemElement);
+      
+      setTimeout(() => {
+        itemElement.style.transition = 'all 0.3s ease';
+        itemElement.style.opacity = '1';
+        itemElement.style.transform = 'translateY(0)';
+      }, index * 100);
+    });
 
-      // Initialize the carousel after rendering
+    setTimeout(() => {
       initializeFavoritesCarousel();
-    }
+    }, 100);
 
   } catch (err) {
-    grid.innerHTML = `<p style="color:#e74c3c;">Error loading favorites: ${err.message}</p>`;
+    grid.innerHTML = `<div class="error-message">Error loading favorites: ${err.message}</div>`;
+    console.error("Error loading favorites:", err);
   }
 }
 
-// ===== NEW: FAVORITES CAROUSEL FUNCTIONALITY =====
 function initializeFavoritesCarousel() {
-  const carouselWrapper = document.getElementById('favoritesCarousel');
-  const arrowLeft = document.querySelector('.carousel-arrow.left');
-  const arrowRight = document.querySelector('.carousel-arrow.right');
-  const items = document.querySelectorAll('#favoritesCarousel .you-might-like-carousel-item');
+  const carousel = document.getElementById('favoritesCarousel');
+  const prevBtn = document.querySelector('.carousel-nav.prev');
+  const nextBtn = document.querySelector('.carousel-nav.next');
+  const items = document.querySelectorAll('.carousel-item');
+  
 
-  if (!carouselWrapper || !arrowLeft || !arrowRight || items.length === 0) {
-    return; // Exit if elements don't exist
+  if (!carousel || !prevBtn || !nextBtn || items.length === 0) {
+    console.warn("Carousel elements not found. Skipping carousel initialization.");
+    return;
   }
+  
 
-  const itemWidth = items[0].offsetWidth + parseInt(getComputedStyle(items[0]).marginRight); // Adjust for margin if any
-  let currentPosition = 0;
+  console.log(`Found ${items.length} carousel items.`);
 
-  // Function to move carousel
-  function moveCarousel(direction) {
-    if (direction === 'left') {
-      currentPosition += itemWidth;
-    } else if (direction === 'right') {
-      currentPosition -= itemWidth;
+  let currentIndex = 0;
+  let itemWidth = 300;
+  let visibleItems = 1;
+
+  function calculateDimensions() {
+    const containerWidth = carousel.parentElement.clientWidth;
+    const navButtonsWidth = 80;
+    const gap = 16;
+    const availableWidth = containerWidth - navButtonsWidth - (gap * 2);
+    
+    if (window.innerWidth <= 480) {
+      itemWidth = Math.min(200, availableWidth - gap);
+      visibleItems = 1;
+    } else if (window.innerWidth <= 768) {
+      itemWidth = Math.min(240, (availableWidth - gap) / 2);
+      visibleItems = Math.floor(availableWidth / (itemWidth + gap));
+    } else if (window.innerWidth <= 1024) {
+      itemWidth = Math.min(280, (availableWidth - gap * 2) / 3);
+      visibleItems = Math.floor(availableWidth / (itemWidth + gap));
+    } else {
+      itemWidth = 300;
+      visibleItems = Math.floor(availableWidth / (itemWidth + gap));
     }
 
-    // Prevent going past the edges
-    const maxPosition = -(items.length - 1) * itemWidth;
-    if (currentPosition > 0) {
-      currentPosition = 0;
-    } else if (currentPosition < maxPosition) {
-      currentPosition = maxPosition;
-    }
+    visibleItems = Math.max(1, visibleItems);
+    
+    items.forEach(item => {
+      item.style.width = `${itemWidth}px`;
+      item.style.minWidth = `${itemWidth}px`;
+      item.style.maxWidth = `${itemWidth}px`;
+    });
+    
 
-    carouselWrapper.style.transform = `translateX(${currentPosition}px)`;
-
-    // Optional: Update active item (if you want to highlight the center one)
-    // updateActiveItem();
+    return { itemWidth, visibleItems, gap };
   }
 
-  // Event listeners for arrows
-  arrowLeft.addEventListener('click', () => moveCarousel('left'));
-  arrowRight.addEventListener('click', () => moveCarousel('right'));
+  function updateCarousel() {
+    const { itemWidth, visibleItems, gap } = calculateDimensions();
+    
+    const translateX = -(currentIndex * (itemWidth + gap));
+    carousel.style.transform = `translateX(${translateX}px)`;
+    carousel.style.transition = 'transform 0.3s ease-out';
+    
+    console.log(`Carousel translated to: ${translateX}px, visible items: ${visibleItems}`);
+    
+    const maxIndex = Math.max(0, items.length - visibleItems);
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex >= maxIndex;
+    
+    prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
+    nextBtn.style.opacity = currentIndex >= maxIndex ? '0.5' : '1';
+  }
 
-  // Add event listeners for clicking on the carousel item to open the modal
-  document.querySelectorAll('#favoritesCarousel .you-might-like-carousel-item').forEach(card => {
+  updateCarousel();
+
+  prevBtn.addEventListener('click', () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      updateCarousel();
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    const { visibleItems } = calculateDimensions();
+    const maxIndex = Math.max(0, items.length - visibleItems);
+    if (currentIndex < maxIndex) {
+      currentIndex++;
+      updateCarousel();
+    }
+  });
+
+  let autoPlayInterval = setInterval(() => {
+    const { visibleItems } = calculateDimensions();
+    const maxIndex = Math.max(0, items.length - visibleItems);
+    
+    if (currentIndex < maxIndex) {
+      currentIndex++;
+    } else {
+      currentIndex = 0;
+    }
+    updateCarousel();
+  }, 5000);
+
+  carousel.addEventListener('mouseenter', () => {
+    clearInterval(autoPlayInterval);
+  });
+
+  carousel.addEventListener('mouseleave', () => {
+    autoPlayInterval = setInterval(() => {
+      const { visibleItems } = calculateDimensions();
+      const maxIndex = Math.max(0, items.length - visibleItems);
+      
+      if (currentIndex < maxIndex) {
+        currentIndex++;
+      } else {
+        currentIndex = 0;
+      }
+      updateCarousel();
+    }, 5000);
+  });
+
+  document.querySelectorAll('.carousel-item:not(.view-only)').forEach(card => {
     card.addEventListener('click', (e) => {
-      // Prevent the click from propagating to the "Add to Billing" button if they click the card itself
-      if (e.target === card || e.target.closest('.product-name, .product-price, .product-description')) {
+      if (e.target === card || e.target.closest('.item-card') || e.target.closest('.item-info')) {
         const itemId = card.dataset.id;
         const item = allMenuItems.find(i => i.id === itemId);
         if (item) {
@@ -308,24 +396,16 @@ function initializeFavoritesCarousel() {
     });
   });
 
-  // Add event listeners for the "Add to Billing" buttons inside the carousel
-  document.querySelectorAll('#favoritesCarousel .add-to-billing-btn-large').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent triggering the card click event
-      const item_id = btn.dataset.id;
-      const item = allMenuItems.find(i => i.id === item_id);
-      if (item) {
-        // Instead of adding to cart directly, open the modal
-        openItemModal(item);
-      }
-    });
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      currentIndex = 0;
+      updateCarousel();
+    }, 250);
   });
-
-  // Initial setup
-  // updateActiveItem();
 }
 
-// ------------------- ORDER TRACKER -------------------
 let currentOrderId = null;
 async function loadCurrentOrderForTracker() {
   try {
@@ -337,7 +417,8 @@ async function loadCurrentOrderForTracker() {
       currentOrderId = current.orderNumber;
       if (trackerPara) trackerPara.textContent = `#${current.orderNumber}`;
       updateTracker(current.status);
-      document.getElementById('trackerTime').textContent = 'Last updated: just now';
+      const trackerTimeEl = document.getElementById('trackerTime');
+      if (trackerTimeEl) trackerTimeEl.textContent = 'Last updated: just now';
     } else {
       if (trackerPara) trackerPara.textContent = 'No active order';
       steps.forEach(s => s.classList.remove('active'));
@@ -355,12 +436,11 @@ function updateTracker(status) {
   else if (status === 'Served' || status === 'Completed') steps[2].classList.add('active');
 }
 
-// ------------------- MENU -------------------
 async function loadMenuItems() {
   const grid = document.getElementById('menuGrid');
+  if (!grid) return;
   grid.innerHTML = '<p>Loading menu...</p>';
   try {
-    // ✅ FIXED: Use enriched endpoint + no trailing space
     const items = await apiCall('/product/customer/menu');
     allMenuItems = Array.isArray(items) ? items : [];
     renderMenu('', 'all');
@@ -371,6 +451,7 @@ async function loadMenuItems() {
 
 function renderMenu(searchTerm = '', category = 'all') {
   const grid = document.getElementById('menuGrid');
+  if (!grid) return;
   let filtered = allMenuItems;
   if (searchTerm) {
     const term = searchTerm.toLowerCase();
@@ -381,8 +462,8 @@ function renderMenu(searchTerm = '', category = 'all') {
   }
   if (category !== 'all') filtered = filtered.filter(item => item.category === category);
   if (filtered.length === 0) { grid.innerHTML = '<p>No items found.</p>'; return; }
+
   grid.innerHTML = filtered.map(item => {
-    // Removed the inline customization HTML for drinks
     return `
       <div class="menu-item-card ${!item.isAvailable ? 'unavailable' : ''}" data-id="${item.id}">
         <div class="product-image">
@@ -392,23 +473,14 @@ function renderMenu(searchTerm = '', category = 'all') {
           <div class="product-name">${item.name}</div>
           <div class="product-description">${item.description || 'Delicious item!'}</div>
           <div class="product-price">₱${Number(item.price).toFixed(2)}</div>
-          <!-- Removed customization rows from here -->
-          <div class="action-row">
-            <input type="number" class="quantity-input-small" value="1" min="1" data-item-id="${item.id}">
-            <button class="add-to-billing-btn-large" data-id="${item.id}" ${!item.isAvailable ? 'disabled' : ''}>
-              <i class="ri-add-line"></i> Add to Billing
-            </button>
-          </div>
         </div>
       </div>
     `;
   }).join('');
 
-  // Add event listeners for clicking on the menu item card to open the modal
   document.querySelectorAll('.menu-item-card').forEach(card => {
     card.addEventListener('click', (e) => {
-      // Prevent the click from propagating to the "Add to Billing" button if they click the card itself
-      if (e.target === card || e.target.closest('.product-details')) {
+      if (e.target === card || e.target.closest('.product-details') || e.target.closest('.product-image')) {
         const itemId = card.dataset.id;
         const item = allMenuItems.find(i => i.id === itemId);
         if (item) {
@@ -417,24 +489,11 @@ function renderMenu(searchTerm = '', category = 'all') {
       }
     });
   });
-
-  // Add event listeners for the "Add to Billing" buttons (for direct add without modal)
-  document.querySelectorAll('.add-to-billing-btn-large').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent triggering the card click event
-      const item_id = btn.dataset.id;
-      const item = allMenuItems.find(i => i.id === item_id);
-      if (item) {
-        // Instead of adding to cart directly, open the modal
-        openItemModal(item);
-      }
-    });
-  });
 }
 
-// Function to open the modal and populate it with item details
 function openItemModal(item) {
   const modal = document.getElementById('itemModal');
+  if (!modal) return;
   const modalImage = document.getElementById('modalImage');
   const modalName = document.getElementById('modalName');
   const modalPrice = document.getElementById('modalPrice');
@@ -444,123 +503,145 @@ function openItemModal(item) {
   const modalQuantity = document.getElementById('modalQuantity');
   const modalAddToCart = document.getElementById('modalAddToCart');
 
-  // Set item details
-  modalImage.src = item.imageUrl || '/image/placeholder-menu.jpg';
-  modalName.textContent = item.name;
-  modalPrice.textContent = `₱${Number(item.price).toFixed(2)}`;
-  modalCategory.textContent = item.category;
+  if (modalImage) modalImage.src = item.imageUrl || '/image/placeholder-menu.jpg';
+  if (modalName) modalName.textContent = item.name;
+  if (modalPrice) modalPrice.textContent = `₱${Number(item.price).toFixed(2)}`;
+  if (modalCategory) modalCategory.textContent = item.category;
 
-  // Clear previous ingredients list
-  modalIngredients.innerHTML = '';
-  // ✅ FIXED: Safely render ingredient names from new enriched API
-  if (item.ingredients && Array.isArray(item.ingredients)) {
-    if (item.ingredients.length === 0) {
-      modalIngredients.innerHTML = '<li>No ingredients listed</li>';
+  if (modalIngredients) modalIngredients.innerHTML = '';
+  if (modalIngredients) {
+    if (item.ingredients && Array.isArray(item.ingredients)) {
+      if (item.ingredients.length === 0) {
+        modalIngredients.innerHTML = '<li>No ingredients listed</li>';
+      } else {
+        item.ingredients.forEach(ingredient => {
+          let name = 'Unknown ingredient';
+          if (typeof ingredient === 'string') {
+            name = ingredient;
+          } else if (typeof ingredient === 'object' && ingredient !== null) {
+            name = ingredient.name || ingredient.Name || `Unknown (${ingredient.inventoryItemId || ''})`;
+          }
+          const li = document.createElement('li');
+          li.textContent = name;
+          modalIngredients.appendChild(li);
+        });
+      }
     } else {
-      item.ingredients.forEach(ingredient => {
-        let name = 'Unknown ingredient';
-        if (typeof ingredient === 'string') {
-          name = ingredient;
-        } else if (typeof ingredient === 'object' && ingredient !== null) {
-          name = ingredient.name || ingredient.Name || `Unknown (${ingredient.inventoryItemId || ''})`;
-        }
-        const li = document.createElement('li');
-        li.textContent = name;
-        modalIngredients.appendChild(li);
-      });
+      modalIngredients.innerHTML = '<li>Details not available</li>';
     }
-  } else {
-    // Fallback if no ingredients array exists
-    modalIngredients.innerHTML = '<li>Details not available</li>';
   }
 
-  // Set availability status
-  if (item.isAvailable) {
-    modalAvailability.textContent = 'Available';
-    modalAvailability.style.color = '#4CAF50'; // Green
-    modalAvailability.style.fontWeight = 'bold';
-    modalAddToCart.disabled = false;
-  } else {
-    modalAvailability.textContent = 'Currently Unavailable';
-    modalAvailability.style.color = '#E53E3E'; // Red
-    modalAvailability.style.fontWeight = 'bold';
-    modalAddToCart.disabled = true;
+  if (modalAvailability) {
+    if (item.isAvailable) {
+      modalAvailability.textContent = 'Available';
+      modalAvailability.style.color = '#4CAF50';
+      modalAvailability.style.fontWeight = 'bold';
+      if (modalAddToCart) modalAddToCart.disabled = false;
+    } else {
+      modalAvailability.textContent = 'Currently Unavailable';
+      modalAvailability.style.color = '#E53E3E';
+      modalAvailability.style.fontWeight = 'bold';
+      if (modalAddToCart) modalAddToCart.disabled = true;
+    }
   }
 
-  // Reset the quantity input
-  modalQuantity.value = '1';
+  if (modalQuantity) {
+    modalQuantity.value = '1';
+  }
 
-  // Set up customization buttons in the modal (only for drinks)
-  // Initialize default selections for the modal
+  // --- FIX: Attach event listeners to minus and plus buttons ---
+  const modalQtyMinus = document.getElementById('modalQtyMinus');
+  const modalQtyPlus = document.getElementById('modalQtyPlus');
+
+  if (modalQtyMinus && modalQuantity) {
+    modalQtyMinus.addEventListener('click', (ev) => {
+      ev?.preventDefault();
+      const current = parseInt(modalQuantity.value) || 1;
+      if (current > 1) modalQuantity.value = String(current - 1);
+    });
+  }
+
+  if (modalQtyPlus && modalQuantity) {
+    modalQtyPlus.addEventListener('click', (ev) => {
+      ev?.preventDefault();
+      const current = parseInt(modalQuantity.value) || 1;
+      modalQuantity.value = String(current + 1);
+    });
+  }
+
+  // --- END OF FIX ---
+
   let selectedMood = 'Hot';
   let selectedSize = 'M';
   let selectedSugar = '50%';
 
-  // Only show and set up customization if the item is a drink
   const customizationSection = document.querySelector('.customization-section');
-  if (item.category === 'Drinks') {
-    customizationSection.style.display = 'block'; // Show customization
+  if (item.category === 'Drinks' && customizationSection) {
+    customizationSection.style.display = 'block';
 
-    // Add event listeners to customization buttons
+    document.querySelectorAll('.custom-option-btn').forEach(btn => {
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+    });
+
     document.querySelectorAll('.custom-option-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const type = e.target.dataset.type;
-        const value = e.target.dataset.value;
-        // Remove active class from all buttons of the same type
+        const target = e.currentTarget;
+        const type = target.dataset.type;
+        const value = target.dataset.value;
         document.querySelectorAll(`.custom-option-btn[data-type="${type}"]`).forEach(b => {
           b.classList.remove('active');
         });
-        // Add active class to the clicked button
-        e.target.classList.add('active');
-        // Update the selected value
+        target.classList.add('active');
         if (type === 'mood') selectedMood = value;
         else if (type === 'size') selectedSize = value;
         else if (type === 'sugar') selectedSugar = value;
       });
     });
 
-    // Set default active states for the modal buttons
-    document.querySelector(`.custom-option-btn[data-type="mood"][data-value="${selectedMood}"]`).classList.add('active');
-    document.querySelector(`.custom-option-btn[data-type="size"][data-value="${selectedSize}"]`).classList.add('active');
-    document.querySelector(`.custom-option-btn[data-type="sugar"][data-value="${selectedSugar}"]`).classList.add('active');
+    const moodBtn = document.querySelector(`.custom-option-btn[data-type="mood"][data-value="${selectedMood}"]`);
+    const sizeBtn = document.querySelector(`.custom-option-btn[data-type="size"][data-value="${selectedSize}"]`);
+    const sugarBtn = document.querySelector(`.custom-option-btn[data-type="sugar"][data-value="${selectedSugar}"]`);
+    if (moodBtn) moodBtn.classList.add('active');
+    if (sizeBtn) sizeBtn.classList.add('active');
+    if (sugarBtn) sugarBtn.classList.add('active');
 
-  } else {
-    // Hide customization section for non-drinks
+  } else if (customizationSection) {
     customizationSection.style.display = 'none';
   }
 
-  // Set up the "Add to Billing" button in the modal
-  modalAddToCart.onclick = () => {
-    if (!item.isAvailable) {
-      alert("This item is currently unavailable.");
-      return;
-    }
-    const quantity = parseInt(modalQuantity.value) || 1;
-    // Use selected customizations if it's a drink, otherwise use defaults or empty strings
-    const sizeToUse = item.category === 'Drinks' ? selectedSize : '';
-    const moodToUse = item.category === 'Drinks' ? selectedMood : '';
-    const sugarToUse = item.category === 'Drinks' ? selectedSugar : '';
-    addToCart(item, quantity, sizeToUse, moodToUse, sugarToUse);
-    // Close the modal after adding to cart
-    closeModal();
-  };
+  if (modalAddToCart) {
+    modalAddToCart.onclick = () => {
+      if (!item.isAvailable) {
+        alert("This item is currently unavailable.");
+        return;
+      }
+      const quantity = (document.getElementById('modalQuantity') && parseInt(document.getElementById('modalQuantity').value)) || 1;
+      const sizeToUse = item.category === 'Drinks' ? selectedSize : '';
+      const moodToUse = item.category === 'Drinks' ? selectedMood : '';
+      const sugarToUse = item.category === 'Drinks' ? selectedSugar : '';
+      addToCart(item, quantity, sizeToUse, moodToUse, sugarToUse);
+      closeModal();
+    };
+  }
 
-  // Show the modal
   modal.style.display = 'block';
 }
 
-// Function to close the modal
 function closeModal() {
   const modal = document.getElementById('itemModal');
+  if (!modal) return;
   modal.style.display = 'none';
-  // Also remove active classes from modal buttons to reset them for next time
   document.querySelectorAll('.custom-option-btn').forEach(btn => btn.classList.remove('active'));
 }
 
-// ------------------- CART -------------------
 function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') {
   if (!item.isAvailable) {
     alert("This item is currently unavailable.");
+    return;
+  }
+  if (quantity <= 0) {
+    alert("Quantity must be at least 1");
     return;
   }
   const existing = cart.find(i =>
@@ -573,7 +654,9 @@ function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') 
     existing.quantity += quantity;
   } else {
     cart.push({
-      ...item,
+      id: item.id,
+      name: item.name,
+      price: item.price,
       quantity,
       size,
       mood,
@@ -588,15 +671,20 @@ function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') 
 function updateCartUI() {
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  document.getElementById('cartCount').textContent = count;
-  document.getElementById('cartTotal').textContent = `₱${total.toFixed(2)}`;
-  document.getElementById('cartItemCount').textContent = `${count} item${count !== 1 ? 's' : ''}`;
-  document.getElementById('checkoutBtn').disabled = count === 0;
+  const cartCountEl = document.getElementById('cartCount');
+  const cartTotalEl = document.getElementById('cartTotal');
+  const cartItemCountEl = document.getElementById('cartItemCount');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+
+  if (cartCountEl) cartCountEl.textContent = count;
+  if (cartTotalEl) cartTotalEl.textContent = `₱${total.toFixed(2)}`;
+  if (cartItemCountEl) cartItemCountEl.textContent = `${count} item${count !== 1 ? 's' : ''}`;
+  if (checkoutBtn) checkoutBtn.disabled = count === 0;
 }
 
 async function placeOrder() {
   if (cart.length === 0) return;
-  const customerInfo = JSON.parse(localStorage.getItem('customerInfo'));
+  const customerInfo = JSON.parse(localStorage.getItem('customerInfo') || '{}');
   const orderItems = cart.map(item => ({
     productId: item.id,
     name: item.name,
@@ -622,7 +710,6 @@ async function placeOrder() {
     localStorage.setItem('tambayanCart', JSON.stringify(cart));
     updateCartUI();
     showView('dashboard');
-    // Reload recent orders and current order tracker after placing an order
     loadRecentOrders();
     loadCurrentOrderForTracker();
   } catch (err) {
@@ -630,40 +717,33 @@ async function placeOrder() {
   }
 }
 
-// ------------------- MY ORDERS -------------------
 async function loadMyOrders() {
     const tbody = document.getElementById('myOrdersTableBody');
-    if (!tbody) return; // Guard clause if element doesn't exist
+    if (!tbody) return;
 
     tbody.innerHTML = '<tr><td colspan="5">Loading your orders...</td></tr>';
 
     try {
-        // Fetch all orders for the current customer
-        // Assuming the API endpoint returns all orders associated with the authenticated customer
-        const orders = await apiCall('/customer/orders'); // Adjust endpoint if needed
+        const orders = await apiCall('/customer/orders');
 
         if (!orders || orders.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5">You have no orders yet.</td></tr>';
             return;
         }
 
-        // Clear loading message
         tbody.innerHTML = '';
 
-        // Sort orders by date, newest first (optional, depends on API response)
         orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         orders.forEach(order => {
             const row = document.createElement('tr');
             const statusClass = getStatusClass(order.status);
 
-            // Format date and time
             const orderDate = new Date(order.createdAt);
-            const formattedDateTime = orderDate.toLocaleString(); // Adjust format as needed
+            const formattedDateTime = orderDate.toLocaleString();
 
-            // Create action buttons (Reorder, Leave Feedback)
             const actionsCell = document.createElement('td');
-            actionsCell.classList.add('actions-cell'); // Add a class for potential styling
+            actionsCell.classList.add('actions-cell');
 
             const reorderBtn = document.createElement('button');
             reorderBtn.textContent = 'Reorder';
@@ -685,7 +765,6 @@ async function loadMyOrders() {
                 <td>₱${Number(order.totalAmount).toFixed(2)}</td>
             `;
 
-            // Append the actions cell after the other cells are added via innerHTML
             row.appendChild(actionsCell);
 
             tbody.appendChild(row);
@@ -696,15 +775,11 @@ async function loadMyOrders() {
     }
 }
 
-// Placeholder functions for Reorder and Feedback actions
 function handleReorder(order) {
-    // Logic to add the items from the order back to the cart
-    // This is a simplified version - you might want to handle customizations more carefully
+    if (!order.items || !Array.isArray(order.items)) return;
     order.items.forEach(item => {
-        // Assuming the order item structure matches the cart item structure
-        // You might need to map fields like productId -> id
         addToCart(
-            { ...item, id: item.productId }, // Map productId if needed
+            { id: item.productId || item.id, name: item.name, price: item.price },
             item.quantity,
             item.size || 'M',
             item.mood || 'Hot',
@@ -712,148 +787,163 @@ function handleReorder(order) {
         );
     });
     alert(`Items from order #${order.orderNumber} added to your cart!`);
-    updateCartUI(); // Update the cart UI after adding items
-    showView('menu'); // Optionally switch to the menu view to see the cart
+    updateCartUI();
+    showView('menu');
 }
 
 function handleFeedback(order) {
-    // Logic to open a feedback form or modal for the specific order
-    // This is a placeholder - implement the actual feedback mechanism
     alert(`Feedback form for order #${order.orderNumber} would open here.`);
-    // Example: Open a modal with order details and a feedback input
-    // You could pass the order ID to a function that displays the feedback UI
 }
 
-// ------------------- PROFILE SETTINGS -------------------
-
-// Open profile settings modal
-function openProfileSettings() {
-    // Create or show profile settings modal
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.id = 'profileModal';
-    modal.innerHTML = `
-        <div class="modal-content" style="width: 500px; max-width: 90vw; padding: 24px;">
-            <span class="close" id="closeProfileModal" style="position: absolute; top: 10px; right: 15px; font-size: 28px; cursor: pointer;">&times;</span>
-            <h2 style="margin-bottom: 20px; color: #6b4a3a;">Profile Settings</h2>
-            <form id="profileForm">
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="profileName" style="display: block; margin-bottom: 5px; font-weight: 500;">Full Name</label>
-                    <input type="text" id="profileName" name="name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="profileEmail" style="display: block; margin-bottom: 5px; font-weight: 500;">Email Address</label>
-                    <input type="email" id="profileEmail" name="email" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="profilePhone" style="display: block; margin-bottom: 5px; font-weight: 500;">Phone Number</label>
-                    <input type="tel" id="profilePhone" name="phone" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="profileAddress" style="display: block; margin-bottom: 5px; font-weight: 500;">Address</label>
-                    <textarea id="profileAddress" name="address" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;"></textarea>
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="profileBirthday" style="display: block; margin-bottom: 5px; font-weight: 500;">Birthday</label>
-                    <input type="date" id="profileBirthday" name="birthday" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                </div>
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="profileGender" style="display: block; margin-bottom: 5px; font-weight: 500;">Gender</label>
-                    <select id="profileGender" name="gender" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                        <option value="">Select Gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" id="cancelProfileBtn" class="btn-secondary" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 8px; background: #f5f2eb; color: #6b4a3a; cursor: pointer;">Cancel</button>
-                    <button type="submit" class="btn-primary" style="padding: 10px 20px; border: none; border-radius: 8px; background: #6b4a3a; color: white; cursor: pointer;">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Load current profile data
-    loadProfileSettings();
-
-    // Add event listeners
-    document.getElementById('closeProfileModal').addEventListener('click', closeProfileModal);
-    document.getElementById('cancelProfileBtn').addEventListener('click', closeProfileModal);
-    document.getElementById('profileForm').addEventListener('submit', saveProfileSettings);
-
-    // Close modal when clicking outside
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            closeProfileModal();
-        }
-    });
-}
-
-// Load profile settings from API
 async function loadProfileSettings() {
     try {
         const profile = await apiCall('/customer/profile');
-        document.getElementById('profileName').value = profile.name || '';
-        document.getElementById('profileEmail').value = profile.email || '';
-        document.getElementById('profilePhone').value = profile.phone || '';
-        document.getElementById('profileAddress').value = profile.address || '';
-        document.getElementById('profileBirthday').value = profile.birthday || '';
-        document.getElementById('profileGender').value = profile.gender || '';
+        document.getElementById('firstName').value = profile.firstName || '';
+        document.getElementById('lastName').value = profile.lastName || '';
+        document.getElementById('email').value = profile.email || '';
+        document.getElementById('phone').value = profile.phone || '';
+        document.getElementById('address').value = profile.address || '';
+        document.getElementById('birthday').value = profile.birthday || '';
+        document.getElementById('gender').value = profile.gender || '';
     } catch (err) {
         console.error('Error loading profile settings:', err);
-        alert('Failed to load profile data: ' + err.message);
+        alert('Failed to load profile  ' + err.message);
     }
 }
 
-// Save profile settings
 async function saveProfileSettings(e) {
-    e.preventDefault();
-    
-    const formData = {
-        name: document.getElementById('profileName').value,
-        email: document.getElementById('profileEmail').value,
-        phone: document.getElementById('profilePhone').value,
-        address: document.getElementById('profileAddress').value,
-        birthday: document.getElementById('profileBirthday').value,
-        gender: document.getElementById('profileGender').value
-    };
+  e.preventDefault();
+  
+  const formData = {
+    firstName: document.getElementById('firstName').value.trim(),
+    lastName: document.getElementById('lastName').value.trim(),
+    email: document.getElementById('email').value.trim().toLowerCase(),
+    phone: document.getElementById('phone').value.trim(),
+    address: document.getElementById('address').value.trim(),
+    birthday: document.getElementById('birthday').value,
+    gender: document.getElementById('gender').value
+  };
 
-    // Validate required fields
-    if (!formData.name || !formData.email || !formData.phone) {
-        alert('Please fill in all required fields (Name, Email, Phone)');
+  const errors = [];
+  
+  if (!formData.firstName || formData.firstName.length < 2) {
+    errors.push('First name must be at least 2 characters');
+  }
+  
+  if (!formData.lastName || formData.lastName.length < 2) {
+    errors.push('Last name must be at least 2 characters');
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(formData.email)) {
+    errors.push('Please enter a valid email address');
+  }
+  
+  if (!formData.phone || !/^\+?[0-9\s\-\(\)]{10,}$/.test(formData.phone)) {
+    errors.push('Please enter a valid phone number');
+  }
+  
+  if (errors.length > 0) {
+    alert('Validation errors:\n' + errors.join('\n'));
+    return;
+  }
+
+  try {
+    const response = await apiCall('/customer/profile', {
+      method: 'PUT',
+      body: JSON.stringify(formData)
+    });
+
+    localStorage.setItem('customerInfo', JSON.stringify(response));
+    document.querySelector('.welcome').textContent = `Welcome back, ${response.firstName} ${response.lastName}!`;
+    alert('Profile updated successfully!');
+  } catch (err) {
+    alert('Failed to update profile: ' + err.message);
+  }
+}
+
+function openCartModal() {
+    const modal = document.getElementById('cartModal');
+    if (!modal) return;
+    
+    loadCartIntoModal();
+    
+    modal.style.display = 'block';
+}
+
+function closeCartModal() {
+    const modal = document.getElementById('cartModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+}
+
+function loadCartIntoModal() {
+    const container = document.querySelector('.cart-items-container');
+    const totalEl = document.getElementById('cartTotal');
+    const countEl = document.getElementById('cartItemCount');
+    
+    if (!container || !totalEl || !countEl) return;
+    
+    if (cart.length === 0) {
+        container.innerHTML = '<p>Your cart is empty.</p>';
+        totalEl.textContent = '₱0.00';
+        countEl.textContent = '0';
+        document.getElementById('checkoutBtn')?.setAttribute('disabled', 'true');
         return;
     }
-
-    try {
-        // Update profile via API
-        const response = await apiCall('/customer/profile', {
-            method: 'PUT',
-            body: JSON.stringify(formData)
+    
+    let html = '';
+    let total = 0;
+    
+    cart.forEach((item, index) => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        
+        html += `
+            <div class="cart-item">
+                <div class="item-details">
+                    <h3>${item.name}</h3>
+                    <p class="item-meta">Qty: ${item.quantity} | Size: ${item.size || 'N/A'} | Mood: ${item.mood || 'N/A'} | Sugar: ${item.sugar || 'N/A'}</p>
+                    <p class="item-price">₱${Number(item.price).toFixed(2)} x ${item.quantity} = ₱${itemTotal.toFixed(2)}</p>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-remove" data-index="${index}">Remove</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    totalEl.textContent = `₱${total.toFixed(2)}`;
+    countEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+    
+    document.getElementById('checkoutBtn')?.removeAttribute('disabled');
+    
+    document.querySelectorAll('.btn-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            removeItemFromCart(index);
         });
+    });
+    
+    document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
+    document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
+}
 
-        // Save to localStorage
-        localStorage.setItem('customerInfo', JSON.stringify(response));
-
-        // Update welcome message
-        document.querySelector('.welcome').textContent = `Welcome back, ${response.name}!`;
-
-        // Show success message
-        alert('Profile updated successfully!');
-
-        // Close modal
-        closeProfileModal();
-    } catch (err) {
-        alert('Failed to update profile: ' + err.message);
+function removeItemFromCart(index) {
+    if (index >= 0 && index < cart.length) {
+        cart.splice(index, 1);
+        localStorage.setItem('tambayanCart', JSON.stringify(cart));
+        updateCartUI();
+        loadCartIntoModal();
     }
 }
 
-// Close profile modal
-function closeProfileModal() {
-    const modal = document.getElementById('profileModal');
-    if (modal) {
-        modal.remove();
+function clearCart() {
+    if (confirm("Are you sure you want to clear your entire cart?")) {
+        cart = [];
+        localStorage.setItem('tambayanCart', JSON.stringify(cart));
+        updateCartUI();
+        loadCartIntoModal();
     }
 }
