@@ -315,6 +315,70 @@
     </div>
   </div>
 </div>
+
+  <div id="customAlert" class="modal">
+    <div class="modal-content">
+      <h3 id="alertTitle">127.0.0.1:5500 says</h3>
+      <p id="alertMessage"></p>
+      <button id="alertOkBtn">OK</button>
+    </div>
+  </div>
+
+  <!-- === ORDER CONFIRMATION MODAL (BIRTHDAY & GENDER REMOVED) === -->
+  <div id="orderConfirmationModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close-btn" id="closeOrderConfirmationModal">&times;</span>
+      <h2 class="section-title"><i class="ri-check-double-line"></i> Confirm Your Order</h2>
+      
+      <div class="order-summary">
+        <h3>Your Order Details</h3>
+        <div class="cart-items-container" id="orderItemsContainer"></div>
+        
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>Total Items:</span>
+            <span id="orderItemCount">0</span>
+          </div>
+          <div class="summary-row">
+            <strong>Total Amount:</strong>
+            <strong id="orderTotal">₱0.00</strong>
+          </div>
+        </div>
+      </div>
+      
+      <div class="customer-info-form">
+        <h3>Customer Information</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customerFirstName">First Name *</label>
+            <input type="text" id="customerFirstName" name="customerFirstName" required>
+          </div>
+          <div class="form-group">
+            <label for="customerLastName">Last Name *</label>
+            <input type="text" id="customerLastName" name="customerLastName" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="customerEmail">Email Address *</label>
+          <input type="email" id="customerEmail" name="customerEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="customerPhone">Phone Number *</label>
+          <input type="tel" id="customerPhone" name="customerPhone" required>
+        </div>
+        <div class="form-group">
+          <label for="customerAddress">Delivery Address *</label>
+          <textarea id="customerAddress" name="customerAddress" rows="3" required></textarea>
+        </div>
+      </div>
+      
+      <div class="order-actions">
+        <button id="confirmOrderBtn" class="checkout-btn">CONFIRM ORDER</button>
+        <button id="cancelOrderBtn" class="btn-secondary">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/customerDashboard.js"></script>
   <script>
     console.log("Customer Dashboard loaded!");

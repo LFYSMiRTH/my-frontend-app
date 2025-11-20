@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadCustomerProfile();
   loadRecentOrders();
-  loadFavorites();
+  loadAllMenuItemsForCarousel();
   loadCurrentOrderForTracker();
   setInterval(loadCurrentOrderForTracker, 10000);
 
@@ -55,16 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const notifs = await apiCall('/customer/notifications?limit=5');
       if (!notifs || notifs.length === 0) {
-        alert('No new notifications.');
+        showAlert('No new notifications', 'You have no new notifications at this time.');
         return;
       }
-      let msg = '🔔 Notifications:\n';
+      let msg = '';
       notifs.forEach(n => {
         msg += `• ${n.message} (${new Date(n.createdAt).toLocaleString()})\n`;
       });
-      alert(msg);
+      showAlert('Notifications', msg);
     } catch (err) {
-      alert('Failed to load notifications: ' + err.message);
+      showAlert('Error', 'Failed to load notifications: ' + err.message);
     }
   });
 
@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('closeCartModal')?.addEventListener('click', closeCartModal);
+  document.getElementById('closeOrderConfirmationModal')?.addEventListener('click', closeOrderConfirmationModal);
   window.onclick = function(event) {
     const modal = document.getElementById('itemModal');
     if (event.target === modal) {
@@ -104,7 +105,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target === cartModal) {
       closeCartModal();
     }
+    const orderModal = document.getElementById('orderConfirmationModal');
+    if (event.target === orderModal) {
+      closeOrderConfirmationModal();
+    }
   };
+
+  document.getElementById('alertOkBtn')?.addEventListener('click', () => {
+    document.getElementById('customAlert').style.display = 'none';
+  });
+  
+  document.getElementById('confirmOrderBtn')?.addEventListener('click', handleOrderConfirmation);
+  document.getElementById('cancelOrderBtn')?.addEventListener('click', closeOrderConfirmationModal);
+  
+  document.getElementById('phone')?.addEventListener('input', function(e) {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    if (this.value.length > 11) {
+      this.value = this.value.slice(0, 11);
+    }
+  });
+  
+  document.getElementById('customerPhone')?.addEventListener('input', function(e) {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    if (this.value.length > 11) {
+      this.value = this.value.slice(0, 11);
+    }
+  });
+  
+  document.getElementById('profileForm')?.addEventListener('submit', validatePhoneInput);
+  document.getElementById('orderConfirmationModal')?.addEventListener('submit', validatePhoneInput);
 });
 
 function showView(viewId) {
@@ -118,7 +147,7 @@ async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = localStorage.getItem('customerToken');
   if (!token) {
-    alert('Customer session expired. Please log in again.');
+    showAlert('Session Expired', 'Customer session expired. Please log in again.');
     window.location.href = '/html/login.html';
     throw new Error('No token');
   }
@@ -131,7 +160,7 @@ async function apiCall(endpoint, options = {}) {
   const res = await fetch(url, config);
 
   if (res.status === 401 || res.status === 403) {
-    alert('Session expired or access denied. Please log in again.');
+    showAlert('Unauthorized', 'Session expired or access denied. Please log in again.');
     localStorage.removeItem('customerToken');
     localStorage.removeItem('customerInfo');
     window.location.href = '/html/login.html';
@@ -157,6 +186,58 @@ async function apiCall(endpoint, options = {}) {
   }
 
   return res.json();
+}
+
+function showAlert(title, message, isConfirmation = false, onConfirm = null, onCancel = null) {
+  const modal = document.getElementById('customAlert');
+  const titleEl = document.getElementById('alertTitle');
+  const msgEl = document.getElementById('alertMessage');
+  const okBtn = document.getElementById('alertOkBtn');
+  const cancelBtn = document.createElement('button');
+  
+  const existingCancel = document.getElementById('alertCancelBtn');
+  if (existingCancel) {
+    existingCancel.remove();
+  }
+  
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+
+  if (isConfirmation) {
+    cancelBtn.id = 'alertCancelBtn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.className = 'btn-secondary';
+    cancelBtn.style.marginLeft = '8px';
+    cancelBtn.style.backgroundColor = '#2d5a6b';
+    cancelBtn.style.borderColor = '#2d5a6b';
+    cancelBtn.style.color = 'white';
+    cancelBtn.style.padding = '10px 20px';
+    cancelBtn.style.borderRadius = '8px';
+    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.style.transition = 'background 0.2s';
+    
+    cancelBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+      if (onCancel) onCancel();
+    });
+    
+    okBtn.parentNode.appendChild(cancelBtn);
+  }
+
+  modal.style.display = 'flex';
+  modal.style.zIndex = '9999'; // ensure it stacks above everything
+
+  okBtn.onclick = function() {
+    modal.style.display = 'none';
+    if (onConfirm) onConfirm();
+  };
+
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      modal.style.display = 'none';
+      if (onCancel) onCancel();
+    }
+  });
 }
 
 async function loadCustomerProfile() {
@@ -211,26 +292,26 @@ async function loadRecentOrders() {
   }
 }
 
-async function loadFavorites() {
+async function loadAllMenuItemsForCarousel() {
   const grid = document.getElementById('favoritesCarousel');
   if (!grid) {
     console.error("Favorites carousel container (#favoritesCarousel) not found in HTML.");
     return;
   }
   
-  grid.innerHTML = '<div class="loading-spinner">Loading recommendations...</div>';
+  grid.innerHTML = '<div class="loading-spinner">Loading all menu items...</div>';
   
   try {
-    const favorites = await apiCall('/customer/favorites');
+    const allItems = await apiCall('/product/customer/menu');
     
-    if (!favorites || favorites.length === 0) {
-      grid.innerHTML = '<div class="no-items">No recommended items yet.</div>';
+    if (!allItems || allItems.length === 0) {
+      grid.innerHTML = '<div class="no-items">No menu items available.</div>';
       return;
     }
 
     grid.innerHTML = '';
     
-    favorites.forEach((item, index) => {
+    allItems.forEach((item, index) => {
       const itemElement = document.createElement('div');
       itemElement.className = `carousel-item ${!item.isAvailable ? 'unavailable' : ''} view-only`;
       itemElement.dataset.id = item.id;
@@ -263,8 +344,8 @@ async function loadFavorites() {
     }, 100);
 
   } catch (err) {
-    grid.innerHTML = `<div class="error-message">Error loading favorites: ${err.message}</div>`;
-    console.error("Error loading favorites:", err);
+    grid.innerHTML = `<div class="error-message">Error loading menu items: ${err.message}</div>`;
+    console.error("Error loading menu items for carousel:", err);
   }
 }
 
@@ -342,6 +423,9 @@ function initializeFavoritesCarousel() {
     if (currentIndex > 0) {
       currentIndex--;
       updateCarousel();
+    } else {
+      currentIndex = items.length - 1;
+      updateCarousel();
     }
   });
 
@@ -350,6 +434,9 @@ function initializeFavoritesCarousel() {
     const maxIndex = Math.max(0, items.length - visibleItems);
     if (currentIndex < maxIndex) {
       currentIndex++;
+      updateCarousel();
+    } else {
+      currentIndex = 0;
       updateCarousel();
     }
   });
@@ -549,31 +636,37 @@ function openItemModal(item) {
     modalQuantity.value = '1';
   }
 
-  // --- FIX: Attach event listeners to minus and plus buttons ---
   const modalQtyMinus = document.getElementById('modalQtyMinus');
   const modalQtyPlus = document.getElementById('modalQtyPlus');
 
   if (modalQtyMinus && modalQuantity) {
-    modalQtyMinus.addEventListener('click', (ev) => {
-      ev?.preventDefault();
-      const current = parseInt(modalQuantity.value) || 1;
-      if (current > 1) modalQuantity.value = String(current - 1);
+    modalQtyMinus.replaceWith(modalQtyMinus.cloneNode(true));
+    const newMinus = document.getElementById('modalQtyMinus');
+    newMinus.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      let current = parseInt(modalQuantity.value) || 1;
+      if (current > 1) {
+        current--;
+        modalQuantity.value = current;
+      }
     });
   }
 
   if (modalQtyPlus && modalQuantity) {
-    modalQtyPlus.addEventListener('click', (ev) => {
-      ev?.preventDefault();
-      const current = parseInt(modalQuantity.value) || 1;
-      modalQuantity.value = String(current + 1);
+    modalQtyPlus.replaceWith(modalQtyPlus.cloneNode(true));
+    const newPlus = document.getElementById('modalQtyPlus');
+    newPlus.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      let current = parseInt(modalQuantity.value) || 1;
+      current++;
+      modalQuantity.value = current;
     });
   }
-
-  // --- END OF FIX ---
 
   let selectedMood = 'Hot';
   let selectedSize = 'M';
   let selectedSugar = '50%';
+  let currentPrice = item.price;
 
   const customizationSection = document.querySelector('.customization-section');
   if (item.category === 'Drinks' && customizationSection) {
@@ -583,6 +676,14 @@ function openItemModal(item) {
       const newBtn = btn.cloneNode(true);
       btn.parentNode.replaceChild(newBtn, btn);
     });
+
+    function updatePrice() {
+      let price = item.price;
+      if (selectedSize === 'S') price -= 5;
+      if (selectedSize === 'L') price += 10;
+      currentPrice = price;
+      if (modalPrice) modalPrice.textContent = `₱${Number(currentPrice).toFixed(2)}`;
+    }
 
     document.querySelectorAll('.custom-option-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -594,7 +695,10 @@ function openItemModal(item) {
         });
         target.classList.add('active');
         if (type === 'mood') selectedMood = value;
-        else if (type === 'size') selectedSize = value;
+        else if (type === 'size') {
+          selectedSize = value;
+          updatePrice();
+        }
         else if (type === 'sugar') selectedSugar = value;
       });
     });
@@ -613,14 +717,14 @@ function openItemModal(item) {
   if (modalAddToCart) {
     modalAddToCart.onclick = () => {
       if (!item.isAvailable) {
-        alert("This item is currently unavailable.");
+        showAlert("Unavailable", "This item is currently unavailable.");
         return;
       }
       const quantity = (document.getElementById('modalQuantity') && parseInt(document.getElementById('modalQuantity').value)) || 1;
       const sizeToUse = item.category === 'Drinks' ? selectedSize : '';
       const moodToUse = item.category === 'Drinks' ? selectedMood : '';
       const sugarToUse = item.category === 'Drinks' ? selectedSugar : '';
-      addToCart(item, quantity, sizeToUse, moodToUse, sugarToUse);
+      addToCart(item, quantity, sizeToUse, moodToUse, sugarToUse, currentPrice);
       closeModal();
     };
   }
@@ -635,13 +739,13 @@ function closeModal() {
   document.querySelectorAll('.custom-option-btn').forEach(btn => btn.classList.remove('active'));
 }
 
-function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') {
+function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%', price = null) {
   if (!item.isAvailable) {
-    alert("This item is currently unavailable.");
+    showAlert("Unavailable", "This item is currently unavailable.");
     return;
   }
   if (quantity <= 0) {
-    alert("Quantity must be at least 1");
+    showAlert("Invalid Quantity", "Quantity must be at least 1");
     return;
   }
   const existing = cart.find(i =>
@@ -656,7 +760,7 @@ function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') 
     cart.push({
       id: item.id,
       name: item.name,
-      price: item.price,
+      price: price !== null ? price : item.price,
       quantity,
       size,
       mood,
@@ -665,7 +769,7 @@ function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%') 
   }
   localStorage.setItem('tambayanCart', JSON.stringify(cart));
   updateCartUI();
-  alert(`"${item.name}" (Mood: ${mood || 'N/A'}, Size: ${size || 'N/A'}, Sugar: ${sugar || 'N/A'}) added to cart!`);
+  showAlert("Added to Cart", `"${item.name}" (Mood: ${mood || 'N/A'}, Size: ${size || 'N/A'}, Sugar: ${sugar || 'N/A'}) added to cart!`);
 }
 
 function updateCartUI() {
@@ -684,7 +788,97 @@ function updateCartUI() {
 
 async function placeOrder() {
   if (cart.length === 0) return;
+  
   const customerInfo = JSON.parse(localStorage.getItem('customerInfo') || '{}');
+  
+  if (customerInfo.firstName) document.getElementById('customerFirstName').value = customerInfo.firstName;
+  if (customerInfo.lastName) document.getElementById('customerLastName').value = customerInfo.lastName;
+  if (customerInfo.email) document.getElementById('customerEmail').value = customerInfo.email;
+  if (customerInfo.phone) document.getElementById('customerPhone').value = customerInfo.phone;
+  if (customerInfo.address) document.getElementById('customerAddress').value = customerInfo.address;
+  
+  loadOrderConfirmationModal();
+  document.getElementById('orderConfirmationModal').style.display = 'block';
+}
+
+function loadOrderConfirmationModal() {
+  const container = document.getElementById('orderItemsContainer');
+  const totalEl = document.getElementById('orderTotal');
+  const countEl = document.getElementById('orderItemCount');
+  
+  if (!container || !totalEl || !countEl) return;
+  
+  if (cart.length === 0) {
+      container.innerHTML = '<p>Your cart is empty.</p>';
+      totalEl.textContent = '₱0.00';
+      countEl.textContent = '0';
+      return;
+  }
+  
+  let html = '';
+  let total = 0;
+  
+  cart.forEach((item, index) => {
+      const itemTotal = item.price * item.quantity;
+      total += itemTotal;
+      
+      html += `
+          <div class="cart-item">
+              <div class="item-details">
+                  <h3>${item.name}</h3>
+                  <p class="item-meta">Qty: ${item.quantity} | Size: ${item.size || 'N/A'} | Mood: ${item.mood || 'N/A'} | Sugar: ${item.sugar || 'N/A'}</p>
+                  <p class="item-price">₱${Number(item.price).toFixed(2)} x ${item.quantity} = ₱${itemTotal.toFixed(2)}</p>
+              </div>
+          </div>
+      `;
+  });
+  
+  container.innerHTML = html;
+  totalEl.textContent = `₱${total.toFixed(2)}`;
+  countEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+function handleOrderConfirmation() {
+  const customerInfo = {
+    firstName: document.getElementById('customerFirstName').value.trim(),
+    lastName: document.getElementById('customerLastName').value.trim(),
+    email: document.getElementById('customerEmail').value.trim().toLowerCase(),
+    phone: document.getElementById('customerPhone').value.trim(),
+    address: document.getElementById('customerAddress').value.trim()
+  };
+
+  const errors = [];
+  
+  if (!customerInfo.firstName || customerInfo.firstName.length < 2) {
+    errors.push('First name must be at least 2 characters');
+  }
+  
+  if (!customerInfo.lastName || customerInfo.lastName.length < 2) {
+    errors.push('Last name must be at least 2 characters');
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(customerInfo.email)) {
+    errors.push('Please enter a valid email address');
+  }
+  
+  if (!customerInfo.phone) {
+    errors.push('Phone number is required');
+  } else if (!/^[0-9]{11}$/.test(customerInfo.phone)) {
+    errors.push('Phone number must be exactly 11 digits and contain only numbers');
+  }
+  
+  if (!customerInfo.address) {
+    errors.push('Please enter a delivery address');
+  }
+  
+  if (errors.length > 0) {
+    showAlert('Validation Errors', errors.join('\n'));
+    return;
+  }
+
+  const storedCustomerInfo = JSON.parse(localStorage.getItem('customerInfo') || '{}');
+  
   const orderItems = cart.map(item => ({
     productId: item.id,
     name: item.name,
@@ -694,27 +888,41 @@ async function placeOrder() {
     mood: item.mood,
     sugar: item.sugar
   }));
+
   const payload = {
-    customerId: customerInfo.id,
+    customerId: storedCustomerInfo.id || null,
     customerEmail: customerInfo.email,
+    customerFirstName: customerInfo.firstName,
+    customerLastName: customerInfo.lastName,
+    customerPhone: customerInfo.phone,
+    deliveryAddress: customerInfo.address,
     items: orderItems,
     totalAmount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   };
-  try {
-    await apiCall('/orders', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-    alert('Order placed successfully! 🎉');
+
+  apiCall('/orders', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    showAlert('Order Placed', 'Order placed successfully! 🎉');
     cart = [];
     localStorage.setItem('tambayanCart', JSON.stringify(cart));
     updateCartUI();
+    closeOrderConfirmationModal();
     showView('dashboard');
     loadRecentOrders();
     loadCurrentOrderForTracker();
-  } catch (err) {
-    alert('Failed to place order: ' + err.message);
-  }
+  })
+  .catch(err => {
+    showAlert('Order Failed', 'Failed to place order: ' + err.message);
+  });
+}
+
+function closeOrderConfirmationModal() {
+  const modal = document.getElementById('orderConfirmationModal');
+  if (!modal) return;
+  modal.style.display = 'none';
 }
 
 async function loadMyOrders() {
@@ -786,13 +994,13 @@ function handleReorder(order) {
             item.sugar || '50%'
         );
     });
-    alert(`Items from order #${order.orderNumber} added to your cart!`);
+    showAlert('Reorder Added', `Items from order #${order.orderNumber} added to your cart!`);
     updateCartUI();
     showView('menu');
 }
 
 function handleFeedback(order) {
-    alert(`Feedback form for order #${order.orderNumber} would open here.`);
+    showAlert('Feedback', `Feedback form for order #${order.orderNumber} would open here.`);
 }
 
 async function loadProfileSettings() {
@@ -807,7 +1015,7 @@ async function loadProfileSettings() {
         document.getElementById('gender').value = profile.gender || '';
     } catch (err) {
         console.error('Error loading profile settings:', err);
-        alert('Failed to load profile  ' + err.message);
+        showAlert('Error', 'Failed to load profile: ' + err.message);
     }
 }
 
@@ -839,12 +1047,14 @@ async function saveProfileSettings(e) {
     errors.push('Please enter a valid email address');
   }
   
-  if (!formData.phone || !/^\+?[0-9\s\-\(\)]{10,}$/.test(formData.phone)) {
-    errors.push('Please enter a valid phone number');
+  if (!formData.phone) {
+    errors.push('Phone number is required');
+  } else if (!/^[0-9]{11}$/.test(formData.phone)) {
+    errors.push('Phone number must be exactly 11 digits and contain only numbers');
   }
   
   if (errors.length > 0) {
-    alert('Validation errors:\n' + errors.join('\n'));
+    showAlert('Validation Errors', errors.join('\n'));
     return;
   }
 
@@ -856,10 +1066,23 @@ async function saveProfileSettings(e) {
 
     localStorage.setItem('customerInfo', JSON.stringify(response));
     document.querySelector('.welcome').textContent = `Welcome back, ${response.firstName} ${response.lastName}!`;
-    alert('Profile updated successfully!');
+    showAlert('Success', 'Profile updated successfully!');
   } catch (err) {
-    alert('Failed to update profile: ' + err.message);
+    showAlert('Update Failed', 'Failed to update profile: ' + err.message);
   }
+}
+
+function validatePhoneInput(e) {
+  const phoneField = e.target.querySelector('#phone') || e.target.querySelector('#customerPhone');
+  if (phoneField) {
+    const phoneValue = phoneField.value.trim();
+    if (phoneValue && !/^[0-9]{11}$/.test(phoneValue)) {
+      e.preventDefault();
+      showAlert('Validation Error', 'Phone number must be exactly 11 digits and contain only numbers');
+      return false;
+    }
+  }
+  return true;
 }
 
 function openCartModal() {
@@ -940,10 +1163,16 @@ function removeItemFromCart(index) {
 }
 
 function clearCart() {
-    if (confirm("Are you sure you want to clear your entire cart?")) {
+    showAlert(
+      'Clear Cart', 
+      'Are you sure you want to clear your entire cart?', 
+      true, 
+      () => {
         cart = [];
         localStorage.setItem('tambayanCart', JSON.stringify(cart));
         updateCartUI();
         loadCartIntoModal();
-    }
+      },
+      () => {}
+    );
 }

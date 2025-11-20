@@ -4,21 +4,30 @@ let currentCategory = 'all';
 let cart = JSON.parse(localStorage.getItem('tambayanCart')) || [];
 let newOrderCustomerName = '';
 let newOrderTableNumber = '';
+let currentFilter = 'New'; // Track the current filter
+
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("DOM fully loaded and parsed.");
+
   const token = localStorage.getItem('staffToken');
   const staffInfo = localStorage.getItem('staffInfo') ? JSON.parse(localStorage.getItem('staffInfo')) : null;
   const userRole = staffInfo?.role;
   if (!token || userRole !== 'staff') {
+    console.log('Invalid staff token or role - redirecting to login');
+    localStorage.removeItem('staffToken');
+    localStorage.removeItem('staffInfo');
     window.location.href = '/html/login.html';
     return;
   }
+
   loadStaffProfile();
   loadDashboardStats();
   loadRecentOrders();
-  loadOrders();
+  loadOrders('New'); // Load orders with explicit filter
   loadInventory();
   loadMenu();
   setInterval(loadDashboardStats, 30000);
+
   document.querySelectorAll('.nav-item:not(.logout)').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -32,12 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
   document.querySelector('.logout').addEventListener('click', (e) => {
     e.preventDefault();
     localStorage.removeItem('staffToken');
     localStorage.removeItem('staffInfo');
     window.location.href = '/html/login.html';
   });
+
   document.querySelector('.bell').addEventListener('click', async () => {
     try {
       const notifs = await apiCall('/staff/notifications?limit=5');
@@ -47,21 +58,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       let msg = '🔔 Notifications:';
       notifs.forEach(n => {
-        msg += `• ${n.message} (${new Date(n.createdAt).toLocaleString()})
-`;
+        msg += `• ${n.message} (${new Date(n.createdAt).toLocaleString()})\n`;
       });
       alert(msg);
     } catch (err) {
       alert('Failed to load notifications: ' + err.message);
     }
   });
-  
+
   // Add event listener for profile icon click
   document.querySelector('.profile-dropdown-trigger')?.addEventListener('click', toggleProfileDropdown);
-  
+
   document.getElementById('menuSearch')?.addEventListener('input', (e) => {
     renderMenu(e.target.value, currentCategory);
   });
+
   document.querySelectorAll('.category-btn')?.forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
@@ -70,33 +81,59 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMenu(document.getElementById('menuSearch').value, currentCategory);
     });
   });
+
   document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
   document.getElementById('closeModal')?.addEventListener('click', closeModal);
+
   window.onclick = function(event) {
     const modal = document.getElementById('itemModal');
     if (event.target === modal) {
       closeModal();
     }
-    
+
     // Close profile dropdown if clicked outside
     const dropdown = document.getElementById('profile-dropdown');
     const trigger = document.querySelector('.profile-dropdown-trigger');
     if (dropdown && !dropdown.contains(event.target) && !trigger.contains(event.target)) {
       dropdown.style.display = 'none';
     }
-  }
+  };
+
+  // Debugging: Log all filter buttons on page load
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  console.log(`Found ${filterButtons.length} filter buttons.`);
+  filterButtons.forEach((btn, index) => {
+    console.log(`Button ${index}:`, btn.textContent.trim(), '- data-filter:', btn.dataset.filter);
+  });
+
+  // Attach event listeners to filter buttons
   document.querySelectorAll('.filter-btn').forEach(button => {
     button.addEventListener('click', function() {
+      console.log('--- Filter Button Clicked ---');
+      console.log('Clicked button text:', this.textContent.trim());
+      console.log('Clicked button data-filter:', this.dataset.filter);
+      console.log('Current active tab before change:', document.querySelector('.filter-btn.active')?.textContent.trim());
+
+      // Remove active class from all buttons
       document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      // Add active class to the clicked button
       this.classList.add('active');
+
       const filter = this.dataset.filter;
-      filterOrders(filter);
+      currentFilter = filter; // Update the global filter variable
+      console.log('Setting currentFilter to:', filter);
+
+      // Call loadOrders with the new filter
+      console.log('Calling loadOrders with filter:', filter);
+      loadOrders(filter); // Reload orders for the new filter
     });
   });
+
   document.addEventListener('click', function(e) {
     if (e.target.matches('.btn-secondary')) {
       const orderId = e.target.getAttribute('data-order-id');
       const action = e.target.getAttribute('data-action');
+      console.log(`Action button clicked for Order ID: ${orderId}, Action: ${action}`);
       if (action === 'prep') {
         updateOrderStatus(orderId, 'Preparing');
       } else if (action === 'serve') {
@@ -163,6 +200,7 @@ async function apiCall(endpoint, options = {}) {
 
 async function updateOrderStatus(orderId, newStatus) {
   try {
+    console.log(`Updating order ${orderId} to status: ${newStatus}`);
     await apiCall(`/orders/${orderId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status: newStatus })
@@ -250,7 +288,8 @@ async function loadRecentOrders() {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
   try {
-    const orders = await apiCall('/staff/orders?limit=3');
+    // CHANGED: Updated endpoint to avoid conflict
+    const orders = await apiCall('/orders/staff?limit=3');
     if (!orders || orders.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4">No recent orders.</td></tr>';
       return;
@@ -272,18 +311,71 @@ async function loadRecentOrders() {
   }
 }
 
-async function loadOrders() {
+// Updated loadOrders function with explicit status mapping and enhanced debugging
+async function loadOrders(filter) {
+  console.log('--- loadOrders function called ---');
+  console.log('Filter parameter received:', filter);
   const ordersList = document.getElementById('orders-list');
-  if (!ordersList) return;
+  if (!ordersList) {
+    console.error('Element with id "orders-list" not found!');
+    return;
+  }
+
+  // Clear the list and show loading state
   ordersList.innerHTML = '<div class="order-item"><div class="order-info"><p>Loading orders...</p></div></div>';
+
   try {
-    const orders = await apiCall('/staff/orders');
+    // Construct the API endpoint with the filter
+    let endpoint = '/orders/staff';
+    if (filter && filter !== 'all') {
+      // Map the UI tab names to the backend status values (case-sensitive)
+      let statusParam = '';
+      switch (filter.toLowerCase()) { // Use lower case for comparison
+        case 'new':
+          statusParam = 'New';
+          break;
+        case 'preparing':
+          statusParam = 'Preparing';
+          break;
+        case 'ready':
+          statusParam = 'Ready';
+          break;
+        case 'complete': // The UI tab says "Complete"
+        case 'completed': // Backend status might be "Completed"
+        case 'served':    // Or might include "Served"
+          statusParam = 'Completed,Served'; // Backend expects these statuses
+          break;
+        default:
+          statusParam = filter; // Fallback, might be correct for other statuses
+          break;
+      }
+
+      if (statusParam) {
+         endpoint += `?status=${statusParam}`;
+         console.log(`Constructed endpoint: ${endpoint}`); // Log the final endpoint
+      } else {
+        console.log('No statusParam generated for filter:', filter);
+      }
+    } else {
+      console.log('No filter applied, fetching all orders.');
+    }
+
+    console.log('Making API call to:', endpoint);
+    const orders = await apiCall(endpoint);
+    console.log('API call successful. Orders received:', orders.length, 'orders');
+    console.log('First order (if any):', orders[0] ? orders[0].status : 'None');
+
     if (!orders || orders.length === 0) {
+      console.log('No orders found for filter:', filter);
       ordersList.innerHTML = '<div class="order-item"><div class="order-info"><p>No orders found.</p></div></div>';
       return;
     }
+
+    // Clear the list before adding new items
     ordersList.innerHTML = '';
+
     orders.forEach(order => {
+      console.log(`Processing order: #${order.orderNumber}, Status: ${order.status}`);
       const orderItem = document.createElement('div');
       orderItem.className = `order-item ${order.status.toLowerCase()}`;
       orderItem.setAttribute('data-order-id', order.id);
@@ -325,6 +417,8 @@ async function loadOrders() {
       }
       ordersList.appendChild(orderItem);
     });
+
+    console.log('Finished rendering orders for filter:', filter);
   } catch (err) {
     console.error("Error in loadOrders:", err);
     ordersList.innerHTML = `<div class="order-item"><div class="order-info"><p style="color:#e74c3c;">Error loading orders: ${err.message}</p></div></div>`;
@@ -362,8 +456,7 @@ async function checkLowStock() {
     }
     let msg = 'Low Stock Items:';
     inventory.forEach(item => {
-      msg += `• ${item.name}: ${item.currentStock} units left
-`;
+      msg += `• ${item.name}: ${item.currentStock} units left\n`;
     });
     alert(msg);
   } catch (err) {
@@ -427,36 +520,36 @@ async function loadInventory() {
 async function loadMenu() {
   const menuSection = document.querySelector('#MenuView .menu-section');
   if (!menuSection) return;
-  
+
   menuSection.innerHTML = '<h3>🍽️ Menu Viewing</h3><p>Loading menu...</p>';
-  
+
   try {
     const menuItems = await apiCall('/product/staff/menu');
-    
+
     if (!menuItems || !Array.isArray(menuItems)) {
       menuSection.innerHTML = '<h3>🍽️ Menu Viewing</h3><p>Error: Invalid data received from server.</p>';
       return;
     }
-    
+
     if (menuItems.length === 0) {
       menuSection.innerHTML = '<h3>🍽️ Menu Viewing</h3><p>No products found in the database.</p>';
       return;
     }
-    
+
     const categories = {};
     for (let i = 0; i < menuItems.length; i++) {
       const item = menuItems[i];
       if (!item) {
         continue;
       }
-      
+
       const category = item.category || item.Category || 'Uncategorized';
       if (!categories[category]) {
         categories[category] = [];
       }
       categories[category].push(item);
     }
-    
+
     let menuHTML = '<h3>🍽️ Menu Viewing</h3>';
     for (const [category, items] of Object.entries(categories)) {
       menuHTML += `<div class="menu-category">
@@ -467,16 +560,16 @@ async function loadMenu() {
         if (!item) {
           continue;
         }
-        
+
         const isAvailable = item.isAvailable !== undefined ? item.isAvailable : (item.IsAvailable !== undefined ? item.IsAvailable : false);
         const stockQuantity = item.stockQuantity !== undefined ? item.stockQuantity : (item.StockQuantity !== undefined ? item.StockQuantity : 0);
         const name = item.name !== undefined ? item.name : (item.Name !== undefined ? item.Name : 'Unknown Item');
         const price = item.price !== undefined ? item.price : (item.Price !== undefined ? item.Price : 0);
         const imageUrl = item.imageUrl !== undefined ? item.imageUrl : '/image/placeholder-menu.jpg';
-        
+
         const stockStatus = isAvailable ? 'in-stock' : (stockQuantity < 5 ? 'low-stock' : 'out-of-stock');
         const stockText = isAvailable ? 'In Stock' : (stockQuantity < 5 ? 'Low Stock' : 'Out of Stock');
-        
+
         menuHTML += `
           <div class="menu-item-card ${!isAvailable ? 'unavailable' : ''}">
             <img src="${imageUrl}" alt="${name}" onerror="this.onerror=null; this.src='/image/placeholder-menu.jpg';">
@@ -490,9 +583,9 @@ async function loadMenu() {
       }
       menuHTML += `</div></div>`;
     }
-    
+
     menuSection.innerHTML = menuHTML;
-    
+
   } catch (err) {
     console.error("Error in loadMenu:", err);
     menuSection.innerHTML = `
@@ -736,7 +829,7 @@ async function placeOrder() {
     updateCartUI();
     document.getElementById('newOrderSection').style.display = 'none';
     document.getElementById('manageOrdersSection').style.display = 'block';
-    loadOrders();
+    loadOrders(currentFilter); // Reload the orders after placing a new one
   } catch (err) {
     console.error('Failed to place new order:', err);
     alert('Failed to place new order: ' + (err.message || 'Unknown error'));
@@ -786,25 +879,52 @@ async function loadProfile() {
   }
 }
 
-function filterOrders(filter) {
-  const rows = document.querySelectorAll('.order-item');
-  rows.forEach(row => {
-    if (filter === 'all' || row.getAttribute('data-status') === filter) {
-      row.style.display = 'flex';
-    } else {
-      row.style.display = 'none';
-    }
-  });
-}
+// The filterOrders function is no longer needed because we are now loading filtered data from the backend
+// function filterOrders(filter) {
+//   const rows = document.querySelectorAll('.order-item');
+//   rows.forEach(row => {
+//     if (filter === 'all' || row.getAttribute('data-status') === filter) {
+//       row.style.display = 'flex';
+//     } else {
+//       row.style.display = 'none';
+//     }
+//   });
+// }
 
 // ======== NEW CODE STARTS HERE ========
 // Toggle profile dropdown menu
 function toggleProfileDropdown() {
-  console.log("Profile dropdown toggle clicked");
-  const dropdown = document.getElementById('profile-dropdown');
-  if (dropdown) {
-    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-  }
+    console.log("Profile dropdown toggle clicked");
+    
+    const dropdown = document.getElementById('profile-dropdown');
+    const trigger = document.querySelector('.profile-dropdown-trigger');
+    
+    console.log("Dropdown element found:", dropdown !== null);
+    console.log("Trigger element found:", trigger !== null);
+    
+    if (dropdown) {
+        console.log("Current dropdown display style:", dropdown.style.display);
+        console.log("Current dropdown classes:", dropdown.className);
+        console.log("Dropdown computed style:", window.getComputedStyle(dropdown).display);
+        
+        // Check if it's currently visible
+        const isVisible = dropdown.style.display === 'block' || dropdown.classList.contains('show');
+        console.log("Dropdown is currently visible:", isVisible);
+        
+        if (isVisible) {
+            // Hide it
+            dropdown.style.display = 'none';
+            dropdown.classList.remove('show');
+            console.log("Hiding dropdown");
+        } else {
+            // Show it
+            dropdown.style.display = 'block';
+            dropdown.classList.add('show');
+            console.log("Showing dropdown");
+        }
+    } else {
+        console.error("Profile dropdown element not found!");
+    }
 }
 
 // Function to handle "View Staff Account"
@@ -889,4 +1009,3 @@ async function changePassword() {
     alert(`Failed to change password: ${err.message}`);
   }
 }
-// ======== NEW CODE ENDS HERE ========

@@ -38,7 +38,7 @@
                         <span class="notification-count">0</span>
                     </div>
                     <!-- Profile dropdown trigger -->
-                    <div class="profile-dropdown-trigger" onclick="toggleProfileDropdown()">
+                    <div class="profile-dropdown-trigger">
                         <i class="fas fa-user-circle"></i>
                     </div>
                     
@@ -119,6 +119,12 @@
             <div id="ordersView" class="view">
                 <h2>Order Management</h2>
                 <div class="section-header">
+                    <div class="filter-bar">
+                        <button class="filter-btn active" data-filter="New">New</button>
+                        <button class="filter-btn" data-filter="Preparing">Preparing</button>
+                        <button class="filter-btn" data-filter="Ready">Ready</button>
+                        <button class="filter-btn" data-filter="Complete">Complete</button>
+                    </div>
                 </div>
 
                 <section id="newOrderSection" class="new-order-section" style="display: none;">
@@ -142,13 +148,6 @@
                 </section>
 
                 <section id="manageOrdersSection" class="manage-orders-section">
-                    <div class="filter-bar">
-                        <button class="filter-btn active" data-filter="all">All</button>
-                        <button class="filter-btn" data-filter="new">New</button>
-                        <button class="filter-btn" data-filter="preparing">Preparing</button>
-                        <button class="filter-btn" data-filter="ready">Ready</button>
-                    </div>
-
                     <div id="orders-list" class="orders-list">
                     </div>
                 </section>
