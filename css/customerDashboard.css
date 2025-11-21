@@ -286,7 +286,7 @@ i { font-size: 18px; }
 .carousel-container {
   position: relative;
   padding: 20px 0;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -341,19 +341,17 @@ i { font-size: 18px; }
 .favorites-carousel {
   display: flex;
   gap: 16px;
-  overflow-x: hidden;
-  padding: 10px 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) var(--section-bg);
+  overflow-x: visible; 
+  overflow-y: visible;
+  padding: 10px 5px; 
+  scrollbar-width: none;
   scroll-behavior: smooth;
-  max-width: 100%;
   transition: transform 0.3s ease-out;
   position: relative;
-  height: auto;
+  min-height: 300px;
   width: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
   flex: 1;
+  box-sizing: border-box;
 }
 
 .favorites-carousel::-webkit-scrollbar {
@@ -368,37 +366,6 @@ i { font-size: 18px; }
 .favorites-carousel::-webkit-scrollbar-track {
   background: var(--section-bg);
   border-radius: 4px;
-}
-
-.carousel-item {
-  min-width: 280px;
-  max-width: 300px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--section-bg);
-  box-shadow: var(--shadow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  height: auto;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .carousel-item {
-    min-width: 220px;
-    max-width: 240px;
-  }
-}
-
-@media (max-width: 480px) {
-  .carousel-item {
-    min-width: 180px;
-    max-width: 200px;
-  }
 }
 
 .item-card {
@@ -522,26 +489,22 @@ i { font-size: 18px; }
   outline: none;
 }
 
-/* Keep the carousel items as non-interactive for clicking */
 .carousel-item {
-  /* Keep existing styles */
   min-width: 280px;
-  max-width: 300px;
+  max-width: 280px; /* Reduced from 300px */
+  flex-shrink: 0;
   border: 1px solid var(--border);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden */
   background: var(--section-bg);
   box-shadow: var(--shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   position: relative;
-  flex-shrink: 0;
   height: auto;
-  width: 100%;
   box-sizing: border-box;
 }
 
-/* Enhance carousel item hover for visual feedback without click action */
 .carousel-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.08);
@@ -849,7 +812,9 @@ i { font-size: 18px; }
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
 }
 
 .modal-content {
@@ -1473,16 +1438,13 @@ i { font-size: 18px; }
 }
 
 /* === CAROUSEL CONTAINER FIX === */
-.carousel-container {
-  position: relative;
-  padding: 20px 0;
-  overflow: hidden;
+#favoritesCarousel {
+  min-width: 600px; /* Or any reasonable minimum width */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 }
 
-/* This is CRITICAL - gives the carousel a defined width */
 .favorites-carousel {
   display: flex;
   gap: 16px;
@@ -1493,29 +1455,8 @@ i { font-size: 18px; }
   height: auto;
   width: 100%;
   box-sizing: border-box;
-  /* Ensure it respects its container's width */
-  max-width: 100%;
+  max-width: max-content;
 }
-
-/* Prevent items from being cut off by forcing them to stay within bounds */
-.carousel-item {
-  min-width: 280px;
-  max-width: 300px;
-  flex-shrink: 0; /* Prevent shrinking */
-  box-sizing: border-box;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--section-bg);
-  box-shadow: var(--shadow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  height: auto;
-  width: 100%;
-}
-
-/* === NAVIGATION BUTTONS FIX === */
 .carousel-nav {
   position: absolute;
   top: 50%;
@@ -1870,4 +1811,136 @@ i { font-size: 18px; }
   font-weight: 500;
   min-width: 100px;
   text-align: center;
+}
+#deleteConfirmModal .modal-content {
+  max-width: 400px;
+  padding: 2rem;
+  text-align: center;
+  /* Add this to match the confirm deletion modal styling */
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#deleteConfirmModal h3 {
+  color: #5d3a2a;
+  margin-top: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  /* Add this to match confirm deletion title */
+  margin-bottom: 0.5rem;
+}
+
+#deleteConfirmModal p {
+  color: #4a4a4a;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.95rem;
+  /* Add this to match confirm deletion message */
+  font-weight: 500;
+}
+
+#passwordInput {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  /* Add this to match the input field in confirm deletion */
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-ok {
+  background-color: #6b4226;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500; /* Normal weight */
+  font-family: inherit; /* Match the font family */
+}
+.btn-ok:hover {
+  background-color: #5a3620;
+}
+
+.btn-cancel {
+  background-color: #2d5a6b; /* Match the dark gray/blue from your screenshot */
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500; /* Normal weight */
+  font-family: inherit; /* Match the font family */
+}
+
+.btn-cancel:hover {
+  background-color: #236570;
+}
+
+/* === CUSTOM ALERT MODAL STYLES === */
+#customAlert .modal-content {
+  max-width: 400px;
+  padding: 2rem;
+  text-align: center;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#customAlert h3 {
+  color: #5d3a2a;
+  margin-top: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+#customAlert p {
+  color: #4a4a4a;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Style for the alert buttons container */
+.alert-buttons {
+  display: flex;
+  gap: 0.5rem; /* Small gap between buttons */
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* Style for both OK and Clear All buttons */
+#customAlert button {
+  background-color: #6b4226;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500; /* Normal weight */
+  font-family: inherit;
+  font-size: 1rem;
+  margin: 0 2px; /* Small margin on sides */
+}
+
+#customAlert button:hover {
+  background-color: #5a3620;
+}
+
+/* Style for the Clear button specifically */
+#alertClearBtn {
+  background-color: #e74c3c; /* Red color for clear action */
+}
+
+#alertClearBtn:hover {
+  background-color: #861a0e; /* Darker red on hover */
 }

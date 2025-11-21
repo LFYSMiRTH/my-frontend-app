@@ -122,16 +122,16 @@
         <div class="profile-container">
           <div class="profile-picture-section">
             <div class="profile-picture">
-  <div class="default-avatar-icon">
-    <i class="ri-user-line"></i>
-  </div>
-  <img id="profileImage" src="/image/default-avatar.jpg" alt="Profile Picture" />
-  <div class="profile-picture-overlay">
-    <i class="ri-camera-line"></i>
-    <span>Change Photo</span>
-  </div>
-  <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
-</div>
+                <div class="default-avatar-icon">
+                  <i class="ri-user-line"></i>
+                </div>
+                <img id="profileImage" src="/image/default-avatar.jpg" alt="Profile Picture" />
+                <div class="profile-picture-overlay">
+                  <i class="ri-camera-line"></i>
+                  <span>Change Photo</span>
+                </div>
+                <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+              </div>
             <button class="change-photo-btn" onclick="document.getElementById('profilePictureInput').click()">
               Change Photo
             </button>
@@ -190,14 +190,14 @@
                   <h4>Change Password</h4>
                   <p>Update your account password</p>
                 </div>
-                <button class="btn-secondary" onclick="openChangePasswordModal()">Change</button>
+                <button class="btn-secondary open-change-password-btn">Change</button>
               </div>             
             </div>
           </div>
           <div class="account-actions">
             <h3>Account Actions</h3>
             <div class="action-buttons">
-              <button class="btn-danger" onclick="confirmDeleteAccount()">Delete Account</button>
+              <button class="btn-danger" onclick="deleteAccount()">Delete Account</button>
               <button class="btn-secondary">Export Data</button>
             </div>
           </div>
@@ -233,9 +233,9 @@
 
   <div class="modal" id="changePasswordModal">
     <div class="modal-content">
-      <span class="close" id="closePasswordModal">&times;</span>
+      <span class="close" id="closePasswordModal"><i class="ri-close-line"></i></span>
       <h3>Change Password</h3>
-      <form id="passwordForm">
+      <form id="changePasswordForm">
         <div class="form-group">
           <label for="currentPassword">Current Password</label>
           <input type="password" id="currentPassword" name="currentPassword" required>
@@ -245,8 +245,8 @@
           <input type="password" id="newPassword" name="newPassword" required>
         </div>
         <div class="form-group">
-          <label for="confirmPassword">Confirm New Password</label>
-          <input type="password" id="confirmPassword" name="confirmPassword" required>
+          <label for="confirmNewPassword">Confirm New Password</label>
+          <input type="password" id="confirmNewPassword" name="confirmNewPassword" required>
         </div>
         <div class="form-actions">
           <button type="button" class="btn-secondary" id="cancelPasswordBtn">Cancel</button>
@@ -316,13 +316,26 @@
   </div>
 </div>
 
-  <div id="customAlert" class="modal">
-    <div class="modal-content">
-      <h3 id="alertTitle">127.0.0.1:5500 says</h3>
-      <p id="alertMessage"></p>
-      <button id="alertOkBtn">OK</button>
+<div id="customAlert" class="modal">
+  <div class="modal-content">
+    <h3 id="alertTitle"></h3>
+    <p id="alertMessage"></p>
+    <button id="alertOkBtn">OK</button>
+  </div>
+</div>
+
+<!-- === DELETE ACCOUNT CONFIRMATION MODAL (NEW) === -->
+<div id="deleteConfirmModal" class="modal">
+  <div class="modal-content">
+    <h3>CONFIRM ACCOUNT DELETION</h3>
+    <p>To confirm deletion, please enter your current password:</p>
+    <input type="password" id="passwordInput" placeholder="Enter your password" autocomplete="current-password">
+    <div class="modal-buttons">
+      <button id="confirmDeleteBtn" class="btn-ok">OK</button>
+      <button id="cancelDeleteBtn" class="btn-cancel">Cancel</button>
     </div>
   </div>
+</div>
 
   <!-- === ORDER CONFIRMATION MODAL (BIRTHDAY & GENDER REMOVED) === -->
   <div id="orderConfirmationModal" class="modal">

@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (action === 'serve') {
         updateOrderStatus(orderId, 'Ready');
       } else if (action === 'complete') {
-        updateOrderStatus(orderId, 'Completed');
+        updateOrderStatus(orderId, 'Served');
       } else if (action === 'print') {
         printReceipt(orderId);
       }
@@ -226,12 +226,16 @@ async function updateOrderStatus(orderId, newStatus) {
               <button class="btn-secondary" data-order-id="${orderId}" data-action="complete">✅ Complete</button>
               <button class="btn-secondary" data-order-id="${orderId}" data-action="print">🖨️ Print</button>
             `;
-          } else if (newStatusLower === 'completed') {
+          } else if (newStatusLower === 'completed' || newStatusLower === 'served') {
             actionButtons.innerHTML = `<span style="color: green;">✅ Completed</span>`;
           }
       }
     }
     alert(`Order ${orderId} updated to ${newStatus}`);
+
+    // ✅ ADD THIS LINE TO REFRESH THE CURRENT TAB
+    loadOrders(currentFilter);
+
   } catch (err) {
     console.error("Error updating order status:", err);
     alert(`Failed to update order status: ${err.message}`);
@@ -878,21 +882,6 @@ async function loadProfile() {
     profileInfo.innerHTML = `<p style="color:#e74c3c;">Error loading profile: ${err.message}</p>`;
   }
 }
-
-// The filterOrders function is no longer needed because we are now loading filtered data from the backend
-// function filterOrders(filter) {
-//   const rows = document.querySelectorAll('.order-item');
-//   rows.forEach(row => {
-//     if (filter === 'all' || row.getAttribute('data-status') === filter) {
-//       row.style.display = 'flex';
-//     } else {
-//       row.style.display = 'none';
-//     }
-//   });
-// }
-
-// ======== NEW CODE STARTS HERE ========
-// Toggle profile dropdown menu
 function toggleProfileDropdown() {
     console.log("Profile dropdown toggle clicked");
     
