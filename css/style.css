@@ -1,4 +1,3 @@
-
 * {
   margin: 0;
   padding: 0;
@@ -38,10 +37,52 @@ body::before {
   100% { transform: translateX(30px) translateY(30px); }
 }
 
+/* ========== FLOATING COFFEE BEANS ANIMATION ========== */
+.floating-beans {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.bean-item {
+  position: absolute;
+  top: -50px;
+  font-size: 30px;
+  opacity: 0.15;
+  animation: floatDown 15s linear infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+@keyframes floatDown {
+  0% {
+    top: -50px;
+    transform: translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.15;
+  }
+  90% {
+    opacity: 0.15;
+  }
+  100% {
+    top: 110vh;
+    transform: translateX(100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+/* ========== END FLOATING BEANS ========== */
+
 html {
   scroll-behavior: smooth;
 }
 
+/* ========= NAVIGATION BAR ========= */
 .navbar {
   position: fixed;
   top: 20px;
@@ -58,6 +99,21 @@ html {
   border: 1px solid rgba(92, 61, 46, 0.1);
   backdrop-filter: blur(8px);
   transition: all 0.4s ease;
+  animation: slideDown 0.8s ease-out;
+  /* Ensure it's always visible */
+  max-width: 90%;
+  overflow-x: auto;
+}
+
+@keyframes slideDown {
+  from {
+    top: -100px;
+    opacity: 0;
+  }
+  to {
+    top: 20px;
+    opacity: 1;
+  }
 }
 
 .navbar a {
@@ -68,6 +124,7 @@ html {
   transition: all 0.3s ease;
   position: relative;
   padding: 4px 0;
+  white-space: nowrap;
 }
 
 .navbar a::after {
@@ -83,6 +140,7 @@ html {
 
 .navbar a:hover {
   color: #3e291d;
+  transform: translateY(-2px);
 }
 .navbar a:hover::after {
   width: 100%;
@@ -108,12 +166,28 @@ html {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   border: 1px solid rgba(92, 61, 46, 0.1);
   transition: all 0.3s ease;
+  animation: fadeInRight 1s ease-out;
+  /* Ensure visibility on small screens */
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes fadeInRight {
+  from {
+    right: -100px;
+    opacity: 0;
+  }
+  to {
+    right: 40px;
+    opacity: 1;
+  }
 }
 
 .logo:hover {
   background: #5C3D2E;
   color: #fff;
-  transform: scale(1.05);
+  transform: scale(1.05) rotate(2deg);
 }
 
 .hero {
@@ -148,6 +222,18 @@ html {
   flex: 1;
   z-index: 1;
   max-width: 520px;
+  animation: fadeInLeft 1s ease-out;
+}
+
+@keyframes fadeInLeft {
+  from {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 h1 {
@@ -157,6 +243,18 @@ h1 {
   color: #3e322a;
   margin-bottom: 20px;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
+  animation: textReveal 1.2s ease-out;
+}
+
+@keyframes textReveal {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .btn {
@@ -172,12 +270,43 @@ h1 {
   transition: all 0.4s ease;
   box-shadow: 0 4px 15px rgba(92, 61, 46, 0.3);
   letter-spacing: 0.5px;
+  animation: btnPulse 2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes btnPulse {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(92, 61, 46, 0.3);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(92, 61, 46, 0.5);
+  }
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 .btn:hover {
   background: linear-gradient(to right, #4a3025, #3e291d);
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.05);
   box-shadow: 0 6px 20px rgba(92, 61, 46, 0.4);
+  animation: none;
 }
 
 .image-section {
@@ -193,11 +322,31 @@ h1 {
 .image-section img {
   width: 390px;
   height: 485px;
-  object-fit: cover;
+  object-fit: contain; /* FIXED: No more ugly cropping! */
   border-radius: 14px;
   box-shadow: 0 8px 25px rgba(92, 61, 46, 0.2);
   transition: all 0.4s ease;
   border: 6px solid #fff;
+  animation: fadeInImage 1.5s ease-out;
+}
+
+@keyframes fadeInImage {
+  from {
+    transform: scale(0.8) translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.coffee-top {
+  animation-delay: 0.2s;
+}
+
+.coffee-bottom {
+  animation-delay: 0.4s;
 }
 
 .image-section img:hover {
@@ -256,6 +405,18 @@ h1 {
   position: relative;
   z-index: 1;
   display: inline-block;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .menu-section h2::after {
@@ -266,6 +427,16 @@ h1 {
   background: #8B5A2B;
   margin: 12px auto 0;
   border-radius: 2px;
+  animation: expandWidth 1s ease-out 0.5s backwards;
+}
+
+@keyframes expandWidth {
+  from {
+    width: 0;
+  }
+  to {
+    width: 60px;
+  }
 }
 
 .categories {
@@ -294,12 +465,43 @@ h1 {
   background: #fff;
   box-shadow: 0 6px 18px rgba(92, 61, 46, 0.08);
   border: 1px solid rgba(92, 61, 46, 0.1);
+  animation: scaleIn 0.6s ease-out backwards;
+}
+
+.category-item:nth-child(1) {
+  animation-delay: 0.2s;
+}
+
+.category-item:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.category-item:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .category-item:hover {
   transform: translateY(-10px) scale(1.03);
   box-shadow: 0 12px 28px rgba(92, 61, 46, 0.18);
   border-color: #8B5A2B;
+  animation: wiggle 0.5s ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: translateY(-10px) rotate(0deg) scale(1.03); }
+  25% { transform: translateY(-10px) rotate(-2deg) scale(1.03); }
+  75% { transform: translateY(-10px) rotate(2deg) scale(1.03); }
 }
 
 .category-img {
@@ -310,10 +512,23 @@ h1 {
   box-shadow: 0 6px 16px rgba(0,0,0,0.12);
   border: 4px solid #f8f4ee;
   transition: all 0.3s ease;
+  animation: rotateIn 0.8s ease-out backwards;
+}
+
+@keyframes rotateIn {
+  from {
+    transform: rotate(-180deg) scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
 }
 
 .category-item:hover .category-img {
-  transform: rotate(5deg);
+  border-color: #5C3D2E;
+  transform: scale(1.05) rotate(5deg);
 }
 
 .category-label {
@@ -358,6 +573,7 @@ h1 {
   position: relative;
   z-index: 1;
   padding: 0 20px;
+  animation: fadeInUp 1s ease-out;
 }
 
 .about-content h2 {
@@ -365,6 +581,18 @@ h1 {
   color: #5C3D2E;
   margin-bottom: 30px;
   font-weight: 700;
+  animation: slideInLeft 0.8s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .about-content p {
@@ -373,6 +601,28 @@ h1 {
   color: #443b34;
   margin-bottom: 20px;
   text-align: left;
+  animation: fadeIn 1s ease-out backwards;
+}
+
+.about-content p:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.about-content p:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.about-content p:nth-child(4) {
+  animation-delay: 0.6s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ===== TEAM SECTION ===== */
@@ -414,6 +664,7 @@ h1 {
 .team-description {
   flex: 1;
   text-align: left;
+  animation: slideInLeft 1s ease-out;
 }
 
 .team-description h2 {
@@ -428,6 +679,7 @@ h1 {
   line-height: 1.7;
   color: #443b34;
   margin-bottom: 20px;
+  animation: fadeIn 1.2s ease-out 0.3s backwards;
 }
 
 .team-quote {
@@ -441,6 +693,18 @@ h1 {
   background: #fffaf5;
   border-left: 4px solid #8B5A2B;
   border-radius: 8px;
+  animation: slideInRight 1s ease-out 0.5s backwards;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .team-slideshow {
@@ -449,6 +713,7 @@ h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  animation: fadeInUp 1s ease-out 0.4s backwards;
 }
 
 .slideshow-container {
@@ -458,6 +723,18 @@ h1 {
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(92, 61, 46, 0.15);
   border: 1px solid rgba(92, 61, 46, 0.1);
+  animation: zoomIn 0.8s ease-out;
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .team-img {
@@ -483,6 +760,21 @@ h1 {
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   width: fit-content;
   min-width: 180px;
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .slideshow-controls {
@@ -505,6 +797,26 @@ h1 {
   justify-content: center;
   transition: all 0.3s ease;
   box-shadow: 0 4px 10px rgba(92, 61, 46, 0.3);
+  animation: popIn 0.5s ease-out backwards;
+}
+
+.slide-btn:first-child {
+  animation-delay: 0.6s;
+}
+
+.slide-btn:last-child {
+  animation-delay: 0.7s;
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .slide-btn:hover {
@@ -546,6 +858,7 @@ h1 {
   position: relative;
   z-index: 1;
   padding: 0 20px;
+  animation: fadeInUp 1s ease-out;
 }
 
 .contact-content h2 {
@@ -560,6 +873,7 @@ h1 {
   color: #555;
   margin-bottom: 30px;
   line-height: 1.6;
+  animation: fadeIn 1s ease-out 0.2s backwards;
 }
 
 .contact-info p {
@@ -570,15 +884,36 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  animation: slideInLeft 0.8s ease-out backwards;
+}
+
+.contact-info p:nth-child(1) {
+  animation-delay: 0.3s;
+}
+
+.contact-info p:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.contact-info p:nth-child(3) {
+  animation-delay: 0.5s;
 }
 
 .contact-info i {
   color: #5C3D2E;
   font-size: 18px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0%, 90% { transform: rotate(0deg); }
+  95% { transform: rotate(20deg); }
+  100% { transform: rotate(0deg); }
 }
 
 .social-links {
   margin-top: 30px;
+  animation: fadeInUp 1s ease-out 0.6s backwards;
 }
 
 .social-links p {
@@ -587,16 +922,35 @@ h1 {
   margin-bottom: 12px;
 }
 
+.social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
 .social-icons a {
   color: #5C3D2E;
   font-size: 20px;
-  margin: 0 10px;
   transition: all 0.3s ease;
+  display: inline-block;
+  animation: bounceIn 0.6s ease-out backwards;
+}
+
+.social-icons a:nth-child(1) {
+  animation-delay: 0.7s;
+}
+
+.social-icons a:nth-child(2) {
+  animation-delay: 0.8s;
+}
+
+.social-icons a:nth-child(3) {
+  animation-delay: 0.9s;
 }
 
 .social-icons a:hover {
   color: #3e291d;
-  transform: scale(1.2);
+  transform: scale(1.2) rotate(10deg);
 }
 
 .modal-overlay {
@@ -672,184 +1026,344 @@ h1 {
 
 .close-btn:hover {
   background: #5C3D2E;
-  color: white;
-  transform: rotate(90deg);
+  color: #fff;
 }
 
-#modalTitle {
-  font-size: 24px;
-  color: #5C3D2E;
-  text-align: center;
-  margin: 0 auto 16px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+/* ========= RESPONSIVE DESIGN ========= */
+
+/* Tablet Styles */
+@media screen and (max-width: 1024px) {
+  .hero {
+    padding: 0 50px;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    padding-top: 120px;
+  }
+  
+  .text-section {
+    margin-bottom: 50px;
+    max-width: 100%;
+  }
+  
+  h1 {
+    font-size: 60px;
+  }
+  
+  .image-section {
+    justify-content: center;
+    padding-right: 0;
+  }
+  
+  .image-section img {
+    width: 300px;
+    height: 370px;
+    object-fit: contain; /* Keep aspect ratio */
+  }
+  
+  .team-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .team-description {
+    width: 100%;
+  }
+  
+  .team-slideshow {
+    order: -1;
+    flex: 0 0 auto;
+  }
+  
+  .menu-section,
+  .about-section,
+  .team-section,
+  .contact-section {
+    padding: 80px 50px;
+  }
+  
+  .navbar {
+    gap: 20px;
+    padding: 8px 18px;
+    max-width: 95%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .navbar a {
+    font-size: 16px;
+    padding: 4px 6px;
+  }
+  
+  .logo {
+    top: 20px;
+    right: 20px;
+    font-size: 18px;
+    padding: 4px 8px;
+  }
+  
+  /* Make sure nav doesn't get cut off */
+  body {
+    padding-top: 80px; /* Give space for navbar */
+  }
 }
 
-.drink-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 22px;
-  margin-top: 10px;
-  padding: 0 10px;
+/* Mobile Styles */
+@media screen and (max-width: 768px) {
+  .hero {
+    padding: 0 20px;
+    min-height: 100vh;
+    padding-top: 140px;
+  }
+  
+  h1 {
+    font-size: 40px;
+    line-height: 1.2;
+  }
+  
+  .btn {
+    padding: 12px 28px;
+    font-size: 15px;
+  }
+  
+  .image-section img {
+    width: 250px;
+    height: 310px;
+    object-fit: contain;
+  }
+  
+  .menu-section,
+  .about-section,
+  .team-section,
+  .contact-section {
+    padding: 60px 20px;
+  }
+  
+  .menu-section h2 {
+    font-size: 36px;
+  }
+  
+  .about-content h2 {
+    font-size: 32px;
+  }
+  
+  .team-description h2 {
+    font-size: 30px;
+  }
+  
+  .contact-content h2 {
+    font-size: 28px;
+  }
+  
+  .categories {
+    gap: 20px;
+  }
+  
+  .category-item {
+    width: 100%;
+    max-width: 250px;
+  }
+  
+  .category-img {
+    width: 140px;
+    height: 140px;
+  }
+  
+  .navbar {
+    top: 15px;
+    gap: 15px;
+    padding: 6px 12px;
+    border-radius: 25px;
+    max-width: 98%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .navbar a {
+    font-size: 15px;
+    padding: 4px 4px;
+  }
+  
+  .logo {
+    top: 20px;
+    right: 15px;
+    font-size: 16px;
+    padding: 4px 8px;
+  }
+  
+  .team-container {
+    gap: 40px;
+  }
+  
+  .slideshow-container {
+    max-width: 300px;
+  }
+  
+  .team-img {
+    height: 300px;
+  }
+  
+  .modal-content {
+    padding: 30px;
+    width: 95%;
+  }
+  
+  /* Add padding to prevent navbar overlap */
+  body {
+    padding-top: 80px;
+  }
 }
 
-.drink-card {
-  width: 140px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  padding: 16px;
-  border-radius: 14px;
-  background: #fffaf5;
-  box-shadow: 0 4px 14px rgba(92, 61, 46, 0.08);
-  border: 1px solid rgba(92, 61, 46, 0.1);
+/* Small Mobile Styles */
+@media screen and (max-width: 480px) {
+  h1 {
+    font-size: 32px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  .image-section img {
+    width: 200px;
+    height: 250px;
+    object-fit: contain;
+  }
+  
+  .menu-section h2 {
+    font-size: 30px;
+  }
+  
+  .about-content h2 {
+    font-size: 28px;
+  }
+  
+  .team-description h2 {
+    font-size: 26px;
+  }
+  
+  .contact-content h2 {
+    font-size: 24px;
+  }
+  
+  .categories {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .category-item {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .category-img {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .navbar {
+    top: 10px;
+    gap: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    max-width: 98%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .navbar a {
+    font-size: 14px;
+    padding: 3px 4px;
+  }
+  
+  .logo {
+    top: 15px;
+    right: 10px;
+    font-size: 14px;
+    padding: 3px 6px;
+  }
+  
+  .team-container {
+    gap: 30px;
+  }
+  
+  .slideshow-container {
+    max-width: 250px;
+  }
+  
+  .team-img {
+    height: 250px;
+  }
+  
+  .team-name {
+    font-size: 18px;
+  }
+  
+  .slide-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .menu-section,
+  .about-section,
+  .team-section,
+  .contact-section {
+    padding: 40px 15px;
+  }
+  
+  .about-content p,
+  .team-intro,
+  .team-quote,
+  .contact-intro,
+  .contact-info p {
+    font-size: 16px;
+  }
+  
+  .social-icons a {
+    font-size: 18px;
+  }
+  
+  /* Ensure navbar is visible */
+  body {
+    padding-top: 70px;
+  }
 }
 
-.drink-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 10px 20px rgba(92, 61, 46, 0.15);
-  border-color: #8B5A2B;
-}
-
-.drink-card img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 50%;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-  margin-bottom: 10px;
-  border: 3px solid #fff;
-  transition: all 0.3s ease;
-}
-
-.drink-card:hover img {
-  border-color: #5C3D2E;
-  transform: scale(1.05);
-}
-
-.drink-card .drink-name {
-  font-size: 15px;
-  color: #5C3D2E;
-  font-weight: 500;
-  word-break: break-word;
-}
-
-.drink-detail {
-  width: 100%;
-  animation: fadeIn 0.4s ease;
-  padding: 20px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.back-btn {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 5;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #5C3D2E;
-  border: 3px solid #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 18px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-
-.back-btn:hover {
-  background-color: #3e291d;
-  transform: scale(1.1);
-}
-
-.detail-content {
-  text-align: center;
-  padding: 20px 10px;
-  margin-top: 50px;
-}
-
-.detail-content img {
-  width: 160px;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 50%;
-  margin-bottom: 16px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-  border: 4px solid #fffaf5;
-}
-
-.detail-content h4 {
-  font-size: 24px;
-  color: #5C3D2E;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.detail-content p {
-  font-size: 16px;
-  color: #3e322a;
-  line-height: 1.6;
-}
-
-@media (max-width: 1024px) {
-  .hero { padding: 0 40px; flex-direction: column-reverse; text-align: center; }
-  .text-section { margin-top: 40px; }
-  .image-section { justify-content: center; padding: 0; }
-  .image-section img { width: 320px; height: 400px; }
-  .navbar { gap: 16px; padding: 8px 12px; }
-  .logo { right: 20px; font-size: 18px; }
-
-  .menu-section, .about-section, .team-section, .contact-section { padding: 80px 40px; }
-  .categories { gap: 20px; }
-  .category-item { width: 160px; }
-  .category-img { width: 120px; height: 120px; }
-  .category-label { font-size: 16px; }
-}
-
-@media (max-width: 768px) {
-  .hero { padding: 100px 20px 60px; min-height: auto; }
-  h1 { font-size: 48px; }
-  .btn { padding: 12px 28px; }
-  .navbar { gap: 12px; font-size: 14px; }
-  .logo { right: 15px; top: 20px; font-size: 16px; }
-
-  .team-container { flex-direction: column; gap: 40px; }
-  .team-slideshow { flex: 0 0 320px; }
-  .team-img { height: 280px; }
-
-  .menu-section h2 { font-size: 36px; }
-  .about-content h2 { font-size: 32px; }
-  .contact-content h2 { font-size: 30px; }
-}
-
-@media (max-width: 480px) {
-  .hero { padding: 80px 15px 50px; }
-  h1 { font-size: 36px; line-height: 1.2; }
-  .btn { padding: 10px 24px; font-size: 14px; }
-  .navbar { gap: 8px; font-size: 12px; padding: 6px 8px; }
-  .logo { font-size: 14px; top: 15px; right: 10px; }
-
-  .menu-section, .about-section, .team-section, .contact-section { padding: 60px 15px; }
-  .categories { gap: 15px; }
-  .category-item { width: 140px; padding: 12px; }
-  .category-img { width: 100px; height: 100px; }
-  .category-label { font-size: 14px; }
-
-  .team-img { height: 240px; }
-  .team-name { font-size: 16px; }
-
-  .modal-content { padding: 25px; }
-  .drink-card { width: 110px; }
-  .drink-card img { width: 70px; height: 70px; }
-  .detail-content img { width: 120px; height: 120px; }
+/* Extra Small Screens */
+@media screen and (max-width: 360px) {
+  .navbar {
+    padding: 4px 8px;
+    gap: 8px;
+  }
+  
+  .navbar a {
+    font-size: 13px;
+    padding: 2px 3px;
+  }
+  
+  .logo {
+    font-size: 12px;
+    padding: 2px 4px;
+  }
+  
+  h1 {
+    font-size: 28px;
+  }
+  
+  .image-section img {
+    width: 180px;
+    height: 220px;
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  body {
+    padding-top: 60px;
+  }
 }

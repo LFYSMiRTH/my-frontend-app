@@ -5,14 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TMBYN Café | Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-xw5JvUv6mZqX6e6Q+Qx1i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i......" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-xw5JvUv6mZqX6e6Q+Qx1i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2i2......" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="../css/login.css">
 </head>
 <body>
 
   <div class="login-wrapper">
-      <img src="/Logo/TMBYN-CAFE-logo.jpg" alt="TMBYN Café" />
-
+    <!-- Coffee Animation Container (replaces the image) -->
+    <div class="coffee-animation-container">
+      <div class="coffee-cup">
+        <div class="steam">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="cup">
+          <div class="coffee"></div>
+          <div class="handle"></div>
+        </div>
+      </div>
+      <div class="coffee-beans">
+        <div class="bean"></div>
+        <div class="bean"></div>
+        <div class="bean"></div>
+      </div>
+      <div class="welcome-text">
+        <h3>TMBYN CAFÉ</h3>
+        <p>Where every cup tells a story</p>
+      </div>
+    </div>
 
     <div class="login-container" id="mainLogin">
       <div class="logo"></div>
@@ -35,7 +56,7 @@
 
         <button type="submit">Login</button>
 
-        <p class="signup-text">Don’t have an account? <a href="#" id="openSignup">Sign up</a></p>
+        <p class="signup-text">Don't have an account? <a href="#" id="openSignup">Sign up</a></p>
       </form>
     </div>
   </div>
