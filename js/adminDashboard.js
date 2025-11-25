@@ -2,8 +2,8 @@ const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
 const cardsConfig = [
   { key: 'totalOrders', title: 'Total Orders', icon: '<i class="ri-shopping-bag-line"></i>', color: '#2EC4B6', formatter: v => v.toLocaleString() },
   { key: 'totalRevenue', title: 'Total Revenue', icon: '<i class="ri-money-dollar-circle-line"></i>', color: '#FF9F1C', formatter: v => `₱${Number(v).toFixed(2)}` },
-  { key: 'pendingOrders', title: 'Pending Orders', icon: '<i class="ri-time-line"></i>', color: '#2A9D8F', formatter: v => v.toLocaleString() },
-  { key: 'lowStockAlerts', title: 'Low Stock Alerts', icon: '<i class="ri-alert-line"></i>', color: '#E76F51', formatter: v => v.toLocaleString() }
+  { key: 'pendingOrders', title: 'Pending Orders', icon: '<i class="ri-time-line"></i>', color: '#27ae60', formatter: v => v.toLocaleString() },
+  { key: 'lowStockAlerts', title: 'Low Stock Alerts', icon: '<i class="ri-alert-line"></i>', color: '#e74c3c', formatter: v => v.toLocaleString() }
 ];
 const overviewContainer = document.getElementById('overviewCards');
 let allInventoryItems = [];
@@ -181,7 +181,7 @@ async function loadSalesTrendGraph(period = 'yearly') {
 // ===== NOTIFICATION SYSTEM =====
 async function loadNotifications() {
   try {
-    const notifications = await apiCall('/dashboard/notifications/unread');
+    const notifications = await apiCall('/admin/notifications?limit=20');
     const badge = document.getElementById('notificationBadge');
     const bell = document.getElementById('notificationBell');
     const dropdown = document.getElementById('notificationDropdown');
@@ -881,13 +881,17 @@ function renderMenuList(searchTerm = '', category = 'all') {
   }
   let html = '';
   filtered.forEach(item => {
-    // ✅ USE `item.ingredients[i].name` DIRECTLY (NO inventory lookup needed)
     let isAvailable = item.isAvailable;
     const ingredientCount = item.ingredients?.length || 0;
     const ingredientNames = ingredientCount > 0
       ? item.ingredients.map(ing => ing.name || `Unknown (${ing.inventoryItemId})`).join(', ')
       : 'None';
-    const statusText = isAvailable ? '' : '<span style="color:#e74c3c; font-size:0.85rem;">(Unavailable)</span>';
+    let statusText = '';
+    if (!isAvailable) {
+        statusText = '<span style="color:#e74c3c; font-size:0.85rem;">(Unavailable)</span>';
+    } else if (item.stockQuantity === 0) {
+        statusText = '<span style="color:#e74c3c; font-size:0.85rem;">(Out of Stock)</span>';
+    }
     const imgSrc = item.imageUrl 
       ? item.imageUrl 
       : '/image/placeholder.jpg';

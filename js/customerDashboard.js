@@ -2,6 +2,19 @@ const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
 let allMenuItems = [];
 let cart = JSON.parse(localStorage.getItem('tambayanCart')) || [];
 let currentCategory = 'all';
+
+function getCustomerIdFromToken() {
+  const token = localStorage.getItem('customerToken');
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.id || payload.sub || null;
+  } catch (e) {
+    console.error("Invalid token:", e);
+    return null;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const customerToken = localStorage.getItem('customerToken');
   if (!customerToken) {
@@ -32,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (view === 'profile') {
             loadProfileSettings();
-            initializeProfileFormListeners(); // Initialize listeners for profile view
+            initializeProfileFormListeners();
         }
       }
     });
@@ -106,19 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target === modal) {
       closeModal();
     }
-  };
-  document.getElementById('profileForm')?.addEventListener('submit', saveProfileSettings);
-  document.getElementById('cancelBtn')?.addEventListener('click', () => {
-      loadProfileSettings();
-      showView('dashboard');
-  });
-  document.getElementById('closeCartModal')?.addEventListener('click', closeCartModal);
-  document.getElementById('closeOrderConfirmationModal')?.addEventListener('click', closeOrderConfirmationModal);
-  window.onclick = function(event) {
-    const modal = document.getElementById('itemModal');
-    if (event.target === modal) {
-      closeModal();
-    }
     const cartModal = document.getElementById('cartModal');
     if (event.target === cartModal) {
       closeCartModal();
@@ -148,12 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('profileForm')?.addEventListener('submit', validatePhoneInput);
   document.getElementById('orderConfirmationModal')?.addEventListener('submit', validatePhoneInput);
 });
+
 function showView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelector(`#${viewId}View`)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelector(`.nav-item[data-view="${viewId}"]`)?.classList.add('active');
 }
+
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = localStorage.getItem('customerToken');
@@ -195,6 +197,7 @@ async function apiCall(endpoint, options = {}) {
   }
   return res.json();
 }
+
 function showAlert(title, message, isConfirmation = false, onConfirm = null, onCancel = null, isNotification = false, onClear = null) {
   const modal = document.getElementById('customAlert');
   const titleEl = document.getElementById('alertTitle');
@@ -204,17 +207,14 @@ function showAlert(title, message, isConfirmation = false, onConfirm = null, onC
   const clearBtn = document.createElement('button');
   const existingCancel = document.getElementById('alertCancelBtn');
   const existingClear = document.getElementById('alertClearBtn');
-  
   if (existingCancel) {
     existingCancel.remove();
   }
   if (existingClear) {
     existingClear.remove();
   }
-  
   titleEl.textContent = title;
   msgEl.textContent = message;
-  
   if (isConfirmation) {
     cancelBtn.id = 'alertCancelBtn';
     cancelBtn.textContent = 'Cancel';
@@ -246,15 +246,12 @@ function showAlert(title, message, isConfirmation = false, onConfirm = null, onC
     });
     okBtn.parentNode.appendChild(clearBtn);
   }
-  
   modal.style.display = 'flex';
   modal.style.zIndex = '9999';
-  
   okBtn.onclick = function() {
     modal.style.display = 'none';
     if (onConfirm) onConfirm();
   };
-  
   window.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       modal.style.display = 'none';
@@ -262,6 +259,7 @@ function showAlert(title, message, isConfirmation = false, onConfirm = null, onC
     }
   });
 }
+
 async function loadCustomerProfile() {
   try {
     const profile = await apiCall('/user/profile');
@@ -280,6 +278,7 @@ async function loadCustomerProfile() {
     document.querySelector('.welcome').textContent = 'Welcome back, Customer!';
   }
 }
+
 function getStatusClass(status) {
   const map = {
     'Preparing': 'preparing',
@@ -289,6 +288,7 @@ function getStatusClass(status) {
   };
   return map[status] || 'preparing';
 }
+
 async function loadRecentOrders() {
   const tbody = document.querySelector('.orders-table tbody');
   if (!tbody) return;
@@ -315,6 +315,7 @@ async function loadRecentOrders() {
     tbody.innerHTML = `<tr><td colspan="4" style="color:#e74c3c;">Error: ${err.message}</td></tr>`;
   }
 }
+
 async function loadAllMenuItemsForCarousel() {
   const grid = document.getElementById('favoritesCarousel');
   if (!grid) {
@@ -353,9 +354,7 @@ async function loadAllMenuItemsForCarousel() {
         itemElement.style.transform = 'translateY(0)';
       }, index * 100);
     });
-
     console.log(`Successfully loaded ${allItems.length} items into carousel.`);
-
     setTimeout(() => {
       initializeFavoritesCarousel();
     }, 100);
@@ -365,28 +364,25 @@ async function loadAllMenuItemsForCarousel() {
     console.error("Error loading menu items for carousel:", err);
   }
 }
+
 function initializeFavoritesCarousel() {
   const carousel = document.getElementById('favoritesCarousel');
   const prevBtn = document.querySelector('.carousel-nav.prev');
   const nextBtn = document.querySelector('.carousel-nav.next');
   const items = document.querySelectorAll('.carousel-item');
-
   if (!carousel || !prevBtn || !nextBtn || items.length === 0) {
     console.warn("Carousel elements not found. Skipping carousel initialization.");
     return;
   }
-
   console.log("Container width:", carousel.parentElement.clientWidth);
   let currentIndex = 0;
   let itemWidth = 300;
   let visibleItems = 1;
-
   function calculateDimensions() {
     const containerWidth = carousel.parentElement.clientWidth;
     const navButtonsWidth = 100;
     const gap = 16;
     const availableWidth = containerWidth - navButtonsWidth - (gap * 2);
-
     if (window.innerWidth <= 480) {
       itemWidth = 200;
       visibleItems = Math.max(1, Math.floor(availableWidth / (itemWidth + gap)));
@@ -410,23 +406,17 @@ function initializeFavoritesCarousel() {
   function updateCarousel() {
     const { itemWidth, visibleItems, gap } = calculateDimensions();
     const translateX = -(currentIndex * (itemWidth + gap));
-
     carousel.style.transform = `translateX(${translateX}px)`;
     carousel.style.transition = 'transform 0.3s ease-out';
-
     console.log(`Carousel translated to: ${translateX}px, visible items: ${visibleItems}`);
     const maxIndex = Math.max(0, items.length - visibleItems);
-    
     prevBtn.disabled = currentIndex === 0;
     nextBtn.disabled = currentIndex >= maxIndex;
-
     prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
     nextBtn.style.opacity = currentIndex >= maxIndex ? '0.5' : '1';
   }
-
   calculateDimensions();
   updateCarousel();
-
   prevBtn.addEventListener('click', () => {
     if (currentIndex > 0) {
       currentIndex--;
@@ -436,13 +426,11 @@ function initializeFavoritesCarousel() {
   nextBtn.addEventListener('click', () => {
     const { visibleItems } = calculateDimensions();
     const maxIndex = Math.max(0, items.length - visibleItems);
-
     if (currentIndex < maxIndex) {
       currentIndex++;
       updateCarousel();
     }
   });
-
   let autoPlayInterval = setInterval(() => {
     const { visibleItems } = calculateDimensions();
     const maxIndex = Math.max(0, items.length - visibleItems);
@@ -453,7 +441,6 @@ function initializeFavoritesCarousel() {
     }
     updateCarousel();
   }, 5000);
-
   carousel.addEventListener('mouseenter', () => {
     clearInterval(autoPlayInterval);
   });
@@ -461,7 +448,6 @@ function initializeFavoritesCarousel() {
     autoPlayInterval = setInterval(() => {
       const { visibleItems } = calculateDimensions();
       const maxIndex = Math.max(0, items.length - visibleItems);
-      
       if (currentIndex < maxIndex) {
         currentIndex++;
       } else {
@@ -490,11 +476,12 @@ function initializeFavoritesCarousel() {
     }, 250);
   });
 }
+
 let currentOrderId = null;
 async function loadCurrentOrderForTracker() {
   try {
-    const orders = await apiCall('/customer/orders?status=Preparing,Ready,Served');
-    const current = Array.isArray(orders) ? orders.find(o => ['Preparing', 'Ready', 'Served'].includes(o.status)) : null;
+    const orders = await apiCall('/customer/orders?status=Preparing,Ready,Served,Completed');
+    const current = Array.isArray(orders) ? orders.find(o => ['Preparing', 'Ready', 'Served', 'Completed'].includes(o.status)) : null;
     const trackerPara = document.getElementById('currentOrderText');
     const steps = document.querySelectorAll('.step');
     if (current) {
@@ -511,6 +498,7 @@ async function loadCurrentOrderForTracker() {
     console.warn('Could not load current order:', err);
   }
 }
+
 function updateTracker(status) {
   const steps = document.querySelectorAll('.step');
   steps.forEach(s => s.classList.remove('active'));
@@ -518,6 +506,7 @@ function updateTracker(status) {
   else if (status === 'Ready') steps[1].classList.add('active');
   else if (status === 'Served' || status === 'Completed') steps[2].classList.add('active');
 }
+
 async function loadMenuItems() {
   const grid = document.getElementById('menuGrid');
   if (!grid) return;
@@ -530,6 +519,7 @@ async function loadMenuItems() {
     grid.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 function renderMenu(searchTerm = '', category = 'all') {
   const grid = document.getElementById('menuGrid');
   if (!grid) return;
@@ -569,6 +559,7 @@ function renderMenu(searchTerm = '', category = 'all') {
     });
   });
 }
+
 function openItemModal(item) {
   const modal = document.getElementById('itemModal');
   if (!modal) return;
@@ -647,8 +638,8 @@ function openItemModal(item) {
     });
   }
   let selectedMood = 'Hot';
-  let selectedSize = 'M';
-  let selectedSugar = '50%';
+  let selectedSize = 'S';
+  let selectedSugar = '30%';
   let currentPrice = item.price;
   const customizationSection = document.querySelector('.customization-section');
   if (item.category === 'Drinks' && customizationSection) {
@@ -659,10 +650,10 @@ function openItemModal(item) {
     });
     function updatePrice() {
       let price = item.price;
-      if (selectedSize === 'S') price -= 5;
+      if (selectedSize === 'M') price += 5;
       if (selectedSize === 'L') price += 10;
       currentPrice = price;
-      if (modalPrice) modalPrice.textContent = `₱${Number(currentPrice).toFixed(2)}`;
+      modalPrice.textContent = `₱${currentPrice.toFixed(2)}`;
     }
     document.querySelectorAll('.custom-option-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -706,12 +697,14 @@ function openItemModal(item) {
   }
   modal.style.display = 'block';
 }
+
 function closeModal() {
   const modal = document.getElementById('itemModal');
   if (!modal) return;
   modal.style.display = 'none';
   document.querySelectorAll('.custom-option-btn').forEach(btn => btn.classList.remove('active'));
 }
+
 function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%', price = null) {
   if (!item.isAvailable) {
     showAlert("Unavailable", "This item is currently unavailable.");
@@ -744,6 +737,7 @@ function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%', 
   updateCartUI();
   showAlert("Added to Cart", `"${item.name}" (Mood: ${mood || 'N/A'}, Size: ${size || 'N/A'}, Sugar: ${sugar || 'N/A'}) added to cart!`);
 }
+
 function updateCartUI() {
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -756,6 +750,7 @@ function updateCartUI() {
   if (cartItemCountEl) cartItemCountEl.textContent = `${count} item${count !== 1 ? 's' : ''}`;
   if (checkoutBtn) checkoutBtn.disabled = count === 0;
 }
+
 async function placeOrder() {
   if (cart.length === 0) return;
   const customerInfo = JSON.parse(localStorage.getItem('customerInfo') || '{}');
@@ -767,6 +762,7 @@ async function placeOrder() {
   loadOrderConfirmationModal();
   document.getElementById('orderConfirmationModal').style.display = 'block';
 }
+
 function loadOrderConfirmationModal() {
   const container = document.getElementById('orderItemsContainer');
   const totalEl = document.getElementById('orderTotal');
@@ -797,6 +793,7 @@ function loadOrderConfirmationModal() {
   totalEl.textContent = `₱${total.toFixed(2)}`;
   countEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
 }
+
 function handleOrderConfirmation() {
   const customerInfo = {
     firstName: document.getElementById('customerFirstName').value.trim(),
@@ -828,7 +825,6 @@ function handleOrderConfirmation() {
     showAlert('Validation Errors', errors.join(''));
     return;
   }
-  const storedCustomerInfo = JSON.parse(localStorage.getItem('customerInfo') || '{}');
   const orderItems = cart.map(item => ({
     productId: item.id,
     name: item.name,
@@ -839,15 +835,12 @@ function handleOrderConfirmation() {
     sugar: item.sugar
   }));
   const payload = {
-    customerId: storedCustomerInfo.id || null,
+    customerId: getCustomerIdFromToken(),
     customerEmail: customerInfo.email,
-    customerFirstName: customerInfo.firstName,
-    customerLastName: customerInfo.lastName,
-    customerPhone: customerInfo.phone,
-    deliveryAddress: customerInfo.address,
     items: orderItems,
     totalAmount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   };
+  console.log("Sending order payload:", payload);
   apiCall('/orders', {
     method: 'POST',
     body: JSON.stringify(payload)
@@ -867,11 +860,13 @@ function handleOrderConfirmation() {
     showAlert('Order Failed', 'Failed to place order: ' + err.message);
   });
 }
+
 function closeOrderConfirmationModal() {
   const modal = document.getElementById('orderConfirmationModal');
   if (!modal) return;
   modal.style.display = 'none';
 }
+
 function openChangePasswordModal() {
   const modal = document.getElementById('changePasswordModal');
   if (modal) {
@@ -888,13 +883,10 @@ function openChangePasswordModal() {
     if (confirmPasswordInput) {
       confirmPasswordInput.value = '';
     }
-
-    // Add event listener for the Cancel button
     const cancelBtn = document.getElementById('cancelPasswordBtn');
     if (cancelBtn) {
       cancelBtn.addEventListener('click', function() {
         modal.style.display = 'none';
-        // Optionally, reset the form fields again
         currentPasswordInput.value = '';
         newPasswordInput.value = '';
         confirmPasswordInput.value = '';
@@ -904,6 +896,7 @@ function openChangePasswordModal() {
     console.error("Change password modal element with ID 'changePasswordModal' not found in the HTML.");
   }
 }
+
 async function loadMyOrders() {
     const tbody = document.getElementById('myOrdersTableBody');
     if (!tbody) return;
@@ -946,6 +939,7 @@ async function loadMyOrders() {
         tbody.innerHTML = `<tr><td colspan="5" style="color:#e74c3c;">Error loading orders: ${err.message}</td></tr>`;
     }
 }
+
 function handleReorder(order) {
     if (!order.items || !Array.isArray(order.items)) return;
     order.items.forEach(item => {
@@ -961,9 +955,11 @@ function handleReorder(order) {
     updateCartUI();
     showView('menu');
 }
+
 function handleFeedback(order) {
     showAlert('Feedback', `Feedback form for order #${order.orderNumber} would open here.`);
 }
+
 async function loadProfileSettings() {
     try {
         const profile = await apiCall('/user/profile');
@@ -985,6 +981,7 @@ async function loadProfileSettings() {
     }
     loadSavedProfilePicture();
 }
+
 async function saveProfileSettings(e) {
   e.preventDefault();
   const formData = {
@@ -1028,6 +1025,7 @@ async function saveProfileSettings(e) {
     showAlert('Update Failed', 'Failed to update profile: ' + err.message);
   }
 }
+
 function validatePhoneInput(e) {
   const phoneField = e.target.querySelector('#phone') || e.target.querySelector('#customerPhone');
   if (phoneField) {
@@ -1040,17 +1038,20 @@ function validatePhoneInput(e) {
   }
   return true;
 }
+
 function openCartModal() {
     const modal = document.getElementById('cartModal');
     if (!modal) return;
     loadCartIntoModal();
     modal.style.display = 'block';
 }
+
 function closeCartModal() {
     const modal = document.getElementById('cartModal');
     if (!modal) return;
     modal.style.display = 'none';
 }
+
 function loadCartIntoModal() {
     const container = document.querySelector('.cart-items-container');
     const totalEl = document.getElementById('cartTotal');
@@ -1094,6 +1095,7 @@ function loadCartIntoModal() {
     document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
     document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
 }
+
 function removeItemFromCart(index) {
     if (index >= 0 && index < cart.length) {
         cart.splice(index, 1);
@@ -1102,6 +1104,7 @@ function removeItemFromCart(index) {
         loadCartIntoModal();
     }
 }
+
 function clearCart() {
     showAlert(
       'Clear Cart', 
@@ -1116,10 +1119,12 @@ function clearCart() {
       () => {}
     );
 }
+
 async function deleteAccount() {
   document.getElementById('deleteConfirmModal').style.display = 'flex';
   document.getElementById('passwordInput').focus();
 }
+
 async function setupDeleteConfirmation() {
   const deleteConfirmModal = document.getElementById('deleteConfirmModal');
   const passwordInput = document.getElementById('passwordInput');
@@ -1135,7 +1140,6 @@ async function setupDeleteConfirmation() {
       showAlert('Error', 'Please enter your password.');
       return;
     }
-
     try {
       showAlert(
         'Confirm Account Deletion',
@@ -1175,28 +1179,25 @@ async function setupDeleteConfirmation() {
     }
   });
 }
+
 async function changePassword(e) {
     e.preventDefault();
     const currentPassword = document.getElementById('currentPassword').value.trim();
     const newPassword = document.getElementById('newPassword').value.trim();
     const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
-
     if (!currentPassword || !newPassword || !confirmNewPassword) {
         showAlert('Validation Error', 'All password fields are required.');
         return;
     }
-
     if (newPassword !== confirmNewPassword) {
         showAlert('Validation Error', 'New passwords do not match.');
         return;
     }
-
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(newPassword)) {
         showAlert('Validation Error', 'New password must be at least 8 characters and include uppercase, lowercase, number, and symbol.');
         return;
     }
-
     try {
         await apiCall('/user/change-password', {
             method: 'POST',
@@ -1211,6 +1212,7 @@ async function changePassword(e) {
         showAlert('Change Password Failed', err.message);
     }
 }
+
 function initializeProfileFormListeners() {
     document.getElementById('changePasswordForm')?.addEventListener('submit', changePassword);
     document.querySelector('.open-change-password-btn')?.addEventListener('click', openChangePasswordModal);
@@ -1229,6 +1231,7 @@ function initializeProfileFormListeners() {
     document.querySelector('.account-actions .btn-danger')?.addEventListener('click', deleteAccount);
     document.getElementById('profilePictureInput')?.addEventListener('change', handleProfilePictureUpload);
 }
+
 function handleProfilePictureUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -1252,6 +1255,7 @@ function handleProfilePictureUpload(event) {
   };
   reader.readAsDataURL(file);
 }
+
 function loadSavedProfilePicture() {
   const savedPicture = localStorage.getItem('profilePicture');
   if (savedPicture) {
