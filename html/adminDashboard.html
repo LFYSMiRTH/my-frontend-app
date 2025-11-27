@@ -209,8 +209,6 @@
         </div>
       </div>
     </div>
-
-    <!-- USER MANAGEMENT VIEW -->
     <div id="userManagementView" class="view hidden">
       <div class="header">
         <div class="user-info">
@@ -241,8 +239,6 @@
       </div>
     </div>
   </main>
-
-  <!-- ADD MENU ITEM MODAL -->
   <div id="addMenuItemModal" class="modal hidden">
     <div class="modal-content">
       <h3>Add New Menu Item</h3>
@@ -281,6 +277,19 @@
           </label>
           <span>Available for ordering</span>
         </div>
+        <div id="ingredientSection" class="ingredient-section">
+          <h4>Ingredients Required</h4>
+          <div id="ingredientList" class="ingredient-list">
+            <p style="color:#777; font-size:0.9rem;">No ingredients linked.</p>
+          </div>
+          <div class="ingredient-add-row">
+            <select id="addIngredientSelect" class="ingredient-select">
+              <option value="">Select ingredient...</option>
+            </select>
+            <input type="number" id="addIngredientQty" placeholder="Qty" min="0.01" step="0.01" class="ingredient-qty" />
+            <button type="button" id="addIngredientBtn" class="btn-icon-small">+</button>
+          </div>
+        </div>
         <div class="modal-actions">
           <button type="button" id="closeModal" class="btn-secondary">Cancel</button>
           <button type="submit" class="btn-primary">Add Item</button>
@@ -288,8 +297,6 @@
       </form>
     </div>
   </div>
-
-  <!-- EDIT MENU ITEM MODAL -->
   <div id="editMenuItemModal" class="modal hidden">
     <div class="modal-content">
       <h3>Edit Menu Item</h3>
@@ -330,15 +337,15 @@
         </div>
         <div id="ingredientSection" class="ingredient-section">
           <h4>Ingredients Required</h4>
-          <div id="ingredientList" class="ingredient-list">
+          <div id="editIngredientList" class="ingredient-list">
             <p>Loading ingredients...</p>
           </div>
           <div class="ingredient-add-row">
-            <select id="addIngredientSelect" class="ingredient-select">
+            <select id="editIngredientSelect" class="ingredient-select">
               <option value="">Select ingredient...</option>
             </select>
-            <input type="number" id="addIngredientQty" placeholder="Qty" min="0.01" step="0.01" class="ingredient-qty" />
-            <button type="button" id="addIngredientBtn" class="btn-icon-small">+</button>
+            <input type="number" id="editIngredientQty" placeholder="Qty" min="0.01" step="0.01" class="ingredient-qty" />
+            <button type="button" id="editIngredientBtn" class="btn-icon-small">+</button>
           </div>
         </div>
         <div class="modal-actions">
@@ -348,8 +355,6 @@
       </form>
     </div>
   </div>
-
-  <!-- DELETE CONFIRM MODAL -->
   <div id="deleteConfirmModal" class="modal hidden">
     <div class="modal-content" style="text-align:center;">
       <h3>Delete Item?</h3>
@@ -361,8 +366,6 @@
       </div>
     </div>
   </div>
-
-  <!-- OTHER MODALS (Inventory, Suppliers, Users) -->
   <div id="addInventoryItemModal" class="modal hidden">
     <div class="modal-content">
       <h3>Add New Ingredient</h3>
@@ -394,7 +397,6 @@
       </form>
     </div>
   </div>
-
   <div id="supplierModal" class="modal hidden">
     <div class="modal-content">
       <h3 id="supplierModalTitle">Add New Supplier</h3>
@@ -427,7 +429,6 @@
       </form>
     </div>
   </div>
-
   <div id="addUserModal" class="modal hidden">
     <div class="modal-content">
       <h3>Add New User</h3>
@@ -454,7 +455,6 @@
       </form>
     </div>
   </div>
-
   <div id="editUserModal" class="modal hidden">
     <div class="modal-content">
       <h3>Edit User</h3>
@@ -489,7 +489,6 @@
       </form>
     </div>
   </div>
-
   <div id="deleteUserConfirmModal" class="modal hidden">
     <div class="modal-content" style="text-align:center;">
       <h3>Delete User?</h3>
@@ -501,7 +500,6 @@
       </div>
     </div>
   </div>
-
   <div id="blockCustomerModal" class="modal hidden">
     <div class="modal-content" style="text-align:center;">
       <h3>Toggle Customer Status</h3>

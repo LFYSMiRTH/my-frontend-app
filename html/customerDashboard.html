@@ -91,7 +91,6 @@
           </div>
         </div>
         <div class="menu-grid" id="menuGrid"></div>
-        <!-- Removed old checkout bar -->
       </div>
       <div id="myOrdersView" class="view">
         <div class="header">
@@ -158,8 +157,18 @@
                   <input type="tel" id="phone" name="phone" required>
               </div>
               <div class="form-group">
-                  <label for="address">Address</label>
+                  <label for="address">Street / Barangay</label>
                   <textarea id="address" name="address" rows="3"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="city">City / Municipality</label>
+                  <input type="text" id="city" name="city">
+                </div>
+                <div class="form-group">
+                  <label for="province">Province</label>
+                  <input type="text" id="province" name="province">
+                </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
@@ -206,13 +215,11 @@
     </main>
   </div>
 
-  <!-- === CART MODAL (POPUP) === -->
   <div class="modal" id="cartModal">
     <div class="modal-content">
       <span class="modal-close-btn" id="closeCartModal">&times;</span>
       <h2 class="section-title"><i class="ri-shopping-cart-line"></i> Your Cart</h2>
       <div class="cart-items-container">
-        <!-- Items will be loaded here by JS -->
       </div>
       <div class="cart-summary">
         <div class="summary-row">
@@ -220,8 +227,16 @@
           <span id="cartItemCount">0</span>
         </div>
         <div class="summary-row">
-          <strong>Total Amount:</strong>
-          <strong id="cartTotal">₱0.00</strong>
+          <strong>Subtotal:</strong>
+          <strong id="cartSubtotal">₱0.00</strong>
+        </div>
+        <div class="summary-row">
+          <span>Delivery Fee:</span>
+          <span id="cartDeliveryFee">₱0.00</span>
+        </div>
+        <div class="summary-row">
+          <strong>Total (with delivery):</strong>
+          <strong id="cartTotalWithFee">₱0.00</strong>
         </div>
       </div>
       <div class="cart-actions">
@@ -258,21 +273,16 @@
   <div class="modal" id="itemModal">
   <div class="modal-content">
     <div class="modal-body">
-      <!-- Modal Header: Image + Close Button -->
       <div class="modal-header">
         <img id="modalImage" alt="Item" />
         <button type="button" class="modal-close-btn" id="closeModal">&times;</button>
       </div>
-
-      <!-- Item Info -->
       <h2 id="modalName"></h2>
       <p id="modalPrice"></p>
       <p><strong>Category:</strong> <span id="modalCategory"></span></p>
       <p><strong>Ingredients:</strong></p>
       <ul id="modalIngredients"></ul>
       <p id="modalAvailability"></p>
-
-      <!-- Enhanced Customization Section -->
       <div class="customization-section">
         <div class="customization-group">
           <strong>Mood</strong>
@@ -302,16 +312,14 @@
           </div>
         </div>
       </div>
-
-      <!-- Quantity Control & Add to Cart -->
       <div class="modal-actions">
-  <div class="quantity-control">
-    <button type="button" class="qty-btn minus" id="modalQtyMinus">−</button>
-    <input type="number" id="modalQuantity" min="1" value="1" />
-    <button type="button" class="qty-btn plus" id="modalQtyPlus">+</button>
-  </div>
-  <button id="modalAddToCart" class="add-btn">ADD TO BILLING</button>
-</div>
+        <div class="quantity-control">
+          <button type="button" class="qty-btn minus" id="modalQtyMinus">−</button>
+          <input type="number" id="modalQuantity" min="1" value="1" />
+          <button type="button" class="qty-btn plus" id="modalQtyPlus">+</button>
+        </div>
+        <button id="modalAddToCart" class="add-btn">Add to Cart</button>
+      </div>
     </div>
   </div>
 </div>
@@ -324,7 +332,6 @@
   </div>
 </div>
 
-<!-- === DELETE ACCOUNT CONFIRMATION MODAL (NEW) === -->
 <div id="deleteConfirmModal" class="modal">
   <div class="modal-content">
     <h3>CONFIRM ACCOUNT DELETION</h3>
@@ -337,7 +344,6 @@
   </div>
 </div>
 
-  <!-- === ORDER CONFIRMATION MODAL (BIRTHDAY & GENDER REMOVED) === -->
   <div id="orderConfirmationModal" class="modal">
     <div class="modal-content">
       <span class="modal-close-btn" id="closeOrderConfirmationModal">&times;</span>
@@ -353,8 +359,16 @@
             <span id="orderItemCount">0</span>
           </div>
           <div class="summary-row">
-            <strong>Total Amount:</strong>
-            <strong id="orderTotal">₱0.00</strong>
+            <strong>Subtotal:</strong>
+            <strong id="orderSubtotal">₱0.00</strong>
+          </div>
+          <div class="summary-row">
+            <span>Delivery Fee:</span>
+            <span id="orderDeliveryFee">₱0.00</span>
+          </div>
+          <div class="summary-row">
+            <strong>Total (with delivery):</strong>
+            <strong id="orderTotalWithFee">₱0.00</strong>
           </div>
         </div>
       </div>
@@ -380,26 +394,36 @@
           <input type="tel" id="customerPhone" name="customerPhone" required>
         </div>
         <div class="form-group">
-          <label for="customerAddress">Delivery Address *</label>
-          <textarea id="customerAddress" name="customerAddress" rows="3" required></textarea>
+          <label for="customerStreet">Delivery Address (Street / Barangay) *</label>
+          <input type="text" id="customerStreet" name="customerStreet" placeholder="e.g., 123 Rizal St, Barangay Tiwi" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customerCity">City / Municipality *</label>
+            <input type="text" id="customerCity" name="customerCity" placeholder="e.g., Legazpi City" required>
+          </div>
+          <div class="form-group">
+            <label for="customerProvince">Province (Optional)</label>
+            <input type="text" id="customerProvince" name="customerProvince" placeholder="e.g., Albay">
+          </div>
         </div>
       </div>
-      
+      <div class="payment-method-section">
+      <h3>Payment Method</h3>
+        <div class="form-group">
+          <select id="paymentMethod" name="paymentMethod" required>
+            <option value="">Select Payment Method</option>
+            <option value="cash_on_delivery">Cash on Delivery</option>
+          </select>
+        </div>
+      </div>
       <div class="order-actions">
         <button id="confirmOrderBtn" class="checkout-btn">CONFIRM ORDER</button>
         <button id="cancelOrderBtn" class="btn-secondary">CANCEL</button>
       </div>
     </div>
   </div>
-
+  <div id="toastContainer"></div>
   <script src="/js/customerDashboard.js"></script>
-  <script>
-    console.log("Customer Dashboard loaded!");
-    console.log("Token:", localStorage.getItem('customerToken'));
-    console.log("Customer Info:", localStorage.getItem('customerInfo'));
-  </script>
-  <script>
-    console.log("Customer token on dashboard:", localStorage.getItem('customerToken'));
-  </script>
 </body>
 </html>

@@ -12,23 +12,23 @@ let allMenuItems = [];
 let allUsers = [];
 let allCustomers = [];
 let lastNotificationId = null;
-// ✅ GET ADMIN TOKEN FROM LOCAL STORAGE
+
 function getAdminToken() {
   const token = localStorage.getItem('adminToken');
   console.log("Getting adminToken:", token ? "FOUND" : "NOT FOUND");
   if (!token) {
-    alert('Admin session not found. Please log in.');
+    showToast('Admin session not found. Please log in.', 'warn');
     window.location.href = '/html/login.html';
     throw new Error('No token');
   }
   return token;
 }
-// ✅ AUTHORIZED API CALL WITH JWT
+
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = getAdminToken();
   if (!token) {
-    alert('Admin session not found. Please log in.');
+    showToast('Admin session not found. Please log in.', 'warn');
     window.location.href = '/html/login.html';
     throw new Error('No token');
   }
@@ -40,7 +40,7 @@ async function apiCall(endpoint, options = {}) {
   const config = { ...options, headers };
   const res = await fetch(url, config);
   if (res.status === 401 || res.status === 403) {
-    alert('Admin access denied. Please log in again.');
+    showToast('Admin access denied. Please log in again.', 'warn');
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminInfo');
     window.location.href = '/html/login.html';
@@ -63,22 +63,21 @@ async function apiCall(endpoint, options = {}) {
     return { success: true };
   }
 }
-// 📈 SALES TRENDS CHART (NEW)
+
 let salesTrendChart = null;
+
 async function loadSalesTrendGraph(period = 'yearly') {
   const periodSelector = document.getElementById('periodSelector');
   if (periodSelector) periodSelector.value = period;
   try {
     const response = await apiCall(`/dashboard/sales-trends?period=${period}`);
     const { current, previous } = response;
-    // Merge labels (union of both periods)
     const allLabels = Array.from(
       new Set([
         ...current.map(x => x.label),
         ...previous.map(x => x.label)
       ])
     ).sort((a, b) => {
-      // Try to sort chronologically (works for "2025", "Nov 2025", "11/01")
       const parse = s => {
         const y = parseInt(s);
         if (!isNaN(y)) return new Date(y, 0, 1);
@@ -98,75 +97,73 @@ async function loadSalesTrendGraph(period = 'yearly') {
       (previous.find(x => x.label === label)?.value || 0)
     );
     const ctx = document.getElementById('salesTrendChart').getContext('2d');
-    // Destroy previous chart if exists
     if (salesTrendChart) salesTrendChart.destroy();
-  salesTrendChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: allLabels,
-      datasets: [
-        {
-          label: 'Current',
-          data: currentValues,
-          borderColor: 'green',
-          backgroundColor: 'rgba(0, 255, 0, 0.1)',
-          borderWidth: 2,
-          fill: false,
-          tension: 0.3,
-          pointRadius: 3,
-          pointHoverRadius: 6
-        },
-        {
-          label: 'Previous',
-          data: previousValues,
-          borderColor: 'red',
-          backgroundColor: 'rgba(255, 0, 0, 0.1)',
-          borderWidth: 2,
-          borderDash: [5, 5],
-          fill: false,
-          tension: 0.3,
-          pointRadius: 3,
-          pointHoverRadius: 6
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: (context) => {
-              const label = context.dataset.label || '';
-              const value = context.parsed.y;
-              return `${label}: ₱${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    salesTrendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: allLabels,
+        datasets: [
+          {
+            label: 'Current',
+            data: currentValues,
+            borderColor: 'green',
+            backgroundColor: 'rgba(0, 255, 0, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            pointRadius: 3,
+            pointHoverRadius: 6
+          },
+          {
+            label: 'Previous',
+            data: previousValues,
+            borderColor: 'red',
+            backgroundColor: 'rgba(255, 0, 0, 0.1)',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            fill: false,
+            tension: 0.3,
+            pointRadius: 3,
+            pointHoverRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const label = context.dataset.label || '';
+                const value = context.parsed.y;
+                return `${label}: ₱${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              }
             }
           }
-        }
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          title: { display: true, text: 'Time Period' }
         },
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: 'Sales (₱)' },
-          ticks: {
-            callback: (value) => `₱${value}`
+        scales: {
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Time Period' }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Sales (₱)' },
+            ticks: {
+              callback: (value) => `₱${value}`
+            }
           }
+        },
+        interaction: {
+          mode: 'index',
+          intersect: false
         }
-      },
-      interaction: {
-        mode: 'index',
-        intersect: false
       }
-    }
-  });
+    });
   } catch (err) {
     console.error('Failed to load sales trend graph:', err);
-    // Optional: show error in UI
     const canvas = document.getElementById('salesTrendChart');
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -178,17 +175,15 @@ async function loadSalesTrendGraph(period = 'yearly') {
     }
   }
 }
-// ===== NOTIFICATION SYSTEM =====
+
 async function loadNotifications() {
   try {
     const notifications = await apiCall('/admin/notifications?limit=20');
     const badge = document.getElementById('notificationBadge');
     const bell = document.getElementById('notificationBell');
     const dropdown = document.getElementById('notificationDropdown');
-    // Update badge
     badge.textContent = notifications.length;
     badge.style.display = notifications.length > 0 ? 'flex' : 'none';
-    // Render dropdown
     if (notifications.length === 0) {
       dropdown.innerHTML = '<div style="padding:12px; color:#777;">No new notifications.</div>';
     } else {
@@ -205,7 +200,6 @@ async function loadNotifications() {
       });
       dropdown.innerHTML = html;
     }
-    // Show toast for newest unseen notification
     const newest = notifications[0];
     if (newest && newest.id !== lastNotificationId) {
       lastNotificationId = newest.id;
@@ -215,27 +209,57 @@ async function loadNotifications() {
     console.error('Failed to load notifications:', err);
   }
 }
+
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.innerHTML = `
-    <div style="position:fixed; top:80px; right:20px; background:${type === 'warn' ? '#fff3cd' : '#d4edda'}; 
-                color:${type === 'warn' ? '#856404' : '#155724'}; padding:12px 20px; border-radius:6px; 
-                box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; animation: slideIn 0.3s;">
-      <strong>${type === 'warn' ? '⚠️' : '✅'}</strong> ${message}
+    <div style="
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'warn' ? '#fff3cd' : '#d4edda'};
+      color: ${type === 'warn' ? '#856404' : '#155724'};
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+      animation: slideInRight 0.3s ease-out;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 250px;
+      max-width: 400px;
+      word-wrap: break-word;
+      font-size: 0.95rem;
+      font-weight: 500;
+    ">
+      <span style="font-size: 1.2rem; line-height: 1;">${type === 'warn' ? '⚠️' : '✅'}</span>
+      <span>${message}</span>
     </div>
   `;
   document.body.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
+    toast.style.transform = 'translateX(20px)';
     setTimeout(() => document.body.removeChild(toast), 300);
   }, 5000);
 }
+
 document.head.innerHTML += `
   <style>
-    @keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
   </style>
 `;
-// ===== USER & CUSTOMER MANAGEMENT =====
+
 async function loadUsers() {
   const el = document.getElementById('usersList');
   el.innerHTML = '<p>Loading users...</p>';
@@ -247,6 +271,7 @@ async function loadUsers() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadCustomers() {
   const el = document.getElementById('customersList');
   el.innerHTML = '<p>Loading customers...</p>';
@@ -258,6 +283,7 @@ async function loadCustomers() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 function renderUsersList(searchTerm = '') {
   const container = document.getElementById('usersList');
   let filtered = allUsers;
@@ -307,6 +333,7 @@ function renderUsersList(searchTerm = '') {
     btn.addEventListener('click', resetUserPassword)
   );
 }
+
 function renderCustomersList(searchTerm = '') {
   const container = document.getElementById('customersList');
   let filtered = allCustomers;
@@ -345,6 +372,7 @@ function renderCustomersList(searchTerm = '') {
     btn.addEventListener('click', () => viewCustomerOrders(btn.dataset.id))
   );
 }
+
 async function resetUserPassword(e) {
   const userId = e.target.closest('.reset-pw-btn').dataset.id;
   const user = allUsers.find(u => u.id === userId);
@@ -352,21 +380,23 @@ async function resetUserPassword(e) {
   if (!confirm(`Send password reset to ${user.email}?`)) return;
   try {
     await apiCall(`/admin/users/${userId}/reset-password`, { method: 'POST' });
-    alert('Password reset email sent!');
+    showToast('Password reset email sent!', 'info');
   } catch (err) {
-    alert('Failed to send reset: ' + err.message);
+    showToast('Failed to send reset: ' + err.message, 'warn');
   }
 }
+
 function openAddUserModal() {
   document.getElementById('addUserModal').classList.remove('hidden');
 }
+
 async function handleAddUserSubmit(e) {
   e.preventDefault();
   const name = document.getElementById('newUserName').value.trim();
   const email = document.getElementById('newUserEmail').value.trim();
   const role = document.getElementById('newUserRole').value;
   if (!name || !email || !['admin', 'staff'].includes(role)) {
-    alert('Please fill in all fields correctly.');
+    showToast('Please fill in all fields correctly.', 'warn');
     return;
   }
   function generateUsername(fullName) {
@@ -407,14 +437,15 @@ async function handleAddUserSubmit(e) {
   };
   try {
     await apiCall('/admin/users', { method: 'POST', body: JSON.stringify(formData) });
-    alert('User added successfully! A welcome email with login instructions has been sent.');
+    showToast('User added successfully! A welcome email with login instructions has been sent.', 'info');
     document.getElementById('addUserForm').reset();
     closeAddUserModal();
     loadUsers();
   } catch (err) {
-    alert('Failed to add user: ' + err.message);
+    showToast('Failed to add user: ' + err.message, 'warn');
   }
 }
+
 function openEditUserModal(e) {
   const btn = e.target.closest('.edit-user-btn');
   const userId = btn.dataset.id;
@@ -427,6 +458,7 @@ function openEditUserModal(e) {
   document.getElementById('editUserActive').checked = user.isActive;
   document.getElementById('editUserModal').classList.remove('hidden');
 }
+
 async function handleEditUserSubmit(e) {
   e.preventDefault();
   const updated = {
@@ -438,43 +470,49 @@ async function handleEditUserSubmit(e) {
   const id = document.getElementById('editUserId').value;
   try {
     await apiCall(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(updated) });
-    alert('User updated!');
+    showToast('User updated!', 'info');
     closeEditUserModal();
     loadUsers();
   } catch (err) {
-    alert('Update failed: ' + err.message);
+    showToast('Update failed: ' + err.message, 'warn');
   }
 }
+
 function openDeleteUserConfirm(e) {
   const btn = e.target.closest('.delete-user-btn');
   document.getElementById('deleteUserId').value = btn.dataset.id;
   document.getElementById('deleteUserName').textContent = btn.dataset.name;
   document.getElementById('deleteUserConfirmModal').classList.remove('hidden');
 }
+
 async function handleDeleteUserConfirm() {
   const id = document.getElementById('deleteUserId').value;
   try {
     await apiCall(`/admin/users/${id}`, { method: 'DELETE' });
-    alert('User deleted!');
+    showToast('User deleted!', 'info');
     closeDeleteUserModal();
     loadUsers();
   } catch (err) {
-    alert('Delete failed: ' + err.message);
+    showToast('Delete failed: ' + err.message, 'warn');
   }
 }
+
 function viewCustomerOrders(id) {
-  alert(`Order history for customer ID ${id} will appear here once implemented.`);
+  showToast(`Order history for customer ID ${id} will appear here once implemented.`, 'info');
 }
+
 function closeAddUserModal() {
   document.getElementById('addUserModal').classList.add('hidden');
 }
+
 function closeEditUserModal() {
   document.getElementById('editUserModal').classList.add('hidden');
 }
+
 function closeDeleteUserModal() {
   document.getElementById('deleteUserConfirmModal').classList.add('hidden');
 }
-// ===== REPORTS, INVENTORY, ETC. (UNCHANGED) =====
+
 async function loadReportHistory() {
   const el = document.getElementById('reportHistoryList');
   el.innerHTML = '<p>Loading...</p>';
@@ -503,6 +541,7 @@ async function loadReportHistory() {
     el.innerHTML = `<p style="color:#e74c3c;">Error loading history: ${err.message}</p>`;
   }
 }
+
 function generateCSV(data, headers) {
   const csvContent = [
     headers.join(','),
@@ -523,6 +562,7 @@ function generateCSV(data, headers) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 function generatePDF(data, headers, title) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -541,8 +581,10 @@ function generatePDF(data, headers, title) {
   });
   doc.save(`${title.replace(/\s+/g, '_')}.pdf`);
 }
+
 let currentReportData = null;
 let currentReportTitle = '';
+
 async function generateReport() {
   const type = document.getElementById('reportType').value;
   const startDate = document.getElementById('startDate').value;
@@ -634,6 +676,7 @@ async function generateReport() {
     tableContainer.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadDetailedTopSelling() {
   const el = document.getElementById('detailedTopSellingList');
   el.innerHTML = '<p>Loading...</p>';
@@ -659,6 +702,7 @@ async function loadDetailedTopSelling() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadCustomerInsights() {
   const el = document.getElementById('customerInsights');
   el.innerHTML = '<p>Loading...</p>';
@@ -673,6 +717,7 @@ async function loadCustomerInsights() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadExpenses() {
   const el = document.getElementById('expenseTracker');
   el.innerHTML = '<p>Loading...</p>';
@@ -694,6 +739,7 @@ async function loadExpenses() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadProfitLossReport() {
   const el = document.getElementById('profitLossReport');
   el.innerHTML = '<p>Loading...</p>';
@@ -713,11 +759,12 @@ async function loadProfitLossReport() {
     el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 async function loadTopSellingItems() {
   const container = document.getElementById('topSellingList');
   container.innerHTML = '<p>Loading top sellers...</p>';
   try {
-    const items = await apiCall('/admin/top-selling'); // ✅ CORRECT: Now calls your backend endpoint
+    const items = await apiCall('/admin/top-selling');
     if (!Array.isArray(items) || items.length === 0) {
       container.innerHTML = '<p>No sales data yet.</p>';
       return;
@@ -737,11 +784,11 @@ async function loadTopSellingItems() {
     container.innerHTML = '<p style="color: #e74c3c;">Failed to load top sellers.</p>';
   }
 }
-// ✅ UPDATED: Load dashboard stats from new endpoint
+
 async function loadDashboardData() {
   overviewContainer.innerHTML = '<p>Loading...</p>';
   try {
-    const data = await apiCall('/dashboard/stats'); // ✅ NOW USES NEW ENDPOINT
+    const data = await apiCall('/dashboard/stats');
     console.log("Dashboard data:", data);
     renderOverviewCards(data);
   } catch (err) {
@@ -750,11 +797,10 @@ async function loadDashboardData() {
       `<p class="no-data">Error loading dashboard: ${err.message}</p>`;
   }
 }
-// ✅ FIXED: Ensure lowStockAlerts card always shows (defaults to 0 if invalid)
+
 function renderOverviewCards(data) {
   overviewContainer.innerHTML = '';
   cardsConfig.forEach(cfg => {
-    // ✅ FIX: Default to 0 if val is missing/NaN/non-number
     let val = data[cfg.key];
     if (typeof val !== 'number' || isNaN(val)) {
       console.warn(`Invalid value for ${cfg.key}: "${val}". Defaulting to 0.`);
@@ -772,6 +818,7 @@ function renderOverviewCards(data) {
     overviewContainer.appendChild(card);
   });
 }
+
 async function loadInventoryItems() {
   const container = document.getElementById('inventoryList');
   container.innerHTML = '<p>Loading inventory...</p>';
@@ -788,6 +835,7 @@ async function loadInventoryItems() {
     container.innerHTML = '<p style="color:red;">Failed to load inventory.</p>';
   }
 }
+
 function renderInventoryList(searchTerm = '') {
   const container = document.getElementById('inventoryList');
   let filtered = allInventoryItems;
@@ -822,6 +870,7 @@ function renderInventoryList(searchTerm = '') {
   });
   container.innerHTML = html;
 }
+
 async function loadSuppliers() {
   const container = document.getElementById('suppliersList');
   container.innerHTML = '<p>Loading suppliers...</p>';
@@ -838,6 +887,7 @@ async function loadSuppliers() {
     container.innerHTML = '<p style="color:red;">Failed to load suppliers.</p>';
   }
 }
+
 function renderSuppliersList() {
   const container = document.getElementById('suppliersList');
   if (allSuppliers.length === 0) {
@@ -858,8 +908,7 @@ function renderSuppliersList() {
   });
   container.innerHTML = html;
 }
-// ===== MENU MANAGEMENT =====
-// ✅ FIXED LOGIC: Availability respects user toggle first, then checks stock
+
 function renderMenuList(searchTerm = '', category = 'all') {
   const container = document.getElementById('menuListContainer');
   let filtered = allMenuItems;
@@ -927,12 +976,11 @@ function renderMenuList(searchTerm = '', category = 'all') {
     btn.addEventListener('click', openDeleteConfirm)
   );
 }
-// ✅ FIXED: Use `/api/product/admin/menu` to get enriched data (with ingredient names)
+
 async function loadMenuItems() {
   const container = document.getElementById('menuListContainer');
   container.innerHTML = '<p>Loading menu...</p>';
   try {
-    // ✅ CALL ENRICHED ENDPOINT
     const items = await apiCall('/product/admin/menu');
     if (!Array.isArray(items)) {
       container.innerHTML = '<p style="color:red;">Invalid menu data.</p>';
@@ -945,25 +993,31 @@ async function loadMenuItems() {
     container.innerHTML = '<p style="color:red;">Failed to load menu.</p>';
   }
 }
-// ✅ FIXED: Use `ing.name` directly — no dependency on `allInventoryItems`
-async function loadAndRenderIngredients(menuItemId) {
-  const listContainer = document.getElementById('ingredientList');
-  const select = document.getElementById('addIngredientSelect');
-  const qtyInput = document.getElementById('addIngredientQty');
-  const addButton = document.getElementById('addIngredientBtn');
+
+async function loadAndRenderIngredients(menuItemId, isEditMode = false) {
+  const listContainer = isEditMode 
+    ? document.getElementById('editIngredientList') 
+    : document.getElementById('ingredientList');
+  const select = isEditMode 
+    ? document.getElementById('editIngredientSelect') 
+    : document.getElementById('addIngredientSelect');
+  const qtyInput = isEditMode 
+    ? document.getElementById('editIngredientQty') 
+    : document.getElementById('addIngredientQty');
+  const addButton = isEditMode 
+    ? document.getElementById('editIngredientBtn') 
+    : document.getElementById('addIngredientBtn');
   if (!listContainer || !select || !qtyInput || !addButton) {
-    console.warn('Missing ingredient UI elements in edit modal');
+    console.warn('Missing ingredient UI elements');
     return;
   }
   try {
-    // ✅ Fetch enriched ingredients (contains `.name`)
     const ingredients = await apiCall(`/product/admin/menu/${menuItemId}/ingredients`);
     if (ingredients.length === 0) {
       listContainer.innerHTML = '<p style="color:#777; font-size:0.9rem;">No ingredients linked.</p>';
     } else {
       let html = '';
       ingredients.forEach(ing => {
-        // ✅ USE `.name` DIRECTLY — no inventory lookup
         const name = (ing.name || `Unknown (${ing.inventoryItemId})`).replace(/"/g, '&quot;');
         html += `
           <div class="ingredient-row" style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #eee;">
@@ -973,68 +1027,57 @@ async function loadAndRenderIngredients(menuItemId) {
         `;
       });
       listContainer.innerHTML = html;
-      // Attach event listener to the remove buttons *after* the HTML is updated
       document.querySelectorAll('.remove-ingredient-btn').forEach(btn => {
-        btn.addEventListener('click', async (event) => {
-          event.preventDefault();
-          const clickedBtn = event.target;
-          const inventoryItemIdToRemove = clickedBtn.dataset.id;
-          const updatedIngredients = ingredients.filter(ing => ing.inventoryItemId !== inventoryItemIdToRemove);
+        btn.addEventListener('click', async (e) => {
+          const idToRemove = btn.dataset.id;
+          const updated = ingredients.filter(ing => ing.inventoryItemId !== idToRemove);
           try {
-            await saveIngredientsForMenuItem(menuItemId, updatedIngredients);
-            await loadAndRenderIngredients(menuItemId);
+            await saveIngredientsForMenuItem(menuItemId, updated);
+            await loadAndRenderIngredients(menuItemId, isEditMode);
           } catch (err) {
             console.error('Failed to remove ingredient:', err);
-            alert('Failed to remove ingredient: ' + err.message);
+            showToast('Failed to remove ingredient: ' + err.message, 'warn');
           }
         });
       });
     }
-    // Populate select dropdown (still needs inventory items for adding new ones)
-    select.innerHTML = '<option value="">Select ingredient...</option>';
-    // ⚠️ Still need to preload inventory for *adding new* ingredients
     if (allInventoryItems.length === 0) {
-      // Preload inventory once if not yet loaded
       allInventoryItems = await apiCall('/admin/inventory');
     }
+    select.innerHTML = '<option value="">Select ingredient...</option>';
     allInventoryItems.forEach(item => {
       const opt = document.createElement('option');
       opt.value = item.id;
       opt.textContent = `${item.name.replace(/"/g, '&quot;')} (${item.currentStock} ${item.unit || 'pcs'})`;
       select.appendChild(opt);
     });
-    // Re-attach event listener to the 'Add Ingredient' button
     const newAddButton = addButton.cloneNode(true);
     addButton.parentNode.replaceChild(newAddButton, addButton);
-    newAddButton.addEventListener('click', async (event) => {
-      event.preventDefault();
+    newAddButton.addEventListener('click', async (e) => {
+      e.preventDefault();
       const inventoryItemId = select.value;
       const quantityRequired = parseFloat(qtyInput.value);
       if (!inventoryItemId) {
-        alert('Please select an ingredient.');
+        showToast('Please select an ingredient.', 'warn');
         return;
       }
       if (isNaN(quantityRequired) || quantityRequired <= 0) {
-        alert('Please enter a valid quantity (> 0).');
+        showToast('Please enter a valid quantity (> 0).', 'warn');
         return;
       }
       if (ingredients.some(ing => ing.inventoryItemId === inventoryItemId)) {
-        alert('This ingredient is already added.');
+        showToast('This ingredient is already added.', 'warn');
         return;
       }
-      const newIngredient = {
-        inventoryItemId,
-        quantityRequired,
-        unit: allInventoryItems.find(i => i.id === inventoryItemId)?.unit || 'pcs'
-      };
-      const updated = [...ingredients, newIngredient];
+      const unit = allInventoryItems.find(i => i.id === inventoryItemId)?.unit || 'pcs';
+      const updated = [...ingredients, { inventoryItemId, quantityRequired, unit }];
       try {
         await saveIngredientsForMenuItem(menuItemId, updated);
-        await loadAndRenderIngredients(menuItemId);
+        await loadAndRenderIngredients(menuItemId, isEditMode);
         qtyInput.value = '';
       } catch (err) {
         console.error('Add ingredient failed:', err);
-        alert('Failed to add ingredient: ' + err.message);
+        showToast('Failed to add ingredient: ' + err.message, 'warn');
       }
     });
   } catch (err) {
@@ -1042,6 +1085,7 @@ async function loadAndRenderIngredients(menuItemId) {
     listContainer.innerHTML = '<p style="color:#e74c3c;">Failed to load ingredients.</p>';
   }
 }
+
 async function saveIngredientsForMenuItem(menuItemId, ingredients) {
   try {
     await apiCall(`/admin/menu/${menuItemId}/ingredients`, {
@@ -1050,10 +1094,11 @@ async function saveIngredientsForMenuItem(menuItemId, ingredients) {
     });
   } catch (err) {
     console.error('Failed to save ingredients:', err);
-    alert('Failed to update ingredients: ' + err.message);
+    showToast('Failed to update ingredients: ' + err.message, 'warn');
     throw err;
   }
 }
+
 function openEditModal(e) {
   const btn = e.target.closest('.edit-btn');
   const menuItem = btn.closest('.menu-item');
@@ -1066,15 +1111,17 @@ function openEditModal(e) {
   const isAvailable = menuItem.dataset.available === 'true';
   document.getElementById('editItemAvailable').checked = isAvailable;
   document.getElementById('editItemImageUrl').value = btn.dataset.imageUrl || '';
-  loadAndRenderIngredients(id);
+  loadAndRenderIngredients(id, true);
   document.getElementById('editMenuItemModal').classList.remove('hidden');
 }
+
 function openDeleteConfirm(e) {
   const btn = e.target.closest('.delete-btn');
   document.getElementById('deleteItemId').value = btn.dataset.id;
   document.getElementById('deleteItemName').textContent = btn.dataset.name;
   document.getElementById('deleteConfirmModal').classList.remove('hidden');
 }
+
 async function handleEditSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('editItemId').value;
@@ -1087,7 +1134,12 @@ async function handleEditSubmit(e) {
     imageUrl: document.getElementById('editItemImageUrl').value.trim() || null
   };
   if (!updated.name || isNaN(updated.price) || updated.price < 0 || isNaN(updated.stockQuantity) || updated.stockQuantity < 0) {
-    alert('Please enter valid name, price (≥0), and stock (≥0).');
+    showToast('Please enter valid name, price (≥0), and stock (≥0).', 'warn');
+    return;
+  }
+  const ingredientRows = document.querySelectorAll('#editIngredientList .ingredient-row');
+  if (ingredientRows.length === 0) {
+    showToast('Please add at least one ingredient before saving.', 'warn');
     return;
   }
   try {
@@ -1095,7 +1147,7 @@ async function handleEditSubmit(e) {
       method: 'PUT',
       body: JSON.stringify(updated)
     });
-    const ingredientRows = document.querySelectorAll('#ingredientList .ingredient-row');
+    const ingredientRows = document.querySelectorAll('#editIngredientList .ingredient-row');
     const currentIngredients = [];
     ingredientRows.forEach(row => {
       const removeBtn = row.querySelector('.remove-ingredient-btn');
@@ -1112,32 +1164,54 @@ async function handleEditSubmit(e) {
       }
     });
     await saveIngredientsForMenuItem(id, currentIngredients);
-    alert('Item updated successfully!');
+    showToast('Item updated successfully!', 'info');
     closeEditModal();
     loadDashboardData();
     loadMenuItems();
     loadTopSellingItems();
   } catch (err) {
     console.error('Edit error:', err);
-    alert('Update failed: ' + err.message);
+    showToast('Update failed: ' + err.message, 'warn');
   }
 }
+
 async function handleDeleteConfirm() {
   const id = document.getElementById('deleteItemId').value;
   try {
     await apiCall(`/admin/menu/${id}`, { method: 'DELETE' });
-    alert('Item deleted successfully!');
+    showToast('Item deleted successfully!', 'info');
     closeDeleteModal();
     loadDashboardData();
     loadMenuItems();
     loadTopSellingItems();
   } catch (err) {
     console.error('Delete error:', err);
-    alert('Delete failed: ' + err.message);
+    showToast('Delete failed: ' + err.message, 'warn');
   }
 }
+
 async function handleAddSubmit(e) {
   e.preventDefault();
+  const ingredientRows = document.querySelectorAll('#ingredientList .ingredient-row');
+  if (ingredientRows.length === 0) {
+    showToast('Please add at least one ingredient before saving.', 'warn');
+    return;
+  }
+  const ingredients = [];
+  ingredientRows.forEach(row => {
+    const removeBtn = row.querySelector('.remove-ingredient-btn');
+    const text = row.querySelector('span').textContent;
+    const match = text.match(/^(.+?):\s*(\d+(?:\.\d+)?)\s*(.+?)$/);
+    if (match && removeBtn) {
+      const [, name, qty, unit] = match;
+      const inventoryItemId = removeBtn.dataset.id;
+      ingredients.push({
+        inventoryItemId,
+        quantityRequired: parseFloat(qty),
+        unit: unit.trim()
+      });
+    }
+  });
   const newItem = {
     name: document.getElementById('itemName').value.trim(),
     category: document.getElementById('itemCategory').value,
@@ -1145,10 +1219,10 @@ async function handleAddSubmit(e) {
     stockQuantity: parseInt(document.getElementById('itemStock').value),
     isAvailable: document.getElementById('itemAvailable').checked,
     imageUrl: document.getElementById('itemImageUrl').value.trim() || null,
-    ingredients: []
+    ingredients: ingredients
   };
   if (!newItem.name || isNaN(newItem.price) || newItem.price < 0 || isNaN(newItem.stockQuantity) || newItem.stockQuantity < 0) {
-    alert('Please enter valid name, price (≥0), and stock (≥0).');
+    showToast('Please enter valid name, price (≥0), and stock (≥0).', 'warn');
     return;
   }
   try {
@@ -1156,7 +1230,7 @@ async function handleAddSubmit(e) {
       method: 'POST',
       body: JSON.stringify(newItem)
     });
-    alert('Item added successfully!');
+    showToast('Item added successfully!', 'info');
     document.getElementById('addMenuItemForm').reset();
     document.getElementById('itemAvailable').checked = true;
     closeAddModal();
@@ -1165,24 +1239,30 @@ async function handleAddSubmit(e) {
     loadTopSellingItems();
   } catch (err) {
     console.error('Add error:', err);
-    alert('Add failed: ' + err.message);
+    showToast('Add failed: ' + err.message, 'warn');
   }
 }
+
 function closeEditModal() {
   document.getElementById('editMenuItemModal').classList.add('hidden');
 }
+
 function closeDeleteModal() {
   document.getElementById('deleteConfirmModal').classList.add('hidden');
 }
+
 function closeAddModal() {
   document.getElementById('addMenuItemModal').classList.add('hidden');
 }
+
 function openAddInventoryModal() {
   document.getElementById('addInventoryItemModal').classList.remove('hidden');
 }
+
 function closeAddInventoryModal() {
   document.getElementById('addInventoryItemModal').classList.add('hidden');
 }
+
 async function handleAddInventorySubmit(e) {
   e.preventDefault();
   const newItem = {
@@ -1193,7 +1273,7 @@ async function handleAddInventorySubmit(e) {
     reorderLevel: parseInt(document.getElementById('invReorder').value) || 10
   };
   if (!newItem.name) {
-    alert('Ingredient name is required.');
+    showToast('Ingredient name is required.', 'warn');
     return;
   }
   try {
@@ -1201,21 +1281,24 @@ async function handleAddInventorySubmit(e) {
       method: 'POST',
       body: JSON.stringify(newItem)
     });
-    alert('Ingredient added successfully!');
+    showToast('Ingredient added successfully!', 'info');
     document.getElementById('addInventoryItemForm').reset();
     closeAddInventoryModal();
     loadInventoryItems();
   } catch (err) {
     console.error('Add inventory error:', err);
-    alert('Failed to add ingredient: ' + err.message);
+    showToast('Failed to add ingredient: ' + err.message, 'warn');
   }
 }
+
 function openAddSupplierModal() {
   document.getElementById('supplierModal').classList.remove('hidden');
 }
+
 function closeSupplierModal() {
   document.getElementById('supplierModal').classList.add('hidden');
 }
+
 async function handleSupplierSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('supplierId').value;
@@ -1227,7 +1310,7 @@ async function handleSupplierSubmit(e) {
     address: document.getElementById('supplierAddress').value.trim()
   };
   if (!supplierData.name || !supplierData.email) {
-    alert('Please fill in required fields.');
+    showToast('Please fill in required fields.', 'warn');
     return;
   }
   try {
@@ -1236,32 +1319,33 @@ async function handleSupplierSubmit(e) {
         method: 'PUT',
         body: JSON.stringify(supplierData)
       });
-      alert('Supplier updated!');
+      showToast('Supplier updated!', 'info');
     } else {
       await apiCall('/admin/suppliers', {
         method: 'POST',
         body: JSON.stringify(supplierData)
       });
-      alert('Supplier added!');
+      showToast('Supplier added!', 'info');
     }
     closeSupplierModal();
     loadSuppliers();
   } catch (err) {
     console.error('Supplier save error:', err);
-    alert('Failed to save supplier: ' + err.message);
+    showToast('Failed to save supplier: ' + err.message, 'warn');
   }
 }
+
 function highlightNavItem(id) {
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
 }
+
 function showView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(viewId).classList.add('active');
 }
-// ✅ DOM READY — WITH NOTIFICATION SETUP
+
 document.addEventListener('DOMContentLoaded', () => {
-  // ✅ ADD NOTIFICATION BELL + DROPDOWN TO HEADER
   const headerActions = document.querySelector('.header .actions');
   if (headerActions && !document.getElementById('notificationBell')) {
     const bellHTML = `
@@ -1272,7 +1356,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div id="notificationDropdown" style="position:absolute; top:50px; right:20px; background:white; border:1px solid #ddd; border-radius:6px; width:300px; max-height:400px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:1000; display:none;"></div>
     `;
     headerActions.insertAdjacentHTML('afterbegin', bellHTML);
-    // Bell interaction
     document.getElementById('notificationBell').addEventListener('click', (e) => {
       e.stopPropagation();
       const dropdown = document.getElementById('notificationDropdown');
@@ -1282,10 +1365,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('notificationDropdown').style.display = 'none';
     });
   }
-  // ✅ POLL NOTIFICATIONS EVERY 30 SECONDS
   loadNotifications();
   setInterval(loadNotifications, 30_000);
-  // ✅ LOGOUT HANDLER
   document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     localStorage.removeItem('adminToken');
@@ -1348,8 +1429,72 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addUserBtn')?.addEventListener('click', openAddUserModal);
   });
   document.getElementById('generateReportBtn')?.addEventListener('click', generateReport);
-  document.getElementById('addItemBtn')?.addEventListener('click', () => {
+  document.getElementById('addItemBtn').addEventListener('click', async () => {
     document.getElementById('addMenuItemModal').classList.remove('hidden');
+    const listContainer = document.getElementById('ingredientList');
+    const select = document.getElementById('addIngredientSelect');
+    const qtyInput = document.getElementById('addIngredientQty');
+    const addButton = document.getElementById('addIngredientBtn');
+    listContainer.innerHTML = '<p style="color:#777; font-size:0.9rem;">No ingredients linked.</p>';
+    select.innerHTML = '<option value="">Select ingredient...</option>';
+    if (allInventoryItems.length === 0) {
+      allInventoryItems = await apiCall('/admin/inventory');
+    }
+    allInventoryItems.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = `${item.name} (${item.currentStock} ${item.unit || 'pcs'})`;
+      select.appendChild(opt);
+    });
+    const newAddButton = addButton.cloneNode(true);
+    addButton.parentNode.replaceChild(newAddButton, addButton);
+    newAddButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      const inventoryItemId = select.value;
+      const quantityRequired = parseFloat(qtyInput.value);
+      if (!inventoryItemId) {
+        showToast('Please select an ingredient.', 'warn');
+        return;
+      }
+      if (isNaN(quantityRequired) || quantityRequired <= 0) {
+        showToast('Please enter a valid quantity (> 0).', 'warn');
+        return;
+      }
+      const existingRows = document.querySelectorAll('#ingredientList .ingredient-row');
+      let exists = false;
+      existingRows.forEach(row => {
+        const btn = row.querySelector('.remove-ingredient-btn');
+        if (btn && btn.dataset.id === inventoryItemId) {
+          exists = true;
+        }
+      });
+      if (exists) {
+        showToast('This ingredient is already added.', 'warn');
+        return;
+      }
+      const name = allInventoryItems.find(i => i.id === inventoryItemId)?.name || `Unknown (${inventoryItemId})`;
+      const unit = allInventoryItems.find(i => i.id === inventoryItemId)?.unit || 'pcs';
+      if (listContainer.children.length === 1 && 
+          listContainer.querySelector('p')) {
+        listContainer.innerHTML = '';
+      }
+      const row = document.createElement('div');
+      row.className = 'ingredient-row';
+      row.innerHTML = `
+        <span>${name}: ${quantityRequired} ${unit}</span>
+        <button class="remove-ingredient-btn" data-id="${inventoryItemId}" style="background:#e74c3c; color:white; border:none; border-radius:4px; width:24px; height:24px; font-size:0.8rem; cursor:pointer;">×</button>
+      `;
+      listContainer.appendChild(row);
+      row.querySelector('.remove-ingredient-btn').addEventListener('click', (ev) => {
+        ev.preventDefault();
+        row.remove();
+        if (listContainer.children.length === 0) {
+          listContainer.innerHTML = '<p style="color:#777; font-size:0.9rem;">No ingredients linked.</p>';
+        }
+      });
+      select.value = '';
+      qtyInput.value = '';
+    });
   });
   document.getElementById('editMenuItemForm')?.addEventListener('submit', handleEditSubmit);
   document.getElementById('confirmDelete')?.addEventListener('click', handleDeleteConfirm);
@@ -1398,9 +1543,7 @@ document.addEventListener('DOMContentLoaded', () => {
   highlightNavItem('nav-dashboard');
   loadDashboardData();
   loadTopSellingItems();
-  // ✅ LOAD SALES TRENDS CHART
   loadSalesTrendGraph('yearly');
-  // ✅ BIND PERIOD SELECTOR
   document.getElementById('periodSelector')?.addEventListener('change', (e) => {
     loadSalesTrendGraph(e.target.value);
   });

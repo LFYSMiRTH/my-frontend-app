@@ -35,6 +35,22 @@
                     <i class="ri-notification-2-line bell"></i>
                     <span class="notification-count">0</span>
                 </div>
+                <div id="notificationPanel" class="notification-panel">
+                <div class="notification-header">
+                    <h3>Notifications</h3>
+                    <div class="notification-tabs">
+                    <button class="tab-btn active" data-tab="all">All</button>
+                    <!-- You can add more tabs later if needed -->
+                    </div>
+                </div>
+                <div id="notificationsList" class="notifications-list">
+                    <!-- Notifications will be loaded here dynamically -->
+                    <div class="no-notifications">
+                    <i class="ri-notification-2-line" style="font-size: 3rem; color: #999; margin-bottom: 10px;"></i>
+                    <p>You have no new notifications.</p>
+                    </div>
+                </div>
+                </div>
                 <div class="profile-dropdown-trigger">
                     <i class="ri-user-line"></i>
                 </div>
@@ -168,11 +184,6 @@
                 </div>
             </div>
 
-            <div id="notificationsView" class="view">
-                <h2>Notifications</h2>
-                <div id="notifications-list" class="notifications-list"></div>
-            </div>
-
             <div id="profileView" class="view">
                 <h2>Profile Settings</h2>
                 <div id="profile-info"></div>
@@ -269,6 +280,51 @@
                 <div class="modal-actions">
                     <button class="btn-secondary" onclick="closeViewAccountModal()">Close</button>
                 </div>
+            </div>
+        </div>
+
+        <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h2>Select Payment Method</h2>
+            <div class="payment-methods">
+            <div class="payment-method" onclick="selectPayment('Cash')">
+                <div class="method-info">
+                <i class="ri-money-dollar-circle-line"></i>
+                <span>Cash</span>
+                </div>
+                <div class="radio-button">
+                <div class="radio-inner"></div>
+                </div>
+            </div>
+            </div>
+            <button class="confirm-payment-btn" onclick="confirmOrder()">
+            <i class="ri-check-double-line"></i>
+            Confirm Payment
+            </button>
+        </div>
+        </div>
+        <!-- Notification Panel -->
+
+        <!-- RECEIPT TEMPLATE (hidden by defa   ult) -->
+        <div id="receipt-template" style="display: none;">
+        <div id="tambayan-receipt">
+            <h2>TAMBAYAN CAFE</h2>
+            <p class="subtitle">Order Receipt</p>
+
+            <div class="receipt-header">
+            <div class="receipt-row"><strong>Order No:</strong> <span id="receipt-order-no"></span></div>
+            <div class="receipt-row"><strong>Date:</strong> <span id="receipt-date"></span></div>
+            </div>
+
+            <div class="receipt-section">
+            <div class="receipt-row"><strong>Customer:</strong> <span id="receipt-customer"></span></div>
+            <div class="receipt-row"><strong>Payment Method:</strong> <span id="receipt-payment-method" class="payment-method"></span></div>
+            <div class="receipt-row"><strong>Payment Status:</strong> <span id="receipt-payment-status"></span></div>
+            </div>
+
+            <div class="items-list">
+            <h3>Items:</h3>
+            <div id="receipt-items"></div>
             </div>
         </div>
 

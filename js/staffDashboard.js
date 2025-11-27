@@ -8,6 +8,68 @@ let currentFilter = 'New';
 let selectedMood = 'Hot';
 let selectedSize = 'S';
 let selectedSugar = '30%';
+let selectedPaymentMethod = null;
+let currentNotificationTab = 'all';
+
+async function loadNotificationCount() {
+  try {
+    const notifs = await apiCall('/staff/notifications?limit=100');
+    const count = Array.isArray(notifs) ? notifs.filter(n => !n.readAt).length : 0;
+    const countElement = document.querySelector('.notification-count');
+    if (countElement) {
+      countElement.textContent = count > 20 ? '20+' : count;
+      countElement.style.display = count > 0 ? 'flex' : 'none';
+    }
+  } catch (err) {
+    console.error('Failed to load notification count:', err);
+  }
+}
+
+async function loadNotificationsIntoPanel() {
+  const panel = document.getElementById('notificationPanel');
+  const list = panel.querySelector('#notificationsList');
+  if (!list) return;
+  try {
+    const notifs = await apiCall('/staff/notifications?limit=20');
+    notifs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (notifs.length === 0) {
+      list.innerHTML = '<p class="empty-notif">No notifications</p>';
+      return;
+    }
+    list.innerHTML = notifs.map(n => {
+      const time = new Date(n.createdAt).toLocaleString();
+      const isUnread = !n.readAt;
+      const avatarText = n.sender ? n.sender.substring(0, 1).toUpperCase() : 'N';
+      return `
+        <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${n.id}">
+          <div class="notification-avatar">${avatarText}</div>
+          <div class="notification-content">
+            <p class="notification-title">${n.message}</p>
+            ${n.details ? `<p class="notification-message">${n.details}</p>` : ''}
+            <p class="notification-time">${time}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+    list.querySelectorAll('.notification-item').forEach(item => {
+      item.addEventListener('click', async () => {
+        const id = item.dataset.id;
+        if (item.classList.contains('unread')) {
+          try {
+            await apiCall(`/staff/notifications/${id}/read`, { method: 'POST' });
+            item.classList.remove('unread');
+            loadNotificationCount();
+          } catch (err) {
+            console.error('Failed to mark notification as read:', err);
+          }
+        }
+      });
+    });
+  } catch (err) {
+    list.innerHTML = `<p class="error-notif">Failed to load notifications</p>`;
+    console.error('Notification load error:', err);
+  }
+}
 
 function getPriceBySize(basePrice, size) {
   if (size === 'S') return basePrice;
@@ -42,7 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadOrders('New');
   loadInventory();
   loadMenuItemsForPOS();
+  loadNotificationCount();
   setInterval(loadDashboardStats, 30000);
+  setInterval(loadNotificationCount, 30000);
   document.querySelectorAll('.nav-item:not(.logout)').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -61,22 +125,22 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('staffInfo');
     window.location.href = '/html/login.html';
   });
-  document.querySelector('.bell').addEventListener('click', async () => {
-    try {
-      const notifs = await apiCall('/staff/notifications?limit=20');
-      if (!notifs || notifs.length === 0) {
-        alert('No new notifications.');
-        return;
+  const bell = document.querySelector('.bell');
+  const panel = document.getElementById('notificationPanel');
+  if (bell && panel) {
+    bell.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      panel.classList.toggle('show');
+      if (panel.classList.contains('show')) {
+        await loadNotificationsIntoPanel();
       }
-      let msg = '🔔 Notifications:';
-      notifs.forEach(n => {
-        msg += `• ${n.message} (${new Date(n.createdAt).toLocaleString()})\n`;
-      });
-      alert(msg);
-    } catch (err) {
-      alert('Failed to load notifications: ' + err.message);
-    }
-  });
+    });
+    document.addEventListener('click', (e) => {
+      if (!panel.contains(e.target) && !bell.contains(e.target)) {
+        panel.classList.remove('show');
+      }
+    });
+  }
   document.querySelector('.profile-dropdown-trigger')?.addEventListener('click', toggleProfileDropdown);
   document.getElementById('menuSearch')?.addEventListener('input', (e) => {
     renderMenuItems(e.target.value, currentCategory);
@@ -119,6 +183,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target === clearCartModal) {
       closeClearCartModal();
     }
+    const paymentModal = document.getElementById('paymentModal');
+    if (paymentModal && event.target === paymentModal) {
+      paymentModal.classList.remove('show');
+      selectedPaymentMethod = null;
+      const radioInner = document.querySelector('.radio-inner');
+      if (radioInner) {
+        radioInner.style.backgroundColor = 'transparent';
+      }
+    }
     const dropdown = document.getElementById('profile-dropdown');
     const trigger = document.querySelector('.profile-dropdown-trigger');
     if (dropdown && !dropdown.contains(event.target) && !trigger.contains(event.target)) {
@@ -159,6 +232,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   document.addEventListener('click', function(e) {
+    if (e.target.matches('.tab-btn')) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      e.target.classList.add('active');
+      currentNotificationTab = e.target.dataset.tab;
+      loadNotificationsIntoPanel();
+    }
     if (e.target.matches('.btn-secondary[data-action="prep"]')) {
       const orderId = e.target.getAttribute('data-order-id');
       updateOrderStatus(orderId, 'Preparing');
@@ -184,6 +263,18 @@ function showView(viewId) {
   document.querySelector(`#${viewId}View`)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelector(`.nav-item[data-view="${viewId}"]`)?.classList.add('active');
+  const userActions = document.querySelector('.user-actions');
+  if (userActions) {
+    if (viewId === 'dashboard') {
+      userActions.style.display = 'flex';
+    } else {
+      userActions.style.display = 'none';
+    }
+  }
+  const panel = document.getElementById('notificationPanel');
+  if (panel) {
+    panel.classList.remove('show');
+  }
 }
 
 async function apiCall(endpoint, options = {}) {
@@ -227,6 +318,25 @@ async function apiCall(endpoint, options = {}) {
   return res.json();
 }
 
+async function markNotificationAsRead(id) {
+  try {
+    await apiCall(`/staff/notifications/${id}/read`, { method: 'POST' });
+    loadNotificationCount();
+  } catch (err) {
+    console.error('Failed to mark as read:', err);
+  }
+}
+
+async function markAllNotificationsAsRead() {
+  try {
+    await apiCall('/staff/notifications/mark-all-read', { method: 'POST' });
+    loadNotificationsIntoPanel();
+    loadNotificationCount();
+  } catch (err) {
+    alert('Failed to mark all as read: ' + err.message);
+  }
+}
+
 async function updateOrderStatus(orderId, newStatus) {
   try {
     await apiCall(`/orders/${orderId}/status`, {
@@ -245,26 +355,24 @@ async function updateOrderStatus(orderId, newStatus) {
       if (actionButtons) {
           const newStatusLower = newStatus.toLowerCase();
           if (newStatusLower === 'preparing') {
-              actionButtons.innerHTML = `
-                <button class="btn-secondary" data-order-id="${orderId}" data-action="serve">
-                  <i class="ri-checkbox-line"></i> Serve
-                </button>
-                <button class="btn-secondary" data-order-id="${orderId}" data-action="print">
-                  <i class="ri-printer-line"></i> Print
-                </button>
-              `;
-          } else if (newStatusLower === 'ready') {
-              actionButtons.innerHTML = `
-                <button class="btn-secondary" data-order-id="${orderId}" data-action="complete">
-                  <i class="ri-check-double-line"></i> Complete
-                </button>
-                <button class="btn-secondary" data-order-id="${orderId}" data-action="print">
-                  <i class="ri-printer-line"></i> Print
-                </button>
-              `;
-          } else if (newStatusLower === 'completed' || newStatusLower === 'served') {
-            actionButtons.innerHTML = `<span style="color: green;">Completed</span>`;
-          }
+          actionButtons.innerHTML = `
+            <button class="btn-secondary" data-order-id="${orderId}" data-action="serve">
+              <i class="ri-checkbox-line"></i> Serve
+            </button>
+          `;
+        } else if (newStatusLower === 'ready') {
+          actionButtons.innerHTML = `
+            <button class="btn-secondary" data-order-id="${orderId}" data-action="complete">
+              <i class="ri-check-double-line"></i> Complete
+            </button>
+          `;
+        } else if (newStatusLower === 'completed' || newStatusLower === 'served') {
+          actionButtons.innerHTML = `
+            <button class="btn-secondary" data-order-id="${orderId}" data-action="print">
+              <i class="ri-printer-line"></i> Print
+            </button>
+          `;
+        }
       }
     }
     loadOrders(currentFilter);
@@ -388,30 +496,25 @@ async function loadOrders(filter) {
           <button class="btn-secondary" data-order-id="${order.id}" data-action="prep">
             <i class="ri-tools-line"></i> Prep
           </button>
-          <button class="btn-secondary" data-order-id="${order.id}" data-action="print">
-            <i class="ri-printer-line"></i> Print
-          </button>
         `;
       } else if (statusLower === 'preparing') {
-          actionButtonsDiv.innerHTML = `
-            <button class="btn-secondary" data-order-id="${order.id}" data-action="serve">
-              <i class="ri-checkbox-line"></i> Serve
-            </button>
-            <button class="btn-secondary" data-order-id="${order.id}" data-action="print">
-              <i class="ri-printer-line"></i> Print
-            </button>
-          `;
+        actionButtonsDiv.innerHTML = `
+          <button class="btn-secondary" data-order-id="${order.id}" data-action="serve">
+            <i class="ri-checkbox-line"></i> Serve
+          </button>
+        `;
       } else if (statusLower === 'ready') {
         actionButtonsDiv.innerHTML = `
           <button class="btn-secondary" data-order-id="${order.id}" data-action="complete">
             <i class="ri-check-double-line"></i> Complete
           </button>
+        `;
+      } else if (statusLower === 'completed' || statusLower === 'served') {
+        actionButtonsDiv.innerHTML = `
           <button class="btn-secondary" data-order-id="${order.id}" data-action="print">
             <i class="ri-printer-line"></i> Print
           </button>
         `;
-      } else if (statusLower === 'completed' || statusLower === 'served') {
-        actionButtonsDiv.innerHTML = `<i class="ri-checkbox-circle-fill" style="color: #27ae60; font-size: 1.2rem;"></i>`;
       }
       ordersList.appendChild(orderItem);
     });
@@ -422,8 +525,96 @@ async function loadOrders(filter) {
 
 async function printReceipt(orderId) {
   try {
-    await apiCall(`/staff/orders/${orderId}/print`, { method: 'POST' });
-    alert(`Receipt for order ${orderId} printed`);
+    const order = await apiCall(`/orders/${orderId}`);
+    if (!order) throw new Error("Order not found.");
+    const orderNumber = order.orderNumber || 'N/A';
+    const customerName = order.customerName || 'Walk-in Customer';
+    const orderTime = new Date(order.createdAt).toLocaleString();
+    const items = order.items || [];
+    const totalAmount = order.totalAmount || 0;
+    const paymentMethod = order.paymentMethod || 'Cash';
+    const isWalkInOrder = customerName === 'Walk-in Customer' || !order.customerEmail;
+    const displayPaymentMethod = isWalkInOrder ? 'Cash' : 
+      (paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : paymentMethod);
+    const paymentStatus = isWalkInOrder ? 'Paid' : 
+      (paymentMethod === 'cash_on_delivery' ? 'Not Paid' : 'Paid');
+    const showDeliverySection = !isWalkInOrder;
+    const receiptHtml = `
+      <div style="font-family: 'Fredoka', sans-serif; padding: 20px; max-width: 360px; margin: 0 auto; background: white; color: #333;">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <h2 style="color: #6b4a3a; margin: 0;">TAMBAYAN CAFE</h2>
+          <p style="margin: 4px 0; color: #7f8c8d; font-size: 0.9rem;">Order Receipt</p>
+        </div>
+        <div style="border-top: 2px solid #6b4a3a; border-bottom: 1px solid #eee; padding: 10px 0; margin: 12px 0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <strong>Order No:</strong> <span>#${orderNumber}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <strong>Date:</strong> <span>${orderTime}</span>
+          </div>
+        </div>
+        <div style="margin: 12px 0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <strong>Customer:</strong> <span>${customerName}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <strong>Payment Method:</strong> <span style="color: #6b4a3a; font-weight: bold;">${displayPaymentMethod}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <strong>Payment Status:</strong> <span>${paymentStatus}</span>
+          </div>
+        </div>
+        <div class="items-list">
+          <h3 style="color: #6b4a3a; margin: 0 0 10px 0; font-size: 1rem;">Items:</h3>
+          ${items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.95rem;">
+              <span>${item.name} x${item.quantity}</span>
+              <span>₱${(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="totals" style="margin: 16px 0;">
+          ${showDeliverySection ? `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.95rem;">
+              <span>Subtotal:</span>
+              <span>₱${(totalAmount - (order.deliveryFee || 0)).toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.95rem; font-weight: bold; color: #6b4a3a;">
+              <span>Delivery Fee:</span>
+              <span>₱${(order.deliveryFee || 0).toFixed(2)}</span>
+            </div>
+          ` : ''}
+          <div style="border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; color: #6b4a3a; margin-top: 8px;">
+              <span>TOTAL TO PAY:</span>
+              <span>₱${totalAmount.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+        ${showDeliverySection && paymentMethod === 'cash_on_delivery' ? `
+          <div class="instructions" style="margin: 16px 0; padding: 10px; background: #fdf2f8; border-left: 4px solid #e53e3e; border-radius: 4px;">
+            <p style="margin: 0; font-size: 0.9rem; color: #7f8c8d;"><strong>Instructions:</strong><br>Please prepare exact cash upon delivery.</p>
+          </div>
+        ` : ''}
+        <div style="text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 0.85rem;">
+          Thank you for choosing TAMBAYAN CAFE!
+        </div>
+      </div>
+    `;
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Receipt - #${orderNumber}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
+          <style>@media print { body { width: 360px; margin: 0 auto; } }</style>
+        </head>
+        <body>${receiptHtml}<script>window.onload = () => window.print();</script></body>
+      </html>
+    `);
+    printWin.document.close();
+    showToast(`Receipt for order #${orderNumber} printed`);
   } catch (err) {
     alert(`Failed to print receipt: ${err.message}`);
   }
@@ -441,11 +632,9 @@ async function loadInventory() {
     }
     inventoryList.innerHTML = '';
     inventory.forEach(item => {
-      // Determine status based on stock level
       let statusClass = 'in-stock';
       let statusText = 'In stock';
       let statusIcon = 'ri-check-line';
-      
       if (item.currentStock <= 0) {
         statusClass = 'out-of-stock';
         statusText = 'Out of stock';
@@ -455,7 +644,6 @@ async function loadInventory() {
         statusText = 'Low stock';
         statusIcon = 'ri-alert-line';
       }
-      
       const inventoryItem = document.createElement('div');
       inventoryItem.className = 'inventory-item';
       inventoryItem.innerHTML = `
@@ -574,7 +762,14 @@ function openItemModal(item) {
   } else {
     modalIngredients.innerHTML = '<li>Details not available</li>';
   }
-  if (item.isAvailable) {
+  const isOutOfStock = (item.stockQuantity || 0) <= 0;
+  const isActuallyAvailable = item.isAvailable && !isOutOfStock;
+  if (isOutOfStock) {
+    modalAvailability.textContent = 'Out of Stock';
+    modalAvailability.style.color = '#E53E3E';
+    modalAvailability.style.fontWeight = 'bold';
+    modalAddToCart.disabled = true;
+  } else if (item.isAvailable) {
     modalAvailability.textContent = 'Available';
     modalAvailability.style.color = '#4CAF50';
     modalAvailability.style.fontWeight = 'bold';
@@ -742,11 +937,38 @@ function showToast(message) {
   }, 2000);
 }
 
-async function placeOrder() {
+function placeOrder() {
   if (cart.length === 0) {
-    alert("Cannot place an empty order.");
+    alert("Your cart is empty.");
     return;
   }
+  selectedPaymentMethod = 'Cash';
+  const radioInner = document.querySelector('.radio-inner');
+  if (radioInner) {
+    radioInner.style.backgroundColor = '#6b4a3a';
+  }
+  document.getElementById('paymentModal').classList.add('show');
+}
+
+function selectPayment(method) {
+  selectedPaymentMethod = method;
+  const radioInner = document.querySelector('.radio-inner');
+  if (radioInner) {
+    radioInner.style.backgroundColor = '#6b4a3a';
+  }
+}
+
+function confirmOrder() {
+  if (!selectedPaymentMethod) {
+    alert('Please select a payment method.');
+    return;
+  }
+  document.getElementById('paymentModal').classList.remove('show');
+  submitOrderToBackend(selectedPaymentMethod);
+}
+
+async function submitOrderToBackend(paymentMethod) {
+  if (cart.length === 0) return;
   const customerName = newOrderCustomerName || 'Walk-in Customer';
   const tableNumber = newOrderTableNumber || 'N/A';
   const orderItems = cart.map(item => ({
@@ -754,9 +976,9 @@ async function placeOrder() {
     name: item.name,
     price: item.price,
     quantity: item.quantity,
-    size: item.size && item.category === 'Drinks' ? item.size : undefined,
-    mood: item.mood && item.category === 'Drinks' ? item.mood : undefined,
-    sugar: item.sugar && item.category === 'Drinks' ? item.sugar : undefined
+    size: item.category === 'Drinks' ? item.size : '',
+    mood: item.category === 'Drinks' ? item.mood : '',
+    sugar: item.category === 'Drinks' ? item.sugar : ''
   }));
   const payload = {
     customerName: customerName,
@@ -764,7 +986,8 @@ async function placeOrder() {
     items: orderItems,
     totalAmount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
     placedByStaff: true,
-    staffId: JSON.parse(localStorage.getItem('staffInfo'))?.id
+    staffId: JSON.parse(localStorage.getItem('staffInfo'))?.id,
+    paymentMethod: paymentMethod
   };
   try {
     const result = await apiCall('/orders', {
@@ -772,13 +995,18 @@ async function placeOrder() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    showToast('New order placed successfully!');
+    showToast('Order placed successfully!');
     cart = [];
     localStorage.removeItem('tambayanCart');
     updateCartUI();
     loadOrders(currentFilter);
+    selectedPaymentMethod = null;
   } catch (err) {
-    alert('Failed to place new order: ' + (err.message || 'Unknown error'));
+    if (err.message.includes("Insufficient stock")) {
+      showToast(`Stock error: ${err.message}`, 'error');
+    } else {
+      showToast('Failed to place order: ' + err.message, 'error');
+    }
   }
 }
 
@@ -852,7 +1080,7 @@ async function submitChangePassword() {
     return;
   }
   try {
-    await apiCall('/staff/change-password', {
+    await apiCall('/user/change-password', {
       method: 'POST',
       body: JSON.stringify({ currentPassword: current, newPassword })
     });
