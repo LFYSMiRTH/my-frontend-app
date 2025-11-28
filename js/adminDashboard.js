@@ -15,7 +15,6 @@ let lastNotificationId = null;
 
 function getAdminToken() {
   const token = localStorage.getItem('adminToken');
-  console.log("Getting adminToken:", token ? "FOUND" : "NOT FOUND");
   if (!token) {
     showToast('Admin session not found. Please log in.', 'warn');
     window.location.href = '/html/login.html';
@@ -27,11 +26,6 @@ function getAdminToken() {
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = getAdminToken();
-  if (!token) {
-    showToast('Admin session not found. Please log in.', 'warn');
-    window.location.href = '/html/login.html';
-    throw new Error('No token');
-  }
   const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
@@ -65,7 +59,6 @@ async function apiCall(endpoint, options = {}) {
 }
 
 let salesTrendChart = null;
-
 async function loadSalesTrendGraph(period = 'yearly') {
   const periodSelector = document.getElementById('periodSelector');
   if (periodSelector) periodSelector.value = period;
@@ -341,36 +334,30 @@ function renderCustomersList(searchTerm = '') {
     const term = searchTerm.toLowerCase();
     filtered = filtered.filter(c =>
       c.name?.toLowerCase().includes(term) ||
-      c.email?.toLowerCase().includes(term)
+      c.email?.toLowerCase().includes(term) ||
+      c.username?.toLowerCase().includes(term)
     );
   }
   filtered = filtered.filter(c => c.role === 'customer');
   if (filtered.length === 0) {
-    container.innerHTML = '<p>No customers found.</p>';
+    container.innerHTML = '<p style="text-align:center; color:#777;">No customers found.</p>';
     return;
   }
   let html = '';
   filtered.forEach(cust => {
-    const statusIcon = cust.isActive
-      ? '<i class="ri-checkbox-circle-fill" style="color:#2ecc71;"></i> Active'
-      : '<i class="ri-close-circle-fill" style="color:#e74c3c;"></i> Inactive';
     html += `
       <div class="menu-item">
         <div>
           <strong>${cust.name || '—'}</strong><br>
-          ${cust.email}<br>
-          Orders: ${cust.orderCount || 0}
+          Email: ${cust.email}<br>
+          Username: ${cust.username || '—'}
         </div>
         <div class="menu-actions">
-          <button class="view-orders-btn" data-id="${cust.id}"><i class="ri-file-list-3-line"></i></button>
         </div>
       </div>
     `;
   });
   container.innerHTML = html;
-  document.querySelectorAll('.view-orders-btn').forEach(btn =>
-    btn.addEventListener('click', () => viewCustomerOrders(btn.dataset.id))
-  );
 }
 
 async function resetUserPassword(e) {
@@ -584,7 +571,6 @@ function generatePDF(data, headers, title) {
 
 let currentReportData = null;
 let currentReportTitle = '';
-
 async function generateReport() {
   const type = document.getElementById('reportType').value;
   const startDate = document.getElementById('startDate').value;
@@ -718,28 +704,6 @@ async function loadCustomerInsights() {
   }
 }
 
-async function loadExpenses() {
-  const el = document.getElementById('expenseTracker');
-  el.innerHTML = '<p>Loading...</p>';
-  try {
-    const expenses = await apiCall('/admin/expenses');
-    if (!Array.isArray(expenses) || expenses.length === 0) {
-      el.innerHTML = '<p>No recorded expenses.</p>';
-      return;
-    }
-    let total = 0;
-    let html = '<ul style="padding-left:20px;">';
-    expenses.forEach(e => {
-      total += e.amount;
-      html += `<li>${e.description || 'N/A'}: ₱${Number(e.amount).toFixed(2)} on ${new Date(e.date).toLocaleDateString()}</li>`;
-    });
-    html += `</ul><p><strong>Total Expenses:</strong> ₱${total.toFixed(2)}</p>`;
-    el.innerHTML = html;
-  } catch (err) {
-    el.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
-  }
-}
-
 async function loadProfitLossReport() {
   const el = document.getElementById('profitLossReport');
   el.innerHTML = '<p>Loading...</p>';
@@ -789,7 +753,6 @@ async function loadDashboardData() {
   overviewContainer.innerHTML = '<p>Loading...</p>';
   try {
     const data = await apiCall('/dashboard/stats');
-    console.log("Dashboard data:", data);
     renderOverviewCards(data);
   } catch (err) {
     console.error("Dashboard load error:", err);
@@ -803,7 +766,6 @@ function renderOverviewCards(data) {
   cardsConfig.forEach(cfg => {
     let val = data[cfg.key];
     if (typeof val !== 'number' || isNaN(val)) {
-      console.warn(`Invalid value for ${cfg.key}: "${val}". Defaulting to 0.`);
       val = 0;
     }
     const card = document.createElement('div');
@@ -1008,7 +970,6 @@ async function loadAndRenderIngredients(menuItemId, isEditMode = false) {
     ? document.getElementById('editIngredientBtn') 
     : document.getElementById('addIngredientBtn');
   if (!listContainer || !select || !qtyInput || !addButton) {
-    console.warn('Missing ingredient UI elements');
     return;
   }
   try {
@@ -1035,7 +996,6 @@ async function loadAndRenderIngredients(menuItemId, isEditMode = false) {
             await saveIngredientsForMenuItem(menuItemId, updated);
             await loadAndRenderIngredients(menuItemId, isEditMode);
           } catch (err) {
-            console.error('Failed to remove ingredient:', err);
             showToast('Failed to remove ingredient: ' + err.message, 'warn');
           }
         });
@@ -1076,7 +1036,6 @@ async function loadAndRenderIngredients(menuItemId, isEditMode = false) {
         await loadAndRenderIngredients(menuItemId, isEditMode);
         qtyInput.value = '';
       } catch (err) {
-        console.error('Add ingredient failed:', err);
         showToast('Failed to add ingredient: ' + err.message, 'warn');
       }
     });
@@ -1093,7 +1052,6 @@ async function saveIngredientsForMenuItem(menuItemId, ingredients) {
       body: JSON.stringify(ingredients)
     });
   } catch (err) {
-    console.error('Failed to save ingredients:', err);
     showToast('Failed to update ingredients: ' + err.message, 'warn');
     throw err;
   }
@@ -1147,14 +1105,13 @@ async function handleEditSubmit(e) {
       method: 'PUT',
       body: JSON.stringify(updated)
     });
-    const ingredientRows = document.querySelectorAll('#editIngredientList .ingredient-row');
     const currentIngredients = [];
     ingredientRows.forEach(row => {
       const removeBtn = row.querySelector('.remove-ingredient-btn');
       const text = row.querySelector('span').textContent;
       const match = text.match(/^(.+?):\s*(\d+(?:\.\d+)?)\s*(.+?)$/);
       if (match && removeBtn) {
-        const [, name, qty, unit] = match;
+        const [, , qty, unit] = match;
         const inventoryItemId = removeBtn.dataset.id;
         currentIngredients.push({
           inventoryItemId,
@@ -1192,18 +1149,30 @@ async function handleDeleteConfirm() {
 
 async function handleAddSubmit(e) {
   e.preventDefault();
-  const ingredientRows = document.querySelectorAll('#ingredientList .ingredient-row');
-  if (ingredientRows.length === 0) {
-    showToast('Please add at least one ingredient before saving.', 'warn');
+  const name = document.getElementById('itemName').value.trim();
+  const category = (document.getElementById('itemCategory').value || '').trim();
+  if (!name) {
+    showToast('Item name is required.', 'warn');
+    return;
+  }
+  const nameLower = name.toLowerCase();
+  const categoryLower = category.toLowerCase();
+  const isDuplicate = allMenuItems.some(item => {
+    const itemName = (item.name || '').trim().toLowerCase();
+    return itemName === nameLower;
+  });
+  if (isDuplicate) {
+    showToast('An item with this name and category already exists.', 'warn');
     return;
   }
   const ingredients = [];
+  const ingredientRows = document.querySelectorAll('#ingredientList .ingredient-row');
   ingredientRows.forEach(row => {
     const removeBtn = row.querySelector('.remove-ingredient-btn');
     const text = row.querySelector('span').textContent;
     const match = text.match(/^(.+?):\s*(\d+(?:\.\d+)?)\s*(.+?)$/);
     if (match && removeBtn) {
-      const [, name, qty, unit] = match;
+      const [, , qty, unit] = match;
       const inventoryItemId = removeBtn.dataset.id;
       ingredients.push({
         inventoryItemId,
@@ -1257,6 +1226,15 @@ function closeAddModal() {
 
 function openAddInventoryModal() {
   document.getElementById('addInventoryItemModal').classList.remove('hidden');
+  document.getElementById('addInventoryItemForm').reset();
+  document.getElementById('invCategory').value = '';
+  const categorySelect = document.getElementById('invCategory');
+  categorySelect.innerHTML = `
+    <option value="">Select a category</option>
+    <option value="Drink Ingredients">Drink Ingredients</option>
+    <option value="Sandwich Ingredients">Sandwich Ingredients</option>
+    <option value="Dessert Ingredients">Dessert Ingredients</option>
+  `;
 }
 
 function closeAddInventoryModal() {
@@ -1265,17 +1243,38 @@ function closeAddInventoryModal() {
 
 async function handleAddInventorySubmit(e) {
   e.preventDefault();
-  const newItem = {
-    name: document.getElementById('invName').value.trim(),
-    category: document.getElementById('invCategory').value.trim() || 'N/A',
-    unit: document.getElementById('invUnit').value.trim() || 'pcs',
-    currentStock: parseInt(document.getElementById('invStock').value) || 0,
-    reorderLevel: parseInt(document.getElementById('invReorder').value) || 10
-  };
-  if (!newItem.name) {
+  const name = document.getElementById('invName').value.trim();
+  const stock = parseInt(document.getElementById('invStock').value) || 0;
+  const reorder = parseInt(document.getElementById('invReorder').value) || 10;
+  const categorySelect = document.getElementById('invCategory');
+  const category = categorySelect.value.trim();
+  if (!name) {
     showToast('Ingredient name is required.', 'warn');
     return;
   }
+  const isDuplicate = allInventoryItems.some(item => 
+    item.name.toLowerCase() === name.toLowerCase()
+  );
+  if (isDuplicate) {
+    showToast('An ingredient with this name already exists.', 'warn');
+    return;
+  }
+  if (!category) {
+    showToast('Please select an ingredient category.', 'warn');
+    return;
+  }
+  if (stock <= 0) {
+    showToast('Cannot add ingredient with 0 stock. Please enter a positive quantity.', 'warn');
+    return;
+  }
+
+  const newItem = {
+    name: name,
+    unit: 'pcs',
+    currentStock: stock,
+    reorderLevel: reorder,
+    category: category
+  };
   try {
     await apiCall('/admin/inventory', {
       method: 'POST',
@@ -1382,7 +1381,6 @@ document.addEventListener('DOMContentLoaded', () => {
     highlightNavItem('nav-sales-analytics');
     await loadDetailedTopSelling();
     await loadCustomerInsights();
-    await loadExpenses();
     await loadProfitLossReport();
   });
   document.getElementById('nav-menu-management')?.addEventListener('click', async () => {
@@ -1528,13 +1526,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cancelEdit')?.addEventListener('click', closeEditModal);
   document.getElementById('cancelDelete')?.addEventListener('click', closeDeleteModal);
   document.getElementById('closeModal')?.addEventListener('click', closeAddModal);
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  const inventoryTabs = document.querySelectorAll('#inventoryManagementView .tab-btn');
+  inventoryTabs.forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      inventoryTabs.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      document.getElementById(`${tab}Tab`)?.classList.add('active');
+      const inventoryContent = document.querySelectorAll('#inventoryManagementView .tab-content');
+      inventoryContent.forEach(content => content.classList.remove('active'));
+      const tabId = btn.dataset.tab;
+      document.getElementById(`${tabId}Tab`).classList.add('active');
     });
   });
   document.getElementById('addUserForm')?.addEventListener('submit', handleAddUserSubmit);

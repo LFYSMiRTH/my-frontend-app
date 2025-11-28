@@ -1,4 +1,27 @@
 const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+
+  const closeBtn = document.createElement('span');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.cursor = 'pointer';
+  closeBtn.style.marginLeft = '10px';
+  closeBtn.addEventListener('click', () => toast.remove());
+
+  toast.appendChild(closeBtn);
+  container.appendChild(toast);
+
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
 
 function goToLogin() {
   window.location.href = "/html/login.html";
@@ -54,7 +77,7 @@ if (loginForm && loginUsername && loginPassword) {
         const user = data.user;
 
         if (!user || !user.role) {
-          alert("Login response format invalid.");
+          showToast("Login response format invalid.", "error");
           return;
         }
 
@@ -75,11 +98,11 @@ if (loginForm && loginUsername && loginPassword) {
           localStorage.setItem('customerInfo', JSON.stringify(user));
           window.location.href = '/html/customerDashboard.html';
         } else {
-          alert("Unknown role. Access denied.");
+          showToast("Unknown role. Access denied.", "error");
         }
 
       } else {
-        alert('Invalid username or password. Please try again.');
+        showToast('Invalid username or password. Please try again.', "error");
         loginPassword.classList.add('input-error');
         setTimeout(() => {
           loginPassword.classList.remove('input-error');
@@ -211,7 +234,7 @@ if (signupForm) {
 
       if (response.ok) {
         if (signupModal) signupModal.classList.add('hidden');
-        alert('Account created successfully! You can now log in.');
+        showToast('Account created successfully! You can now log in.', "success");
         signupForm.reset();
         if (strengthBar) strengthBar.style.width = '0%';
       } else {
@@ -225,12 +248,12 @@ if (signupForm) {
           passwordError.textContent = 'Password does not meet security requirements.';
           passwordInput.classList.add('input-error');
         } else {
-          alert('Failed to create account. Please try again.');
+          showToast('Failed to create account. Please try again.', "error");
         }
       }
     } catch (err) {
       console.error('Signup error:', err);
-      alert('Network error. Please check your connection.');
+      showToast('Network error. Please check your connection.', "error");
     }
   });
 }
@@ -290,11 +313,11 @@ document.getElementById('forgotPasswordForm')?.addEventListener('submit', async 
         document.getElementById('verificationCode').value = '';
       }
     } else {
-      alert('Failed to send code. Please try again.');
+      showToast('Failed to send code. Please try again.', "error");
     }
   } catch (err) {
     console.error('Forgot password error:', err);
-    alert('Network error. Please check your connection.');
+    showToast('Network error. Please check your connection.', "error");
   }
 });
 
@@ -303,7 +326,7 @@ document.getElementById('verifyCodeForm')?.addEventListener('submit', async (e) 
   const code = document.getElementById('verificationCode')?.value.trim();
 
   if (!window.tempResetEmail) {
-    alert('Session expired. Please start over.');
+    showToast('Session expired. Please start over.', "error");
     if (verifyCodeModal) verifyCodeModal.classList.add('hidden');
     if (forgotPasswordModal) forgotPasswordModal.classList.remove('hidden');
     return;
@@ -322,11 +345,11 @@ document.getElementById('verifyCodeForm')?.addEventListener('submit', async (e) 
       if (document.getElementById('newPassword')) document.getElementById('newPassword').value = '';
       if (document.getElementById('confirmNewPassword')) document.getElementById('confirmNewPassword').value = '';
     } else {
-      alert('Invalid or expired code. Please check your email.');
+      showToast('Invalid or expired code. Please check your email.', "error");
     }
   } catch (err) {
     console.error('Verify code error:', err);
-    alert('Verification failed. Please try again.');
+    showToast('Verification failed. Please try again.', "error");
   }
 });
 
@@ -336,12 +359,12 @@ document.getElementById('newPasswordForm')?.addEventListener('submit', async (e)
   const confirm = document.getElementById('confirmNewPassword')?.value;
 
   if (pass !== confirm) {
-    alert('Passwords do not match.');
+    showToast('Passwords do not match.', "error");
     return;
   }
 
   if (!window.tempResetEmail) {
-    alert('Session expired. Please restart the process.');
+    showToast('Session expired. Please restart the process.', "error");
     if (newPasswordModal) newPasswordModal.classList.add('hidden');
     if (forgotPasswordModal) forgotPasswordModal.classList.remove('hidden');
     return;
@@ -360,14 +383,14 @@ document.getElementById('newPasswordForm')?.addEventListener('submit', async (e)
 
     if (res.ok) {
       if (newPasswordModal) newPasswordModal.classList.add('hidden');
-      alert('✅ Password reset successfully! You can now log in.');
+      showToast('Password reset successfully! You can now log in.', "success");
       window.location.href = '/html/login.html';
     } else {
-      alert('Failed to reset password. Please try again.');
+      showToast('Failed to reset password. Please try again.', "error");
     }
   } catch (err) {
     console.error('Reset password error:', err);
-    alert('Reset failed. Please check your connection.');
+    showToast('Reset failed. Please check your connection.', "error");
   }
 });
 

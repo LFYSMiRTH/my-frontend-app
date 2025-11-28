@@ -2,6 +2,11 @@ const API_BASE = 'https://tambayan-cafe-backend.onrender.com/api';
 let allMenuItems = [];
 let cart = JSON.parse(localStorage.getItem('tambayanCart')) || [];
 let currentCategory = 'all';
+
+function getFeedbackKey(orderId) {
+  return `feedback_order_${orderId}`;
+}
+
 function getCustomerIdFromToken() {
   const token = localStorage.getItem('customerToken');
   if (!token) return null;
@@ -13,6 +18,7 @@ function getCustomerIdFromToken() {
     return null;
   }
 }
+
 async function updateDeliveryFeeInModal() {
   const street = document.getElementById('customerStreet')?.value.trim();
   const city = document.getElementById('customerCity')?.value.trim();
@@ -39,6 +45,7 @@ async function updateDeliveryFeeInModal() {
     console.warn('Failed to fetch delivery fee dynamically:', err);
   }
 }
+
 async function updateNotificationBadge() {
   try {
     const notifs = await apiCall('/customer/notifications?limit=10');
@@ -54,10 +61,20 @@ async function updateNotificationBadge() {
     if (badge) badge.style.display = 'none';
   }
 }
+
 document.addEventListener('DOMContentLoaded', () => {
-document.getElementById('closeCartModal')?.addEventListener('click', () => closeModalById('cartModal'));
-document.querySelector('#orderConfirmationModal .modal-close-btn')
-  ?.addEventListener('click', closeOrderConfirmationModal);
+  document.getElementById('closeCartModal')?.addEventListener('click', () => closeModalById('cartModal'));
+  document.querySelector('#orderConfirmationModal .modal-close-btn')
+    ?.addEventListener('click', closeOrderConfirmationModal);
+  document.getElementById('closeFeedbackModal')?.addEventListener('click', () => {
+    document.getElementById('feedbackModal').style.display = 'none';
+  });
+  window.addEventListener('click', (e) => {
+    const feedbackModal = document.getElementById('feedbackModal');
+    if (e.target === feedbackModal) {
+      feedbackModal.style.display = 'none';
+    }
+  });
   const customerToken = localStorage.getItem('customerToken');
   if (!customerToken) {
     window.location.href = '/html/login.html';
@@ -85,18 +102,18 @@ document.querySelector('#orderConfirmationModal .modal-close-btn')
           window.menuLoaded = true;
         }
         if (view === 'myOrders') {
-            loadMyOrders();
+          loadMyOrders();
         }
         if (view === 'profile') {
-            loadProfileSettings();
-            initializeProfileFormListeners();
+          loadProfileSettings();
+          initializeProfileFormListeners();
         }
       }
     });
   });
   document.querySelector('.cart-badge')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      openCartModal();
+    e.preventDefault();
+    openCartModal();
   });
   document.querySelector('.logout')?.addEventListener('click', (e) => {
     e?.preventDefault();
@@ -119,8 +136,7 @@ document.querySelector('#orderConfirmationModal .modal-close-btn')
       }
       let msg = '';
       orderNotifs.forEach(n => {
-        msg += `• ${n.message} (${new Date(n.createdAt).toLocaleString()})
-  `;
+        msg += `• ${n.message} (${new Date(n.createdAt).toLocaleString()})\n`;
       });
       showAlert(
         'Order Notifications',
@@ -195,13 +211,46 @@ document.querySelector('#orderConfirmationModal .modal-close-btn')
   document.getElementById('customerStreet')?.addEventListener('input', updateDeliveryFeeInModal);
   document.getElementById('customerCity')?.addEventListener('input', updateDeliveryFeeInModal);
   document.getElementById('customerProvince')?.addEventListener('input', updateDeliveryFeeInModal);
+
+  document.getElementById('feedbackForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const rating = document.querySelector('input[name="rating"]:checked')?.value;
+    const comment = document.getElementById('comment').value.trim();
+    if (!rating || !comment) {
+      showToast('Please provide both a rating and a comment.', 'error');
+      return;
+    }
+    const orderId = window.currentFeedbackOrderId;
+    const feedbackData = {
+      rating: parseInt(rating),
+      comment: comment,
+      submittedAt: new Date().toISOString()
+    };
+    localStorage.setItem(getFeedbackKey(orderId), JSON.stringify(feedbackData));
+    showToast('Thank you for your feedback!', 'success');
+    document.getElementById('feedbackModal').style.display = 'none';
+  });
+
+  document.addEventListener('click', function(e) {
+    if (e.target.matches('.star-rating input[type="radio"]')) {
+      const clickedRadio = e.target;
+      const ratingValue = parseInt(clickedRadio.value);
+      const stars = document.querySelectorAll('.star-rating input[type="radio"]');
+      stars.forEach(star => star.nextElementSibling.classList.remove('filled'));
+      for (let i = 0; i < ratingValue; i++) {
+        stars[i].nextElementSibling.classList.add('filled');
+      }
+    }
+  });
 });
+
 function showView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelector(`#${viewId}View`)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelector(`.nav-item[data-view="${viewId}"]`)?.classList.add('active');
 }
+
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = localStorage.getItem('customerToken');
@@ -243,6 +292,7 @@ async function apiCall(endpoint, options = {}) {
   }
   return res.json();
 }
+
 function showAlert(title, message, isConfirmation = false, onConfirm = null, onCancel = null, isNotification = false, onClear = null) {
   const modal = document.getElementById('customAlert');
   const titleEl = document.getElementById('alertTitle');
@@ -304,6 +354,7 @@ function showAlert(title, message, isConfirmation = false, onConfirm = null, onC
     }
   });
 }
+
 async function loadCustomerProfile() {
   try {
     const profile = await apiCall('/user/profile');
@@ -322,6 +373,7 @@ async function loadCustomerProfile() {
     document.querySelector('.welcome').textContent = 'Welcome back, Customer!';
   }
 }
+
 function getStatusClass(status) {
   const map = {
     'Preparing': 'preparing',
@@ -331,6 +383,7 @@ function getStatusClass(status) {
   };
   return map[status] || 'preparing';
 }
+
 async function loadRecentOrders() {
   const tbody = document.querySelector('.orders-table tbody');
   if (!tbody) return;
@@ -357,6 +410,7 @@ async function loadRecentOrders() {
     tbody.innerHTML = `<tr><td colspan="4" style="color:#e74c3c;">Error: ${err.message}</td></tr>`;
   }
 }
+
 async function loadAllMenuItemsForCarousel() {
   const grid = document.getElementById('favoritesCarousel');
   if (!grid) {
@@ -395,7 +449,6 @@ async function loadAllMenuItemsForCarousel() {
         itemElement.style.transform = 'translateY(0)';
       }, index * 100);
     });
-    console.log(`Successfully loaded ${allItems.length} items into carousel.`);
     setTimeout(() => {
       initializeFavoritesCarousel();
     }, 100);
@@ -405,6 +458,7 @@ async function loadAllMenuItemsForCarousel() {
     console.error("Error loading menu items for carousel:", err);
   }
 }
+
 function initializeFavoritesCarousel() {
   const carousel = document.getElementById('favoritesCarousel');
   const prevBtn = document.querySelector('.carousel-nav.prev');
@@ -415,8 +469,6 @@ function initializeFavoritesCarousel() {
     return;
   }
   let currentIndex = 0;
-  let itemWidth = 300;
-  let visibleItems = 1;
   function calculateDimensions() {
     const containerWidth = carousel.parentElement.clientWidth;
     const gap = 16;
@@ -491,17 +543,6 @@ function initializeFavoritesCarousel() {
       updateCarousel();
     }, 5000);
   });
-  document.querySelectorAll('.carousel-item:not(.view-only)').forEach(card => {
-    card.addEventListener('click', (e) => {
-      if (e.target === card || e.target.closest('.item-card') || e.target.closest('.item-info')) {
-        const itemId = card.dataset.id;
-        const item = allMenuItems.find(i => i.id === itemId);
-        if (item) {
-          openItemModal(item);
-        }
-      }
-    });
-  });
   let resizeTimeout;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
@@ -511,14 +552,14 @@ function initializeFavoritesCarousel() {
     }, 250);
   });
 }
+
 let currentOrderId = null;
 
 function formatElapsedTime(dateString) {
   const now = new Date();
   const then = new Date(dateString);
   const diffMs = now - then;
-  const diffMins = Math.floor(diffMs / 60000); // Convert ms → minutes
-
+  const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 1) return 'just now';
   if (diffMins === 1) return '1 minute ago';
   return `${diffMins} minutes ago`;
@@ -530,21 +571,16 @@ async function loadCurrentOrderForTracker() {
     const current = Array.isArray(orders)
       ? orders.find(o => ['Preparing', 'Ready', 'Served', 'Completed'].includes(o.status))
       : null;
-
     const trackerPara = document.getElementById('currentOrderText');
     const steps = document.querySelectorAll('.step');
     const trackerTimeEl = document.getElementById('trackerTime');
-
     if (current) {
       currentOrderId = current.orderNumber;
       if (trackerPara) trackerPara.textContent = `#${current.orderNumber}`;
       updateTracker(current.status);
-      
-      // ✨ Real-time elapsed time display
       if (trackerTimeEl && current.updatedAt) {
         trackerTimeEl.textContent = `Last updated: ${formatElapsedTime(current.updatedAt)}`;
       } else if (trackerTimeEl && current.createdAt) {
-        // fallback to createdAt if updatedAt isn't available
         trackerTimeEl.textContent = `Last updated: ${formatElapsedTime(current.createdAt)}`;
       }
     } else {
@@ -556,6 +592,7 @@ async function loadCurrentOrderForTracker() {
     console.warn('Could not load current order:', err);
   }
 }
+
 function updateTracker(status) {
   const steps = document.querySelectorAll('.step');
   steps.forEach(s => s.classList.remove('active'));
@@ -563,6 +600,7 @@ function updateTracker(status) {
   else if (status === 'Ready') steps[1].classList.add('active');
   else if (status === 'Served' || status === 'Completed') steps[2].classList.add('active');
 }
+
 async function loadMenuItems() {
   const grid = document.getElementById('menuGrid');
   if (!grid) return;
@@ -575,6 +613,7 @@ async function loadMenuItems() {
     grid.innerHTML = `<p style="color:#e74c3c;">Error: ${err.message}</p>`;
   }
 }
+
 function renderMenu(searchTerm = '', category = 'all') {
   const grid = document.getElementById('menuGrid');
   if (!grid) return;
@@ -614,6 +653,7 @@ function renderMenu(searchTerm = '', category = 'all') {
     });
   });
 }
+
 function openItemModal(item) {
   const modal = document.getElementById('itemModal');
   if (!modal) return;
@@ -758,12 +798,14 @@ function openItemModal(item) {
   }
   modal.style.display = 'block';
 }
+
 function closeModal() {
   const modal = document.getElementById('itemModal');
   if (!modal) return;
   modal.style.display = 'none';
   document.querySelectorAll('.custom-option-btn').forEach(btn => btn.classList.remove('active'));
 }
+
 function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%', price = null) {
   if (!item.isAvailable) {
     showToast("This item is currently unavailable.", 'error');
@@ -796,6 +838,7 @@ function addToCart(item, quantity = 1, size = 'M', mood = 'Hot', sugar = '50%', 
   updateCartUI();
   showToast(`"${item.name}" added to cart!`, 'success');
 }
+
 function updateCartUI() {
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -806,12 +849,13 @@ function updateCartUI() {
   const cartItemCountEl = document.getElementById('cartItemCount');
   const checkoutBtn = document.getElementById('checkoutBtn');
   if (cartCountEl) cartCountEl.textContent = count;
-  if (cartSubtotalEl) cartSubtotalEl.textContent = `₱${subtotal.toFixed(2)}`;
-  if (cartDeliveryFeeEl) cartDeliveryFeeEl.textContent = `₱0.00`;
-  if (cartTotalWithFeeEl) cartTotalWithFeeEl.textContent = `₱${subtotal.toFixed(2)}`;
+  if (cartSubtotalEl) cartSubtotalEl.innerHTML = `<span class="currency-value">₱${subtotal.toFixed(2)}</span>`;
+  if (cartDeliveryFeeEl) cartDeliveryFeeEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
+  if (cartTotalWithFeeEl) cartTotalWithFeeEl.innerHTML = `<span class="currency-value">₱${subtotal.toFixed(2)}</span>`;
   if (cartItemCountEl) cartItemCountEl.textContent = count;
   if (checkoutBtn) checkoutBtn.disabled = count === 0;
 }
+
 async function placeOrder() {
   if (cart.length === 0) return;
   const customerInfo = JSON.parse(localStorage.getItem('customerInfo') || '{}');
@@ -828,6 +872,7 @@ async function placeOrder() {
   loadOrderConfirmationModal();
   document.getElementById('orderConfirmationModal').style.display = 'block';
 }
+
 function loadOrderConfirmationModal() {
   const container = document.getElementById('orderItemsContainer');
   const subtotalEl = document.getElementById('orderSubtotal');
@@ -837,9 +882,9 @@ function loadOrderConfirmationModal() {
   if (!container || !subtotalEl || !deliveryFeeEl || !totalWithFeeEl || !countEl) return;
   if (cart.length === 0) {
       container.innerHTML = '<p>Your cart is empty.</p>';
-      subtotalEl.textContent = '₱0.00';
-      deliveryFeeEl.textContent = '₱0.00';
-      totalWithFeeEl.textContent = '₱0.00';
+      subtotalEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
+      deliveryFeeEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
+      totalWithFeeEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
       countEl.textContent = '0';
       return;
   }
@@ -859,11 +904,12 @@ function loadOrderConfirmationModal() {
       `;
   });
   container.innerHTML = html;
-  subtotalEl.textContent = `₱${subtotal.toFixed(2)}`;
-  deliveryFeeEl.textContent = `₱0.00`;
-  totalWithFeeEl.textContent = `₱${subtotal.toFixed(2)}`;
+  subtotalEl.innerHTML = `<span class="currency-value">₱${subtotal.toFixed(2)}</span>`;
+  deliveryFeeEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
+  totalWithFeeEl.innerHTML = `<span class="currency-value">₱${subtotal.toFixed(2)}</span>`;
   countEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
 }
+
 async function handleOrderConfirmation() {
   const customerInfo = {
     firstName: document.getElementById('customerFirstName').value.trim(),
@@ -871,12 +917,16 @@ async function handleOrderConfirmation() {
     email: document.getElementById('customerEmail').value.trim().toLowerCase(),
     phone: document.getElementById('customerPhone').value.trim(),
     address: [
-    document.getElementById('customerStreet')?.value.trim(),
-    document.getElementById('customerCity')?.value.trim(),
-    document.getElementById('customerProvince')?.value.trim()
-  ].filter(part => part).join(', ')
+      document.getElementById('customerStreet')?.value.trim(),
+      document.getElementById('customerCity')?.value.trim(),
+      document.getElementById('customerProvince')?.value.trim()
+    ].filter(part => part).join(', ')
   };
   const paymentMethod = document.getElementById('paymentMethod').value;
+  if (!paymentMethod) {
+    showToast('Please select a payment method.', 'error');
+    return;
+  }
   const errors = [];
   if (!customerInfo.firstName || customerInfo.firstName.length < 2) {
     errors.push('First name must be at least 2 characters');
@@ -956,11 +1006,13 @@ async function handleOrderConfirmation() {
     }
   }
 }
+
 function closeOrderConfirmationModal() {
   const modal = document.getElementById('orderConfirmationModal');
   if (!modal) return;
   modal.style.display = 'none';
 }
+
 function openChangePasswordModal() {
   const modal = document.getElementById('changePasswordModal');
   if (modal) {
@@ -990,48 +1042,50 @@ function openChangePasswordModal() {
     console.error("Change password modal element with ID 'changePasswordModal' not found in the HTML.");
   }
 }
+
 async function loadMyOrders() {
-    const tbody = document.getElementById('myOrdersTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5">Loading your orders...</td></tr>';
-    try {
-        const orders = await apiCall('/customer/orders?limit=20');
-        if (!orders || orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5">You have no orders yet.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = '';
-        orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        orders.forEach(order => {
-            const row = document.createElement('tr');
-            const statusClass = getStatusClass(order.status);
-            const orderDate = new Date(order.createdAt);
-            const formattedDateTime = orderDate.toLocaleString();
-            const actionsCell = document.createElement('td');
-            actionsCell.classList.add('actions-cell');
-            const reorderBtn = document.createElement('button');
-            reorderBtn.textContent = 'Reorder';
-            reorderBtn.className = 'action-btn reorder-btn';
-            reorderBtn.onclick = () => handleReorder(order);
-            const feedbackBtn = document.createElement('button');
-            feedbackBtn.textContent = 'Feedback';
-            feedbackBtn.className = 'action-btn feedback-btn';
-            feedbackBtn.onclick = () => handleFeedback(order);
-            actionsCell.appendChild(reorderBtn);
-            actionsCell.appendChild(feedbackBtn);
-            row.innerHTML = `
-                <td>#${order.orderNumber}</td>
-                <td>${formattedDateTime}</td>
-                <td><span class="status ${statusClass}">${order.status}</span></td>
-                <td>₱${Number(order.totalAmount).toFixed(2)}</td>
-            `;
-            row.appendChild(actionsCell);
-            tbody.appendChild(row);
-        });
-    } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" style="color:#e74c3c;">Error loading orders: ${err.message}</td></tr>`;
+  const tbody = document.getElementById('myOrdersTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5">Loading your orders...</td></tr>';
+  try {
+    const orders = await apiCall('/customer/orders?limit=20');
+    if (!orders || orders.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5">You have no orders yet.</td></tr>';
+      return;
     }
+    tbody.innerHTML = '';
+    orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    orders.forEach(order => {
+      const row = document.createElement('tr');
+      const statusClass = getStatusClass(order.status);
+      const orderDate = new Date(order.createdAt);
+      const formattedDateTime = orderDate.toLocaleString();
+      const actionsCell = document.createElement('td');
+      actionsCell.classList.add('actions-cell');
+      const reorderBtn = document.createElement('button');
+      reorderBtn.textContent = 'Reorder';
+      reorderBtn.className = 'action-btn reorder-btn';
+      reorderBtn.onclick = () => handleReorder(order);
+      const feedbackBtn = document.createElement('button');
+      feedbackBtn.textContent = 'Feedback';
+      feedbackBtn.className = 'action-btn feedback-btn';
+      feedbackBtn.onclick = () => handleFeedback(order);
+      actionsCell.appendChild(reorderBtn);
+      actionsCell.appendChild(feedbackBtn);
+      row.innerHTML = `
+        <td>#${order.orderNumber}</td>
+        <td>${formattedDateTime}</td>
+        <td><span class="status ${statusClass}">${order.status}</span></td>
+        <td>₱${Number(order.totalAmount).toFixed(2)}</td>
+      `;
+      row.appendChild(actionsCell);
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#e74c3c;">Error loading orders: ${err.message}</td></tr>`;
+  }
 }
+
 async function handleReorder(order) {
   if (!order.items || !Array.isArray(order.items)) return;
   if (allMenuItems.length === 0) {
@@ -1054,60 +1108,65 @@ async function handleReorder(order) {
   updateCartUI();
   showView('menu');
 }
+
+let currentFeedbackOrderId = null;
 function handleFeedback(order) {
-    showToast(`Feedback form for order #${order.orderNumber} would open here.`, 'info');
+  currentFeedbackOrderId = order.id;
+  document.getElementById('feedbackOrderNumber').textContent = order.orderNumber;
+  document.getElementById('feedbackForm').reset();
+  document.querySelector('.star-rating input[value="5"]').checked = true;
+  document.getElementById('feedbackModal').style.display = 'flex';
 }
+
 async function loadProfileSettings() {
-    try {
-        const profile = await apiCall('/user/profile');
-        document.getElementById('firstName').value = profile.firstName || '';
-        document.getElementById('lastName').value = profile.lastName || '';
-        document.getElementById('email').value = profile.email || '';
-        document.getElementById('phone').value = profile.phoneNumber || '';
-        if (profile.address) {
-          const parts = profile.address.split(',').map(p => p.trim());
-          document.getElementById('address').value = parts[0] || '';
-          document.getElementById('city').value = parts[1] || '';
-          document.getElementById('province').value = parts[2] || '';
-        } else {
-          document.getElementById('address').value = '';
-          document.getElementById('city').value = '';
-          document.getElementById('province').value = '';
-        }
-        if (profile.birthday) {
-            const date = new Date(profile.birthday);
-            document.getElementById('birthday').value = date.toISOString().split('T')[0];
-        } else {
-            document.getElementById('birthday').value = '';
-        }
-        document.getElementById('gender').value = profile.gender || '';
-    } catch (err) {
-        console.error('Error loading profile settings:', err);
-        showToast('Failed to load profile: ' + err.message, 'error');
+  try {
+    const profile = await apiCall('/user/profile');
+    document.getElementById('firstName').value = profile.firstName || '';
+    document.getElementById('lastName').value = profile.lastName || '';
+    document.getElementById('email').value = profile.email || '';
+    document.getElementById('phone').value = profile.phoneNumber || '';
+    if (profile.address) {
+      const parts = profile.address.split(',').map(p => p.trim());
+      document.getElementById('address').value = parts[0] || '';
+      document.getElementById('city').value = parts[1] || '';
+      document.getElementById('province').value = parts[2] || '';
+    } else {
+      document.getElementById('address').value = '';
+      document.getElementById('city').value = '';
+      document.getElementById('province').value = '';
     }
-    loadSavedProfilePicture();
+    if (profile.birthday) {
+      const date = new Date(profile.birthday);
+      document.getElementById('birthday').value = date.toISOString().split('T')[0];
+    } else {
+      document.getElementById('birthday').value = '';
+    }
+    document.getElementById('gender').value = profile.gender || '';
+  } catch (err) {
+    console.error('Error loading profile settings:', err);
+    showToast('Failed to load profile: ' + err.message, 'error');
+  }
+  loadSavedProfilePicture();
 }
+
 async function saveProfileSettings(e) {
   e.preventDefault();
   const street = document.getElementById('address').value.trim();
   const city = document.getElementById('city').value.trim();
   const province = document.getElementById('province').value.trim();
-
   const fullAddress = [street, city, province].filter(part => part).join(', ');
-
   const formData = {
-      firstName: document.getElementById('firstName').value.trim(),
-      lastName: document.getElementById('lastName').value.trim(),
-      email: document.getElementById('email').value.trim().toLowerCase(),
-      phoneNumber: document.getElementById('phone').value.trim(),
-      address: fullAddress, // ✅ Required by backend (was missing)
-      street: street,       // optional – backend uses TryGetProperty
-      city: city,           // optional
-      province: province,   // optional
-      birthday: document.getElementById('birthday').value,
-      gender: document.getElementById('gender').value
+    firstName: document.getElementById('firstName').value.trim(),
+    lastName: document.getElementById('lastName').value.trim(),
+    email: document.getElementById('email').value.trim().toLowerCase(),
+    phoneNumber: document.getElementById('phone').value.trim(),
+    address: fullAddress,
+    street: street,
+    city: city,
+    province: province,
+    birthday: document.getElementById('birthday').value,
+    gender: document.getElementById('gender').value
   };
-
   const errors = [];
   if (!formData.firstName || formData.firstName.length < 2) {
     errors.push('First name must be at least 2 characters');
@@ -1128,13 +1187,11 @@ async function saveProfileSettings(e) {
     showToast(errors.join(' '), 'error');
     return;
   }
-
   try {
     const response = await apiCall('/user/profile', {
       method: 'PUT',
       body: JSON.stringify(formData)
     });
-    // Backend returns updated profile? If not, fall back to formData
     const updatedProfile = response?.user || response || formData;
     localStorage.setItem('customerInfo', JSON.stringify(updatedProfile));
     document.querySelector('.welcome').textContent = `Welcome back, ${updatedProfile.firstName}!`;
@@ -1143,6 +1200,7 @@ async function saveProfileSettings(e) {
     showToast('Failed to update profile: ' + err.message, 'error');
   }
 }
+
 function validatePhoneInput(e) {
   const phoneField = e.target.querySelector('#phone') || e.target.querySelector('#customerPhone');
   if (phoneField) {
@@ -1155,93 +1213,100 @@ function validatePhoneInput(e) {
   }
   return true;
 }
+
 function openCartModal() {
-    const modal = document.getElementById('cartModal');
-    if (!modal) return;
-    loadCartIntoModal();
-    modal.style.display = 'block';
+  const modal = document.getElementById('cartModal');
+  if (!modal) return;
+  loadCartIntoModal();
+  modal.style.display = 'block';
 }
+
 function closeCartModal() {
-    const modal = document.getElementById('cartModal');
-    if (!modal) return;
-    modal.style.display = 'none';
+  const modal = document.getElementById('cartModal');
+  if (!modal) return;
+  modal.style.display = 'none';
 }
+
 function loadCartIntoModal() {
-    const container = document.querySelector('.cart-items-container');
-    const subtotalEl = document.getElementById('cartSubtotal');
-    const deliveryFeeEl = document.getElementById('cartDeliveryFee');
-    const totalWithFeeEl = document.getElementById('cartTotalWithFee');
-    const countEl = document.getElementById('cartItemCount');
-    if (!container || !subtotalEl || !deliveryFeeEl || !totalWithFeeEl || !countEl) return;
-    if (cart.length === 0) {
-        container.innerHTML = '<p>Your cart is empty.</p>';
-        if (subtotalEl) subtotalEl.textContent = '₱0.00';
-        if (deliveryFeeEl) deliveryFeeEl.textContent = '₱0.00';
-        if (totalWithFeeEl) totalWithFeeEl.textContent = '₱0.00';
-        if (countEl) countEl.textContent = '0';
-        document.getElementById('checkoutBtn')?.setAttribute('disabled', 'true');
-        return;
-    }
-    let html = '';
-    let subtotal = 0;
-    cart.forEach((item, index) => {
-        const itemTotal = item.price * item.quantity;
-        subtotal += itemTotal;
-        html += `
-            <div class="cart-item">
-                <div class="item-details">
-                    <h3>${item.name}</h3>
-                    <p class="item-meta">Qty: ${item.quantity} | Size: ${item.size || 'N/A'} | Mood: ${item.mood || 'N/A'} | Sugar: ${item.sugar || 'N/A'}</p>
-                    <p class="item-price">₱${Number(item.price).toFixed(2)} x ${item.quantity} = ₱${itemTotal.toFixed(2)}</p>
-                </div>
-                <div class="item-actions">
-                    <button class="btn-remove" data-index="${index}">Remove</button>
-                </div>
-            </div>
-        `;
+  const container = document.querySelector('.cart-items-container');
+  const subtotalEl = document.getElementById('cartSubtotal');
+  const deliveryFeeEl = document.getElementById('cartDeliveryFee');
+  const totalWithFeeEl = document.getElementById('cartTotalWithFee');
+  const countEl = document.getElementById('cartItemCount');
+  if (!container || !subtotalEl || !deliveryFeeEl || !totalWithFeeEl || !countEl) return;
+  if (cart.length === 0) {
+    container.innerHTML = '<p>Your cart is empty.</p>';
+    subtotalEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
+    deliveryFeeEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
+    totalWithFeeEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
+    countEl.textContent = '0';
+    document.getElementById('checkoutBtn')?.setAttribute('disabled', 'true');
+    return;
+  }
+  let html = '';
+  let subtotal = 0;
+  cart.forEach((item, index) => {
+    const itemTotal = item.price * item.quantity;
+    subtotal += itemTotal;
+    html += `
+      <div class="cart-item">
+        <div class="item-details">
+          <h3>${item.name}</h3>
+          <p class="item-meta">Qty: ${item.quantity} | Size: ${item.size || 'N/A'} | Mood: ${item.mood || 'N/A'} | Sugar: ${item.sugar || 'N/A'}</p>
+          <p class="item-price">₱${Number(item.price).toFixed(2)} x ${item.quantity} = ₱${itemTotal.toFixed(2)}</p>
+        </div>
+        <div class="item-actions">
+          <button class="btn-remove" data-index="${index}">Remove</button>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+  subtotalEl.innerHTML = `<span class="currency-value">₱${subtotal.toFixed(2)}</span>`;
+  deliveryFeeEl.innerHTML = `<span class="currency-value">₱0.00</span>`;
+  totalWithFeeEl.innerHTML = `<span class="currency-value">₱${subtotal.toFixed(2)}</span>`;
+  if (countEl) countEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+  document.getElementById('checkoutBtn')?.removeAttribute('disabled');
+  document.querySelectorAll('.btn-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const index = parseInt(e.target.dataset.index);
+      removeItemFromCart(index);
     });
-    container.innerHTML = html;
-    if (subtotalEl) subtotalEl.textContent = `₱${subtotal.toFixed(2)}`;
-    if (deliveryFeeEl) deliveryFeeEl.textContent = `₱0.00`;
-    if (totalWithFeeEl) totalWithFeeEl.textContent = `₱${subtotal.toFixed(2)}`;
-    if (countEl) countEl.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
-    document.getElementById('checkoutBtn')?.removeAttribute('disabled');
-    document.querySelectorAll('.btn-remove').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const index = parseInt(e.target.dataset.index);
-            removeItemFromCart(index);
-        });
-    });
-    document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
-    document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
+  });
+  document.getElementById('checkoutBtn')?.addEventListener('click', placeOrder);
+  document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
 }
+
 function removeItemFromCart(index) {
-    if (index >= 0 && index < cart.length) {
-        cart.splice(index, 1);
-        localStorage.setItem('tambayanCart', JSON.stringify(cart));
-        updateCartUI();
-        loadCartIntoModal();
-    }
+  if (index >= 0 && index < cart.length) {
+    cart.splice(index, 1);
+    localStorage.setItem('tambayanCart', JSON.stringify(cart));
+    updateCartUI();
+    loadCartIntoModal();
+  }
 }
+
 function clearCart() {
-    showAlert(
-      'Clear Cart', 
-      'Are you sure you want to clear your entire cart?', 
-      true, 
-      () => {
-        cart = [];
-        localStorage.setItem('tambayanCart', JSON.stringify(cart));
-        updateCartUI();
-        loadCartIntoModal();
-        showToast('Cart cleared.', 'info');
-      },
-      () => {}
-    );
+  showAlert(
+    'Clear Cart',
+    'Are you sure you want to clear your entire cart?',
+    true,
+    () => {
+      cart = [];
+      localStorage.setItem('tambayanCart', JSON.stringify(cart));
+      updateCartUI();
+      loadCartIntoModal();
+      showToast('Cart cleared.', 'info');
+    },
+    () => {}
+  );
 }
+
 async function deleteAccount() {
   document.getElementById('deleteConfirmModal').style.display = 'flex';
   document.getElementById('passwordInput').focus();
 }
+
 async function setupDeleteConfirmation() {
   const deleteConfirmModal = document.getElementById('deleteConfirmModal');
   const passwordInput = document.getElementById('passwordInput');
@@ -1296,57 +1361,60 @@ async function setupDeleteConfirmation() {
     }
   });
 }
+
 async function changePassword(e) {
-    e.preventDefault();
-    const currentPassword = document.getElementById('currentPassword').value.trim();
-    const newPassword = document.getElementById('newPassword').value.trim();
-    const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-        showToast('All password fields are required.', 'error');
-        return;
-    }
-    if (newPassword !== confirmNewPassword) {
-        showToast('New passwords do not match.', 'error');
-        return;
-    }
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(newPassword)) {
-        showToast('New password must be at least 8 characters and include uppercase, lowercase, number, and symbol.', 'error');
-        return;
-    }
-    try {
-        await apiCall('/user/change-password', {
-            method: 'POST',
-            body: JSON.stringify({
-                currentPassword,
-                newPassword
-            })
-        });
-        showToast('Password changed successfully!', 'success');
-        document.getElementById('changePasswordForm').reset();
-    } catch (err) {
-        showToast('Change Password Failed: ' + err.message, 'error');
-    }
+  e.preventDefault();
+  const currentPassword = document.getElementById('currentPassword').value.trim();
+  const newPassword = document.getElementById('newPassword').value.trim();
+  const confirmNewPassword = document.getElementById('confirmNewPassword').value.trim();
+  if (!currentPassword || !newPassword || !confirmNewPassword) {
+    showToast('All password fields are required.', 'error');
+    return;
+  }
+  if (newPassword !== confirmNewPassword) {
+    showToast('New passwords do not match.', 'error');
+    return;
+  }
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  if (!passwordRegex.test(newPassword)) {
+    showToast('New password must be at least 8 characters and include uppercase, lowercase, number, and symbol.', 'error');
+    return;
+  }
+  try {
+    await apiCall('/user/change-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        currentPassword,
+        newPassword
+      })
+    });
+    showToast('Password changed successfully!', 'success');
+    document.getElementById('changePasswordForm').reset();
+  } catch (err) {
+    showToast('Change Password Failed: ' + err.message, 'error');
+  }
 }
+
 function initializeProfileFormListeners() {
-    document.getElementById('changePasswordForm')?.addEventListener('submit', changePassword);
-    document.querySelector('.open-change-password-btn')?.addEventListener('click', openChangePasswordModal);
-    document.getElementById('closePasswordModal')?.addEventListener('click', function() {
-        const modal = document.getElementById('changePasswordModal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    });
-    window.addEventListener('click', function(event) {
-        const modal = document.getElementById('changePasswordModal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
-    document.querySelector('.account-actions .btn-danger')?.addEventListener('click', deleteAccount);
-    document.getElementById('profilePictureInput')?.addEventListener('change', handleProfilePictureUpload);
-    document.getElementById('profileForm')?.addEventListener('submit', saveProfileSettings);
+  document.getElementById('changePasswordForm')?.addEventListener('submit', changePassword);
+  document.querySelector('.open-change-password-btn')?.addEventListener('click', openChangePasswordModal);
+  document.getElementById('closePasswordModal')?.addEventListener('click', function() {
+    const modal = document.getElementById('changePasswordModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  });
+  window.addEventListener('click', function(event) {
+    const modal = document.getElementById('changePasswordModal');
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+  document.querySelector('.account-actions .btn-danger')?.addEventListener('click', deleteAccount);
+  document.getElementById('profilePictureInput')?.addEventListener('change', handleProfilePictureUpload);
+  document.getElementById('profileForm')?.addEventListener('submit', saveProfileSettings);
 }
+
 function handleProfilePictureUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -1370,6 +1438,7 @@ function handleProfilePictureUpload(event) {
   };
   reader.readAsDataURL(file);
 }
+
 function loadSavedProfilePicture() {
   const savedPicture = localStorage.getItem('profilePicture');
   if (savedPicture) {
@@ -1384,12 +1453,14 @@ function loadSavedProfilePicture() {
     }
   }
 }
+
 function closeModalById(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
     modal.style.display = 'none';
   }
 }
+
 function showToast(message, type = 'info', duration = 3000) {
   const toastContainer = document.getElementById('toastContainer');
   if (!toastContainer) {

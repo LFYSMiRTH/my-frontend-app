@@ -1567,7 +1567,16 @@ i { font-size: 18px; }
 .summary-row strong {
   font-weight: 600;
 }
-
+.summary-row .currency-value {
+  /* Ensure the currency symbol and number are treated as one unit for alignment */
+  display: inline-block;
+  text-align: right;
+  min-width: 80px; /* Adjust this width as needed to fit your longest value */
+}
+.summary-row strong {
+  font-weight: 600;
+  /* You can add a fixed width or max-width here if needed */
+}
 .summary-row:last-child {
   border-bottom: none;
   padding-bottom: 0;
@@ -1857,29 +1866,29 @@ i { font-size: 18px; }
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 500; /* Normal weight */
-  font-family: inherit; /* Match the font family */
+  font-weight: 500;
+  font-family: inherit;
 }
 .btn-ok:hover {
   background-color: #5a3620;
 }
 
 .btn-cancel {
-  background-color: #2d5a6b; /* Match the dark gray/blue from your screenshot */
+  background-color: #2d5a6b;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 500; /* Normal weight */
-  font-family: inherit; /* Match the font family */
+  font-weight: 500; 
+  font-family: inherit;
 }
 
 .btn-cancel:hover {
   background-color: #236570;
 }
 
-/* === CUSTOM ALERT MODAL STYLES === */
+
 #customAlert .modal-content {
   max-width: 400px;
   padding: 2rem;
@@ -1919,23 +1928,23 @@ i { font-size: 18px; }
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 500; /* Normal weight */
+  font-weight: 500;
   font-family: inherit;
   font-size: 1rem;
-  margin: 0 2px; /* Small margin on sides */
+  margin: 0 2px;
 }
 
 #customAlert button:hover {
   background-color: #5a3620;
 }
 
-/* Style for the Clear button specifically */
+
 #alertClearBtn {
-  background-color: #e74c3c; /* Red color for clear action */
+  background-color: #e74c3c;
 }
 
 #alertClearBtn:hover {
-  background-color: #861a0e; /* Darker red on hover */
+  background-color: #861a0e;
 }
 #toastContainer {
   position: fixed;
@@ -1983,7 +1992,7 @@ i { font-size: 18px; }
   border-left-color: var(--primary);
 }
 
-/* === PAYMENT METHOD SECTION STYLES === */
+
 .payment-method-section {
   margin-top: 24px;
   padding: 24px;
@@ -2025,9 +2034,149 @@ i { font-size: 18px; }
   padding: 8px;
 }
 
-/* Responsive styling for mobile */
+
 @media (max-width: 768px) {
   .payment-method-section {
     padding: 16px;
   }
+}
+
+#feedbackModal .modal-content {
+  max-width: 400px;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#feedbackModal h2 {
+  color: #5d3a2a;
+  margin-top: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+#feedbackModal label {
+  display: block;
+  color: #4a4a4a;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+#feedbackModal .star-rating {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+#feedbackModal .star-rating input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  background: white;
+  transition: all 0.2s ease;
+  position: absolute;
+  opacity: 0;
+}
+
+#feedbackModal .star-rating input[type="radio"]:checked {
+  background: #6b4226;
+  border-color: #6b4226;
+}
+
+#feedbackModal .star-rating input[type="radio"]:hover {
+  border-color: #6b4226;
+}
+
+#feedbackModal .star-rating label {
+  display: inline-block;
+  font-size: 1.2rem;
+  color: #6b4226;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  transition: transform 0.2s ease;
+  padding: 0.2rem;
+}
+
+#feedbackModal .star-rating label.filled {
+  color: #6b4226;
+  transform: scale(1.2);
+}
+#feedbackModal .star-rating input[type="radio"]:checked + label {
+  color: #6b4226;
+  transform: scale(1.2);
+}
+#feedbackModal .star-rating input[type="radio"]:checked ~ label {
+  color: #6b4226;
+  transform: scale(1.2);
+}
+
+#feedbackModal .star-rating input[type="radio"]:not(:checked) + label:hover {
+  color: #6b4226;
+  transform: scale(1.1);
+}
+
+#feedbackModal textarea {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+}
+
+#feedbackModal .btn-primary {
+  background-color: #6b4226;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+  max-width: 150px;
+  text-align: center;
+}
+
+#feedbackModal .btn-primary:hover {
+  background-color: #5a3620;
+}
+
+#feedbackModal .modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }

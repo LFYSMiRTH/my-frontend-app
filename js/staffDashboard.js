@@ -333,7 +333,7 @@ async function markAllNotificationsAsRead() {
     loadNotificationsIntoPanel();
     loadNotificationCount();
   } catch (err) {
-    alert('Failed to mark all as read: ' + err.message);
+    showToast('Failed to mark all as read: ' + err.message);
   }
 }
 
@@ -377,7 +377,7 @@ async function updateOrderStatus(orderId, newStatus) {
     }
     loadOrders(currentFilter);
   } catch (err) {
-    alert(`Failed to update order status: ${err.message}`);
+    showToast(`Failed to update order status: ${err.message}`);
   }
 }
 
@@ -616,7 +616,7 @@ async function printReceipt(orderId) {
     printWin.document.close();
     showToast(`Receipt for order #${orderNumber} printed`);
   } catch (err) {
-    alert(`Failed to print receipt: ${err.message}`);
+    showToast(`Failed to print receipt: ${err.message}`);
   }
 }
 
@@ -674,9 +674,9 @@ async function sendLowStockAlert(itemName) {
       method: 'POST',
       body: JSON.stringify({ itemName })
     });
-    alert(`Low stock alert sent for ${itemName}`);
+    showToast(`Low stock alert sent for ${itemName}`);
   } catch (err) {
-    alert(`Failed to send alert: ${err.message}`);
+    showToast(`Failed to send alert: ${err.message}`);
   }
 }
 
@@ -764,7 +764,6 @@ function openItemModal(item) {
   }
   const isOutOfStock = (item.stockQuantity || 0) <= 0;
   const isActuallyAvailable = item.isAvailable && !isOutOfStock;
-
   if (isOutOfStock) {
     modalAvailability.textContent = 'Out of Stock';
     modalAvailability.style.color = '#E53E3E';
@@ -835,7 +834,7 @@ function openItemModal(item) {
   modalImage.src = getFullImageUrl(item.imageUrl);
   modalAddToCart.onclick = () => {
     if (!item.isAvailable) {
-      alert("This item is currently unavailable.");
+      showToast("This item is currently unavailable.");
       return;
     }
     const quantity = currentModalQuantity;
@@ -867,7 +866,7 @@ function closeClearCartModal() {
 
 function addToCart(item, quantity = 1, size = 'S', mood = 'Hot', sugar = '30%', overridePrice = null) {
   if (!item.isAvailable) {
-    alert("This item is currently unavailable.");
+    showToast("This item is currently unavailable.");
     return;
   }
   const priceToUse = overridePrice !== null ? overridePrice : getPriceBySize(item.price, size);
@@ -940,7 +939,7 @@ function showToast(message) {
 
 function placeOrder() {
   if (cart.length === 0) {
-    alert("Your cart is empty.");
+    showToast("Your cart is empty.");
     return;
   }
   selectedPaymentMethod = 'Cash';
@@ -961,7 +960,7 @@ function selectPayment(method) {
 
 function confirmOrder() {
   if (!selectedPaymentMethod) {
-    alert('Please select a payment method.');
+    showToast('Please select a payment method.');
     return;
   }
   document.getElementById('paymentModal').classList.remove('show');
@@ -996,6 +995,9 @@ async function submitOrderToBackend(paymentMethod) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+    if (result && result.id) {
+      printReceipt(result.id);
+    }
     showToast('Order placed successfully!');
     cart = [];
     localStorage.removeItem('tambayanCart');
@@ -1004,9 +1006,9 @@ async function submitOrderToBackend(paymentMethod) {
     selectedPaymentMethod = null;
   } catch (err) {
     if (err.message.includes("Insufficient stock")) {
-      showToast(`Stock error: ${err.message}`, 'error');
+      showToast(`Stock error: ${err.message}`);
     } else {
-      showToast('Failed to place order: ' + err.message, 'error');
+      showToast('Failed to place order: ' + err.message);
     }
   }
 }
@@ -1052,7 +1054,7 @@ async function viewStaffAccount() {
     `;
     modal.style.display = 'flex';
   } catch (err) {
-    alert(`Failed to load profile: ${err.message}`);
+    showToast(`Failed to load profile: ${err.message}`);
   }
 }
 
@@ -1073,11 +1075,11 @@ async function submitChangePassword() {
   const newPassword = document.getElementById('newPassword').value.trim();
   const confirm = document.getElementById('confirmPassword').value.trim();
   if (!current || !newPassword || !confirm) {
-    alert('Please fill in all fields.');
+    showToast('Please fill in all fields.');
     return;
   }
   if (newPassword !== confirm) {
-    alert('New passwords do not match.');
+    showToast('New passwords do not match.');
     return;
   }
   try {
@@ -1085,12 +1087,12 @@ async function submitChangePassword() {
       method: 'POST',
       body: JSON.stringify({ currentPassword: current, newPassword })
     });
-    alert('Password changed successfully!');
+    showToast('Password changed successfully!');
     closeChangePasswordModal();
     document.getElementById('currentPassword').value = '';
     document.getElementById('newPassword').value = '';
     document.getElementById('confirmPassword').value = '';
   } catch (err) {
-    alert('Failed to change password: ' + (err.message || 'Unknown error'));
+    showToast('Failed to change password: ' + (err.message || 'Unknown error'));
   }
 }

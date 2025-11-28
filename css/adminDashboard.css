@@ -560,7 +560,6 @@ body {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
-  overflow-x: hidden;
 }
 
 .tab-btn {
@@ -587,10 +586,11 @@ body {
   transform: translateY(-1px);
 }
 
-.tab-content {
+#inventoryManagementView .tab-content {
   display: none;
 }
-.tab-content.active {
+
+#inventoryManagementView .tab-content.active {
   display: block;
 }
 
@@ -1213,4 +1213,97 @@ input:checked + .slider:before {
   .container {
     overflow-x: hidden;
   }
+}
+#stockTab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inventory-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 250px;
+}
+
+#inventoryList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+}
+
+.add-button-container {
+  margin-top: auto;
+  padding: 16px 0 0;
+  display: flex;
+  justify-content: center;
+}
+#userManagementView .tab-content {
+  display: none;
+}
+
+#userManagementView .tab-content.active {
+  display: block;
+}
+/* Notification Bell & Dropdown */
+.notification-bell {
+  cursor: pointer;
+  position: relative;
+  margin-left: 15px;
+}
+
+.notification-bell i {
+  font-size: 24px;
+  color: #555;
+}
+
+#notificationBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#notificationDropdown {
+  position: absolute;
+  top: calc(100% + 8px); /* Position directly below the bell icon */
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  display: none;
+}
+
+#notificationDropdown div {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+#notificationDropdown div:last-child {
+  border-bottom: none;
+}
+
+#notificationDropdown strong {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+#notificationDropdown .time {
+  font-size: 0.75rem;
+  color: #888;
 }

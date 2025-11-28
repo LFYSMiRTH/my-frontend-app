@@ -103,10 +103,6 @@
           <div id="customerInsights">Loading...</div>
         </div>
         <div class="analytics-card">
-          <h3>Expense Tracker</h3>
-          <div id="expenseTracker">Loading...</div>
-        </div>
-        <div class="analytics-card">
           <h3>Profit and Loss Report</h3>
           <div id="profitLossReport">Loading...</div>
         </div>
@@ -136,40 +132,42 @@
       </div>
     </div>
     <div id="inventoryManagementView" class="view hidden">
-      <div class="header">
-        <div class="user-info">
-          <h2>Inventory Management</h2>
-          <p>Track and manage stock levels</p>
-        </div>
+    <div class="header">
+      <div class="user-info">
+        <h2>Inventory Management</h2>
+        <p>Track and manage stock levels</p>
       </div>
-      <div class="inventory-tabs">
-        <button class="tab-btn active" data-tab="stock">Stock Tracker</button>
-        <button class="tab-btn" data-tab="suppliers">Suppliers</button>
+    </div>
+    <div class="inventory-tabs">
+      <button class="tab-btn active" data-tab="stock">Stock Tracker</button>
+      <button class="tab-btn" data-tab="suppliers">Suppliers</button>
+    </div>
+    <div id="stockTab" class="tab-content active">
+      <div class="inventory-filters">
+        <input type="text" id="inventorySearch" placeholder="Search ingredients..." />
       </div>
-      <div id="stockTab" class="tab-content active">
-        <div class="inventory-filters">
-          <input type="text" id="inventorySearch" placeholder="Search ingredients..." />
-        </div>
-        <div id="inventoryList" style="max-height: 300px; overflow-y: auto; margin: 16px 0;">
+      <div class="inventory-content-wrapper">
+        <div id="inventoryList">
           <p>Loading inventory...</p>
         </div>
-        <div style="margin-top: 24px;">
+        <div class="add-button-container">
           <button type="button" id="addInventoryItemBtn" class="btn-add-ingredient">
             <i class="ri-add-line"></i> Add New Ingredient
           </button>
         </div>
       </div>
-      <div id="suppliersTab" class="tab-content">
-        <div id="suppliersList" style="max-height: 260px; overflow-y: auto; margin: 16px 0;">
-          <p>Loading suppliers...</p>
-        </div>
-        <div style="margin-top: 24px;">
-          <button type="button" id="addSupplierBtn" class="btn-add-supplier">
-            <i class="ri-add-line"></i> Add Supplier
-          </button>
-        </div>
+    </div>
+    <div id="suppliersTab" class="tab-content">
+      <div id="suppliersList" style="max-height: 260px; overflow-y: auto; margin: 16px 0;">
+        <p>Loading suppliers...</p>
+      </div>
+      <div style="margin-top: 24px;">
+        <button type="button" id="addSupplierBtn" class="btn-add-supplier">
+          <i class="ri-add-line"></i> Add Supplier
+        </button>
       </div>
     </div>
+  </div>
     <div id="reportsView" class="view hidden">
       <div class="header">
         <div class="user-info">
@@ -376,11 +374,16 @@
         </div>
         <div class="form-group">
           <label for="invCategory">Category</label>
-          <input type="text" id="invCategory" placeholder="e.g., Dairy, Coffee" />
+          <select id="invCategory" required>
+            <option value="">Select a category</option>
+            <option value="Drink Ingredients">Drink Ingredients</option>
+            <option value="Sandwich Ingredients">Sandwich Ingredients</option>
+            <option value="Dessert Ingredients">Dessert Ingredients</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="invUnit">Unit</label>
-          <input type="text" id="invUnit" placeholder="e.g., cup, tsp, pcs" value="pcs" required />
+          <input type="text" id="invUnit" value="pcs" readonly />
         </div>
         <div class="form-group">
           <label for="invStock">Current Stock</label>
@@ -515,10 +518,5 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="/js/adminDashboard.js"></script>
-  <script>
-    console.log("Admin Dashboard loaded!");
-    console.log("Token:", localStorage.getItem('adminToken'));
-    console.log("Admin Info:", localStorage.getItem('adminInfo'));
-  </script>
 </body>
 </html>

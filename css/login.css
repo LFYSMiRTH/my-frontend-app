@@ -1008,3 +1008,24 @@ button[type="submit"]:active {
   line-height: 1 !important;
 }
 
+.toast {
+  min-width: 280px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+.toast.success { background-color: #10b981; }     /* green */
+.toast.error { background-color: #ef4444; }       /* red */
+.toast.info { background-color: #3b82f6; }        /* blue */
