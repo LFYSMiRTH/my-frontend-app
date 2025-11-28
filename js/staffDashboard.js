@@ -764,6 +764,7 @@ function openItemModal(item) {
   }
   const isOutOfStock = (item.stockQuantity || 0) <= 0;
   const isActuallyAvailable = item.isAvailable && !isOutOfStock;
+
   if (isOutOfStock) {
     modalAvailability.textContent = 'Out of Stock';
     modalAvailability.style.color = '#E53E3E';
